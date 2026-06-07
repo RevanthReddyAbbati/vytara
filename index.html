@@ -58,7 +58,7 @@
         .light input[type="text"], .light input[type="number"], .light input[type="date"], .light input[type="time"], .light select, .light textarea {
             background-color: #ffffff !important;
             color: #0f172a !important;
-            border: 1px solid #cbd5e1 !important;
+            border: 1px solid #e2e8f0 !important;
         }
         input:focus, select:focus, textarea:focus {
             border-color: #3b82f6 !important;
@@ -123,7 +123,7 @@
         </header>
 
         <main class="max-w-4xl mx-auto text-center my-auto space-y-6 px-4">
-            <span class="px-4 py-1.5 rounded-full bg-brand-500/10 text-brand-500 text-xs font-bold uppercase tracking-widest">The Ultimate Fitness Operating System</span>
+            <span class="px-4 py-1.5 rounded-full bg-brand-500/10 text-brand-500 text-xs font-bold uppercase tracking-widest">Premium Fitness Platform</span>
             <h2 class="text-5xl lg:text-7xl font-black tracking-tight leading-none uppercase">Train. Track. <span class="text-brand-500">Transform.</span></h2>
             <p class="text-slate-500 dark:text-slate-400 max-w-xl mx-auto text-base sm:text-lg leading-relaxed font-medium">
                 Unlock an integrated biomechanical tracking system combining deep workout load metrics, food sync optimization modules, and executive analytics.
@@ -136,10 +136,10 @@
         </main>
 
         <footer class="max-w-7xl w-full mx-auto border-t border-slate-200 dark:border-slate-800/80 pt-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-center text-xs font-bold uppercase tracking-wider text-slate-400">
-            <div>✓ Muscle Partition Matrix</div>
-            <div>✓ Nutrition Sync Vault</div>
-            <div>✓ Multi-Goal Telemetry</div>
-            <div>✓ Executive Reporting</div>
+            <div>✓ Workout Tracking</div>
+            <div>✓ Nutrition Tracking</div>
+            <div>✓ Goal Planning</div>
+            <div>✓ Analytics Reports</div>
         </footer>
     </div>
 
@@ -172,7 +172,7 @@
                 <div x-show="wizardStep === 3" class="space-y-4">
                     <div class="flex justify-between items-center">
                         <h3 class="text-2xl font-extrabold tracking-tight">Select Goals</h3>
-                        <button @click="skipWizardStep(3)" class="text-xs font-bold text-brand-500 hover:underline">Skip & Add Later ➔</button>
+                        <button @click="skipWizardStep(3)" class="text-xs font-bold text-brand-500 hover:underline">Skip For Now ➔</button>
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         <template x-for="g in goalOptions">
@@ -187,7 +187,7 @@
                 <div x-show="wizardStep === 4" class="space-y-4">
                     <div class="flex justify-between items-center">
                         <h3 class="text-2xl font-extrabold tracking-tight">Target Metrics</h3>
-                        <button @click="skipWizardStep(4)" class="text-xs font-bold text-brand-500 hover:underline">Skip & Add Later ➔</button>
+                        <button @click="skipWizardStep(4)" class="text-xs font-bold text-brand-500 hover:underline">Configure Later ➔</button>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Target Weight (kg)</label><input type="number" step="0.1" x-model="wizard.targetWeight"></div>
@@ -222,7 +222,7 @@
             </div>
 
             <nav class="space-y-1 flex-1">
-                <button @click="switchTab('dashboard')" :class="activeTab === 'dashboard' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all">Weight Progress</button>
+                <button @click="switchTab('dashboard')" :class="activeTab === 'dashboard' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all">Today's Summary</button>
                 <button @click="switchTab('workouts')" :class="activeTab === 'workouts' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all">Workout History</button>
                 <button @click="switchTab('diet')" :class="activeTab === 'diet' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all">Nutrition Tracking</button>
                 <button @click="switchTab('metrics')" :class="activeTab === 'metrics' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all">Body Metrics Log</button>
@@ -248,7 +248,7 @@
 
         <main class="flex-1 overflow-y-auto h-screen p-4 md:p-8 lg:p-12 pb-24 lg:pb-12 no-scrollbar no-print">
             
-            <div x-show="activeTab === 'dashboard'" class="space-y-8 animate-in fade-in duration-200">
+            <div x-show="activeTab === 'dashboard'" x-transition class="space-y-8">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-3xl font-extrabold tracking-tight">Today's Summary</h2>
@@ -359,7 +359,7 @@
                 </div>
             </div>
 
-            <div id="tab-workouts" class="tab-panel space-y-8 hidden animate-in fade-in duration-200">
+            <div x-show="activeTab === 'workouts'" x-transition class="space-y-8">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-3xl font-extrabold tracking-tight">Workout History</h2>
@@ -408,7 +408,7 @@
                 </div>
             </div>
 
-            <div id="tab-diet" class="tab-panel space-y-8 hidden animate-in fade-in duration-200">
+            <div x-show="activeTab === 'diet'" x-transition class="space-y-8">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-3xl font-extrabold tracking-tight">Nutrition Tracking</h2>
@@ -471,7 +471,7 @@
                 </div>
             </div>
 
-            <div id="tab-metrics" class="tab-panel space-y-8 hidden animate-in fade-in duration-200">
+            <div x-show="activeTab === 'metrics'" x-transition class="space-y-8">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-3xl font-extrabold tracking-tight">Body Metrics Log</h2>
@@ -520,7 +520,7 @@
                 </div>
             </div>
 
-            <div id="tab-goals" class="tab-panel space-y-8 hidden animate-in fade-in duration-200">
+            <div x-show="activeTab === 'goals'" x-transition class="space-y-8">
                 <div>
                     <h2>Goals Center</h2>
                     <p class="text-sm text-slate-500">Track target changes vectors weights values milestones and timeline constraints anytime.</p>
@@ -548,14 +548,32 @@
                     <div class="lg:col-span-2 bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-8 rounded-3xl space-y-6 shadow-sm flex flex-col justify-between">
                         <div>
                             <h3 class="text-lg font-bold tracking-tight uppercase italic mb-6">Active Target Milestones</h3>
-                            <div class="space-y-3 mx-auto text-center py-8 text-slate-400 italic" x-show="customGoals.length === 0 && (!profile || profile.goals.length === 0)">No goals added yet.</div>
-                            <div class="space-y-3" id="container-goals-list"></div>
+                            <div class="space-y-3" id="container-goals-list">
+                                <template x-for="g in (profile ? profile.goals : [])">
+                                    <div class="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-xs font-bold">
+                                        <span class="text-emerald-500">✓</span>
+                                        <span class="text-slate-700 dark:text-slate-300 uppercase tracking-tight" x-text="'Active Target Objective: ' + g"></span>
+                                    </div>
+                                </template>
+                                <template x-for="g in customGoals" :key="g.id">
+                                    <div class="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-xs font-bold shadow-sm">
+                                        <div class="flex items-center gap-3">
+                                            <input type="checkbox" :checked="g.completed" @change="toggleCustomGoalStatus(g.id)">
+                                            <span :class="g.completed ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-200'" x-text="g.description"></span>
+                                        </div>
+                                        <button @click="deleteCustomGoal(g.id)" class="text-red-500 font-bold hover:underline">Delete</button>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="p-8 text-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl" x-show="customGoals.length === 0 && (!profile || profile.goals.length === 0)">
+                                No goals configured yet. Create a goal target to begin tracking.
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div id="tab-photos" class="tab-panel space-y-8 hidden animate-in fade-in duration-200">
+            <div x-show="activeTab === 'photos'" x-transition class="space-y-8">
                 <div>
                     <h2>Progress Photos</h2>
                     <p class="text-sm text-slate-500">Compare composition before vs after tracking grids images assets safely mapped.</p>
@@ -569,10 +587,27 @@
                     <div><label class="text-[9px] font-black text-slate-400 block uppercase">File Payload</label><input type="file" id="photo-input-file" class="p-1.5 bg-slate-50 dark:bg-slate-950"></div>
                     <button @click="processPhotoUpload()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-extrabold py-3.5 rounded-xl text-xs uppercase tracking-wider shadow-md">Sync Photo</button>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6" id="container-photos-gallery"></div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6" id="container-photos-gallery">
+                    <template x-for="p in photos" :key="p.id">
+                        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[2rem] p-4 space-y-3 relative overflow-hidden shadow-sm">
+                            <img :src="p.dataUrl" class="w-full h-56 object-cover rounded-2xl bg-slate-50 dark:bg-slate-950">
+                            <div class="flex justify-between items-center text-xs px-1">
+                                <div>
+                                    <span class="font-black uppercase block tracking-wider" x-text="p.type + ' Profile'"></span>
+                                    <span class="text-slate-400 font-semibold" x-text="p.date"></span>
+                                </div>
+                                <button @click="wipePhotoFromVault(p.id)" class="text-red-500 font-bold text-[10px] uppercase">Wipe</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div x-show="photos.length === 0" class="p-12 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl text-xs text-slate-400 italic">
+                    Visual progress history vault empty. No images logged yet.
+                </div>
             </div>
 
-            <div id="tab-reports" class="tab-panel space-y-8 hidden animate-in fade-in duration-200">
+            <div x-show="activeTab === 'reports'" x-transition class="space-y-8">
                 <div>
                     <h2>Report Center</h2>
                     <p class="text-sm text-slate-500">Extract high fidelity records histories logs into clean printable print modules.</p>
@@ -587,7 +622,7 @@
                 </div>
             </div>
 
-            <div id="tab-system" class="tab-panel space-y-8 hidden animate-in fade-in duration-200">
+            <div x-show="activeTab === 'system'" x-transition class="space-y-8">
                 <div>
                     <h2>Settings & Storage Workspace</h2>
                     <p class="text-sm text-slate-500">Export or restore system records instances blocks cleanly into local device storage formats.</p>
@@ -605,7 +640,12 @@
                         </div>
                         <button @click="hardResetEcosystem()" class="w-full bg-red-500/10 hover:bg-red-600 text-red-600 hover:text-white border border-red-500/20 py-3.5 rounded-xl text-xs font-black tracking-widest uppercase tracking-wider">Purge Global Database Elements</button>
                     </div>
-                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-8 rounded-[2.5rem] space-y-4 shadow-sm text-xs font-semibold text-slate-400" id="system-profile-snapshot"></div>
+                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-8 rounded-[2.5rem] space-y-4 shadow-sm text-xs font-semibold text-slate-400" id="system-profile-snapshot">
+                        <div class="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1.5"><span>Athlete User Identity Name:</span><strong class="text-slate-900 dark:text-white" x-text="profile ? profile.name : '--'"></strong></div>
+                        <div class="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1.5"><span>Stature Variable:</span><strong class="text-slate-900 dark:text-white" x-text="profile ? profile.height + ' cm' : '--'"></strong></div>
+                        <div class="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1.5"><span>Starting Weight Value:</span><strong class="text-slate-900 dark:text-white" x-text="profile ? profile.currentWeight + ' kg' : '--'"></strong></div>
+                        <div class="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1.5"><span>Target Weight Value:</span><strong class="text-slate-900 dark:text-white" x-text="profile ? profile.targetWeight + ' kg' : '--'"></strong></div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -687,9 +727,6 @@
     </div>
 
     <script>
-        const SYSTEM_MUSCLE_GROUPS = ['Chest', 'Shoulders', 'Triceps', 'Back', 'Biceps', 'Legs', 'Core', 'Forearms', 'Glutes', 'Calves'];
-        const SYSTEM_EXTENDED_GOALS = ['Muscle Gain', 'Fat Loss', 'Strength Gain', 'Weight Loss', 'Weight Gain', 'Bulking', 'Cutting', 'Stay Fit', 'Body Recomposition', 'Endurance', 'Improve Cardio', 'Athletic Performance', 'Maintain Weight', 'Improve Mobility', 'General Fitness', 'Better Sleep', 'Better Nutrition'];
-
         const AppState = {
             hasOnboarded: false,
             theme: 'dark',
@@ -705,9 +742,6 @@
         const BIND_LOCAL_VAULT_KEY = 'vytara_production_os_vault_v6';
         const ActiveCharts = {};
 
-        /**
-         * Storage Interaction Engine
-         */
         const StorageLayer = {
             loadEcosystemData() {
                 const raw = localStorage.getItem(BIND_LOCAL_VAULT_KEY);
@@ -1049,7 +1083,7 @@
                 if (!start || !end) { alert("Please compile scope deadlines range parameters first."); return; }
 
                 let printHtml = `
-                    <h2 class="text-2xl font-black uppercase text-black">Vytara Performance History Report</h2>
+                    <h2 class="text-2xl font-black uppercase text-black">Vytara Executive Performance History Report</h2>
                     <p class="text-xs mb-4 text-black">Athlete Profile: <strong>${AppState.profile ? AppState.profile.name : 'Unknown'}</strong> | Selected Range: ${start} to ${end}</p>
                     <table class="w-full text-sm border-collapse text-black" style="color: black !important">
                         <thead>
@@ -1171,19 +1205,26 @@
                 activeTab: 'dashboard',
                 goalOptions: SYSTEM_EXTENDED_GOALS,
                 
-                // Reactive Forms data schemas contexts links
+                // Reactive Forms data schemas contexts links (Initialized safely to eliminate DOM load errors)
+                profileForm: { name: '', age: '', gender: '', height: '', currentWeight: '', currentBodyFat: '', targetWeight: '', targetBodyFat: '', targetDate: '', goals: [] },
                 wizard: { name: '', age: '', gender: '', height: '', currentWeight: '', currentBodyFat: '', targetWeight: '', targetBodyFat: '', targetDate: '', goals: [] },
                 
                 // Arrays bindings targets pointers
-                profile: null, logs: [], workouts: [], dietLogs: [], metricsLogs: [], customGoals: [], photos: [],
-                computedMetrics: {},
+                profile: { name: '', age: 0, gender: '', height: 0, currentWeight: 0, currentBodyFat: 0, targetWeight: 0, targetBodyFat: 0, targetDate: '', goals: [] }, 
+                logs: [], 
+                workouts: [], 
+                dietLogs: [], 
+                metricsLogs: [], 
+                customGoals: [], 
+                photos: [],
+                computedMetrics: { currentWeight: 0, targetWeight: 0, caloriesToday: 0, proteinToday: 0, waterToday: 0, workoutCount: 0, goalsCount: 0, progressPercent: 0, daysRemaining: 0, personalRecords: [], aiInsightText: '' },
 
                 initPlatform() {
                     StorageLayer.loadEcosystemData();
                     this.theme = AppState.theme;
                     ThemeModule.applySavedSystemThemeState();
 
-                    // Re-route local pointers structures natively
+                    // Re-route local pointers structures natively into the reactive core layout
                     this.profile = AppState.profile;
                     this.workouts = AppState.workouts;
                     this.dietLogs = AppState.dietLogs;
@@ -1193,7 +1234,7 @@
 
                     if (AppState.hasOnboarded && AppState.profile) {
                         this.currentView = 'app';
-                        this.switchTab('dashboard');
+                        this.activeTab = AppState.activeTab || 'dashboard';
                     }
                     this.setDefaultFormsDatesValues();
 
@@ -1273,6 +1314,7 @@
                 finalizeOnboarding() {
                     AppState.profile = JSON.parse(JSON.stringify(this.wizard));
                     AppState.hasOnboarded = true;
+                    AppState.activeTab = 'dashboard';
                     StorageLayer.persistEcosystemData();
                     
                     this.profile = AppState.profile;
@@ -1281,9 +1323,9 @@
                 },
 
                 switchTab(tabId) {
+                    this.activeTab = tabId;
                     AppState.activeTab = tabId;
                     StorageLayer.persistEcosystemData();
-                    this.activeTab = tabId;
                     this.syncEcosystemChanges();
                     
                     if (tabId === 'goals') {
@@ -1482,7 +1524,7 @@
                         });
                     }
                 }
-            }
+            };
         }
     </script>
 </body>
