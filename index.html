@@ -1442,6 +1442,13 @@
                 authLoading: false,
                 firebaseUser: null,
 
+                // Internal timers (not reactive — plain properties)
+                _cloudSyncTimer: null,
+                _scoreSyncTimer: null,
+                _chartRenderTimer: null,
+                _cloudSyncing: false,
+                _challengeUnsub: null,
+
                 // Heatmap extras
                 currentStreak: 0,
                 longestStreak: 0,
@@ -1663,23 +1670,26 @@
                     return map[code] || 'Authentication error: ' + code;
                 },
 
-                // ——— PERSIST: also save to Firestore if user is logged in ———
+                // ——— PERSIST: save to Firestore (called via debounce only) ———
                 async persistCloud() {
                     if (!this.firebaseUser || !window._fb) return;
+                    if (this._cloudSyncing) return; // guard against concurrent calls
+                    this._cloudSyncing = true;
                     try {
                         const { db, doc, setDoc } = window._fb;
                         const payload = {
                             theme: this.theme, activeTab: this.activeTab, hasOnboarded: this.currentView === 'app',
                             profile: this.profile, dietLogs: this.dietLogs, workouts: this.workouts,
                             metricsLogs: this.metricsLogs, customGoals: this.customGoals,
-                            // Photos are base64 and can be large — skip or store URLs only
                             photos: this.photos.map(p => ({ ...p, dataUrl: p.dataUrl ? '[photo]' : '' }))
                         };
                         await setDoc(doc(db, 'users', this.firebaseUser.uid), payload);
                     } catch (err) { console.warn('Cloud sync failed:', err); }
+                    finally { this._cloudSyncing = false; }
                 },
 
-                persist() {
+                // Write only to localStorage — safe to call anytime, no side effects
+                _localPersist() {
                     localStorage.setItem(BIND_LOCAL_VAULT_KEY, JSON.stringify({
                         theme: this.theme,
                         activeTab: this.activeTab,
@@ -1692,10 +1702,24 @@
                         photos: this.photos,
                         challenges: this.challenges
                     }));
-                    // Also sync to Firestore if signed in
-                    this.persistCloud();
-                    // Sync challenge scores whenever data changes
-                    this.syncChallengeScores();
+                },
+
+                persist() {
+                    this._localPersist();
+                    // Debounced cloud sync — prevents Firestore spam
+                    clearTimeout(this._cloudSyncTimer);
+                    this._cloudSyncTimer = setTimeout(() => {
+                        this.persistCloud();
+                        this._debouncedScoreSync();
+                    }, 3000); // 3s delay — batches rapid changes
+                },
+
+                // Debounced score sync — only fires 5s after last change
+                _debouncedScoreSync() {
+                    clearTimeout(this._scoreSyncTimer);
+                    this._scoreSyncTimer = setTimeout(() => {
+                        this.syncChallengeScores();
+                    }, 5000);
                 },
 
                 setDefaultDates() {
@@ -1757,13 +1781,15 @@
                     this.theme = this.theme === 'dark' ? 'light' : 'dark';
                     localStorage.setItem('asc_theme_mode', this.theme);
                     document.documentElement.classList.toggle('dark', this.theme === 'dark');
-                    this.persist();
-                    setTimeout(() => this.renderDataCharts(), 60);
+                    this._localPersist();
+                    clearTimeout(this._cloudSyncTimer);
+                    this._cloudSyncTimer = setTimeout(() => this.persistCloud(), 3000);
+                    setTimeout(() => this.renderDataCharts(), 100);
                 },
 
                 switchTab(tabId) {
                     this.activeTab = tabId;
-                    this.persist();
+                    this._localPersist(); // tab switch = local only, no cloud needed
                     if (tabId === 'challenges') {
                         // Refresh challenge data from Firestore every time the tab opens
                         this.loadFirestoreChallenges().then(() => this.syncChallengeScores());
@@ -1780,7 +1806,8 @@
                         this.goalsForm.fiberTarget   = nt.fiber    || 25;
                     }
                     // Re-render charts after a short delay to ensure DOM is visible
-                    setTimeout(() => this.renderDataCharts(), 80);
+                    clearTimeout(this._chartRenderTimer);
+                    this._chartRenderTimer = setTimeout(() => this.renderDataCharts(), 150);
                 },
 
                 openModal(id) {
@@ -2203,7 +2230,7 @@
                         // Also store locally with Firestore doc id
                         challenge.firestoreId = ref.id;
                         this.challenges.unshift({ ...challenge, role: 'sender' });
-                        this.persist();
+                        this._localPersist(); // local only — challenge already written to Firestore above
                         this.challengeForm = { friendEmail: '', name: '', durationDays: 30, metric: 'workouts' };
                         alert('✅ Challenge sent to ' + friendEmail + '! They will see it in their Challenges tab when they open the app.');
                     } catch(e) {
@@ -2234,18 +2261,17 @@
                         const localOnly = this.challenges.filter(c => !c.firestoreId || !fsIds.has(c.firestoreId));
                         this.challenges = [...allDocs, ...localOnly];
                         this.challenges.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
-                        this.persist();
+                        this._localPersist(); // local only — no cloud loop
                     } catch(e) {
                         console.warn('Challenge load error:', e);
                     }
                 },
 
-                // Compute scores for both participants in a challenge, push to Firestore
+                // Compute scores and push to Firestore — NO persist() call to avoid loops
                 async syncChallengeScores() {
-                    if (!window._fb || !this.firebaseUser) return;
+                    if (!window._fb || !this.firebaseUser || !this.challenges.length) return;
                     const { db, doc, setDoc } = window._fb;
-                    const myEmail = this.firebaseUser.email.toLowerCase();
-
+                    let changed = false;
                     for (const ch of this.challenges) {
                         if (!ch.firestoreId) continue;
                         const start = ch.startDate, end = ch.endDate;
@@ -2253,21 +2279,24 @@
                         if (ch.metric === 'workouts') myScore = this.workouts.filter(w => w.date >= start && w.date <= end).length;
                         else if (ch.metric === 'diet') myScore = this.dietLogs.filter(d => d.date >= start && d.date <= end).length;
                         else if (ch.metric === 'metrics') myScore = this.metricsLogs.filter(m => m.date >= start && m.date <= end).length;
-
                         const scoreField = ch.role === 'sender' ? 'senderScore' : 'receiverScore';
-                        try {
-                            await setDoc(doc(db, 'challenges', ch.firestoreId), { [scoreField]: myScore }, { merge: true });
-                            // Update local copy
-                            ch[scoreField] = myScore;
-                        } catch(e) { console.warn('Score sync error:', e); }
+                        // Only write if score actually changed — avoids redundant Firestore writes
+                        if (ch[scoreField] !== myScore) {
+                            try {
+                                await setDoc(doc(db, 'challenges', ch.firestoreId), { [scoreField]: myScore }, { merge: true });
+                                ch[scoreField] = myScore;
+                                changed = true;
+                            } catch(e) { console.warn('Score sync error:', e); }
+                        }
                     }
-                    this.persist();
+                    // Only write localStorage if something changed
+                    if (changed) this._localPersist();
                 },
 
                 deleteChallenge(id) {
                     if (confirm('Remove this challenge?')) {
                         this.challenges = this.challenges.filter(c => c.id !== id);
-                        this.persist();
+                        this._localPersist();
                     }
                 },
 
@@ -2304,7 +2333,7 @@
                             }
                         });
                         this.challenges.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
-                        this.persist();
+                        this._localPersist(); // local only — no cloud loop
                     }, err => console.warn('Challenge listener error:', err));
                 },
 
@@ -2441,7 +2470,8 @@
                     };
 
                     this.generateHeatmapData();
-                    setTimeout(() => this.renderDataCharts(), 60);
+                    clearTimeout(this._chartRenderTimer);
+                    this._chartRenderTimer = setTimeout(() => this.renderDataCharts(), 150);
                 },
 
                 generateHeatmapData() {
@@ -2520,6 +2550,8 @@
                 },
 
                 renderDataCharts() {
+                    if (this._rendering) return;
+                    this._rendering = true;
                     const isDark = this.theme === 'dark';
                     const textColor = isDark ? '#94a3b8' : '#64748b';
                     const gridColor = isDark ? 'rgba(30,41,59,0.5)' : 'rgba(226,232,240,0.7)';
@@ -2611,6 +2643,7 @@
                             });
                         }
                     }
+                    this._rendering = false;
                 }
             };
         }
