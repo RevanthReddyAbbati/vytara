@@ -130,43 +130,66 @@
     </style>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    <!-- ============================================================
-         FIREBASE CONFIG — Replace the values below with YOUR project
-         ============================================================ -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    <!--
+    ════════════════════════════════════════════════════════
+     FIREBASE SETUP  (SAFE — no secrets in committed code)
+    ════════════════════════════════════════════════════════
+     1. Create a file called  firebase-config.js  in the
+        SAME folder as this HTML file.
+     2. Paste this into firebase-config.js (fill your values):
 
-       const firebaseConfig = {
-  	apiKey: "AIzaSyAeHZRyQcAXAIKD2bW72IF_mEIIdCfH0dI",
-  	authDomain: "gym-tracker-ec342.firebaseapp.com",
-  	projectId: "gym-tracker-ec342",
-  	storageBucket: "gym-tracker-ec342.firebasestorage.app",
-  	messagingSenderId: "799478199566",
-  	appId: "1:799478199566:web:1ae71f357400d9795c135f",
-	measurementId: "G-YEWVD5LZZV"
-	};
-
-        const app  = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db   = getFirestore(app);
-
-        // Expose to Alpine via window so the app can call them
-        window._fb = {
-            auth, db,
-            createUserWithEmailAndPassword,
-            signInWithEmailAndPassword,
-            signOut,
-            onAuthStateChanged,
-            doc, setDoc, getDoc
+        window.__VYTARA_CONFIG = {
+            apiKey:            "YOUR_API_KEY",
+            authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId:         "YOUR_PROJECT_ID",
+            storageBucket:     "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId:             "YOUR_APP_ID"
         };
 
-        // Notify Alpine when auth state changes
-        onAuthStateChanged(auth, user => {
-            window._fbUser = user || null;
-            document.dispatchEvent(new CustomEvent("fb-auth-change", { detail: user }));
-        });
+     3. Add  firebase-config.js  to your  .gitignore  file
+        so it is NEVER committed.  GitHub will then show 0 secrets.
+
+     If firebase-config.js is missing, the app works in
+     offline / local-only mode automatically — no crash.
+    ════════════════════════════════════════════════════════
+    -->
+    <script src="firebase-config.js" onerror="console.warn('firebase-config.js not found — running in offline mode.')"></script>
+    <script type="module">
+        const cfg = window.__VYTARA_CONFIG;
+        if (!cfg || !cfg.apiKey || cfg.apiKey === 'YOUR_API_KEY') {
+            console.warn('VYTARA: Firebase not configured. Running in local-only mode.');
+        } else {
+            try {
+                const { initializeApp }                              = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+                const { getAuth, createUserWithEmailAndPassword,
+                        signInWithEmailAndPassword, signOut,
+                        onAuthStateChanged }                         = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+                const { getFirestore, doc, setDoc, getDoc,
+                        collection, query, where, getDocs,
+                        addDoc, deleteDoc }                          = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+
+                const app  = initializeApp(cfg);
+                const auth = getAuth(app);
+                const db   = getFirestore(app);
+
+                window._fb = {
+                    auth, db,
+                    createUserWithEmailAndPassword,
+                    signInWithEmailAndPassword,
+                    signOut,
+                    onAuthStateChanged,
+                    doc, setDoc, getDoc, collection, query, where, getDocs, addDoc, deleteDoc
+                };
+
+                onAuthStateChanged(auth, user => {
+                    window._fbUser = user || null;
+                    document.dispatchEvent(new CustomEvent("fb-auth-change", { detail: user }));
+                });
+            } catch(e) {
+                console.error('Firebase init failed:', e);
+            }
+        }
     </script>
 </head>
 <body class="bg-slate-50 dark:bg-slateDark text-slate-900 dark:text-slate-50 min-h-screen antialiased flex flex-col lg:flex-row overflow-x-hidden" x-data="vytaraApp()" x-init="initPlatform()" @keydown.escape.window="closeAllModals(); mobileMenuOpen = false;">
@@ -305,8 +328,8 @@
                     <h3 class="text-2xl font-extrabold tracking-tight">Body Details</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Height (cm) *</label><input type="number" x-model="wizard.height" placeholder="Stature" min="1"></div>
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Current Weight (kg) *</label><input type="number" step="0.1" x-model="wizard.currentWeight" placeholder="Mass Weight" min="1"></div>
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Body Fat % (Optional)</label><input type="number" step="0.1" x-model="wizard.currentBodyFat" placeholder="Estimated %" min="0"></div>
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Current Weight (kg) *</label><input type="number" step="any" x-model="wizard.currentWeight" placeholder="Mass Weight" min="1"></div>
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Body Fat % (Optional)</label><input type="number" step="any" x-model="wizard.currentBodyFat" placeholder="Estimated %" min="0"></div>
                     </div>
                 </div>
 
@@ -347,8 +370,8 @@
                         <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">(Optional)</span>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Target Weight (kg)</label><input type="number" step="0.1" x-model="wizard.targetWeight"></div>
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Target Body Fat %</label><input type="number" step="0.1" x-model="wizard.targetBodyFat"></div>
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Target Weight (kg)</label><input type="number" step="any" x-model="wizard.targetWeight"></div>
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Target Body Fat %</label><input type="number" step="any" x-model="wizard.targetBodyFat"></div>
                         <div><label class="text-[10px] font-bold text-slate-400 block mb-1">Goal Deadline</label><input type="date" x-model="wizard.targetDate"></div>
                     </div>
                 </div>
@@ -434,6 +457,10 @@
                 <button @click="switchTab('photos'); mobileMenuOpen = false" :class="activeTab === 'photos' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Progress Photos</button>
                 <button @click="switchTab('reports'); mobileMenuOpen = false" :class="activeTab === 'reports' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Reports</button>
                 <button @click="switchTab('system'); mobileMenuOpen = false" :class="activeTab === 'system' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Settings</button>
+                <button @click="switchTab('challenges'); mobileMenuOpen = false" :class="activeTab === 'challenges' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">
+                    <span>🏆 Challenges</span>
+                    <span x-show="challenges.length > 0" class="ml-auto text-[9px] bg-brand-500 text-white rounded-full px-1.5 py-0.5 font-black" x-text="challenges.length"></span>
+                </button>
             </nav>
 
             <div class="space-y-2 pt-4 border-t border-slate-100 dark:border-slate-800">
@@ -461,7 +488,7 @@
         <main class="flex-1 overflow-y-auto h-screen p-4 md:p-8 lg:p-12 pb-24 lg:pb-12 no-scrollbar no-print relative">
             
             <!-- Dashboard -->
-            <div x-show="activeTab === 'dashboard'" x-transition.opacity.duration.300ms class="space-y-8 absolute inset-0 p-4 md:p-8 lg:p-12 overflow-y-auto pb-24">
+            <div x-show="activeTab === 'dashboard'" class="space-y-8 p-4 md:p-8 lg:p-12 pb-32">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-3xl font-extrabold tracking-tight">Today's Summary</h2>
@@ -625,25 +652,25 @@
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[2rem] h-80 flex flex-col justify-between shadow-sm">
-                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase">Weight Progress (kg)</p>
-                        <div class="h-64 w-full relative flex items-center justify-center" id="chart-weight-parent">
-                            <span x-show="metricsLogs.length === 0" class="text-xs text-slate-400 font-bold border border-dashed border-slate-200 dark:border-slate-800 p-8 rounded-xl bg-white/50 dark:bg-slate-900/40 italic">No body metrics tracked yet. Log your weight to generate charts.</span>
-                            <canvas x-show="metricsLogs.length > 0" id="canvas-dash-weight"></canvas>
+                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[2rem] shadow-sm" style="height:280px;">
+                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Weight Progress (kg)</p>
+                        <div class="relative" style="height:220px;">
+                            <div x-show="metricsLogs.length === 0" class="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-bold border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-white/50 dark:bg-slate-900/40 italic text-center p-4">No body metrics tracked yet.<br>Log your weight to generate charts.</div>
+                            <canvas id="canvas-dash-weight" x-show="metricsLogs.length > 0" style="display:block;width:100%;height:100%;"></canvas>
                         </div>
                     </div>
-                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[2rem] h-80 flex flex-col justify-between shadow-sm">
-                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase">Calories Trend</p>
-                        <div class="h-64 w-full relative flex items-center justify-center" id="chart-calories-parent">
-                            <span x-show="dietLogs.length === 0" class="text-xs text-slate-400 font-bold border border-dashed border-slate-200 dark:border-slate-800 p-8 rounded-xl bg-white/50 dark:bg-slate-900/40 italic">No nutrition entries yet. Track your meals to view energy charts.</span>
-                            <canvas x-show="dietLogs.length > 0" id="canvas-dash-calories"></canvas>
+                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[2rem] shadow-sm" style="height:280px;">
+                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Calories Trend</p>
+                        <div class="relative" style="height:220px;">
+                            <div x-show="dietLogs.length === 0" class="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-bold border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-white/50 dark:bg-slate-900/40 italic text-center p-4">No nutrition entries yet.<br>Track your meals to view energy charts.</div>
+                            <canvas id="canvas-dash-calories" x-show="dietLogs.length > 0" style="display:block;width:100%;height:100%;"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Workouts -->
-            <div x-show="activeTab === 'workouts'" x-transition.opacity.duration.300ms class="space-y-8 absolute inset-0 p-4 md:p-8 lg:p-12 overflow-y-auto pb-24">
+            <div x-show="activeTab === 'workouts'" class="space-y-8 p-4 md:p-8 lg:p-12 pb-32">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-3xl font-extrabold tracking-tight">Workout History</h2>
@@ -657,9 +684,9 @@
                 </div>
 
                 <div x-show="workouts.length > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[2rem] h-66 lg:col-span-2 shadow-sm">
-                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Total Load Tonnage Volume</p>
-                        <div class="h-48 relative" id="chart-volume-parent"><canvas id="canvas-workout-volume"></canvas></div>
+                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[2rem] lg:col-span-2 shadow-sm" style="min-height:260px;">
+                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Workout Volume Trend (kg)</p>
+                        <div style="position:relative;height:200px;"><canvas id="canvas-workout-volume" style="display:block;width:100%;height:100%;"></canvas></div>
                     </div>
                     <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[2rem] flex flex-col shadow-sm">
                         <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-4">Personal Records</p>
@@ -685,7 +712,7 @@
                                     <th class="p-4 text-center">Sets Tracked</th>
                                     <th class="p-4 text-center">Peak Load</th>
                                     <th class="p-4 text-center">Cardio</th>
-                                    <th class="p-4 text-center">Total Volume</th>
+                                    <th class="p-4 text-center">Volume / Distance</th>
                                     <th class="p-4 text-right no-print">Action</th>
                                 </tr>
                             </thead>
@@ -697,8 +724,11 @@
                                         <td class="p-4"><span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded font-bold text-[10px]" x-text="w.muscles.join(', ')"></span></td>
                                         <td class="p-4 text-center font-bold" x-text="w.sets.length"></td>
                                         <td class="p-4 text-center text-brand-500 font-black" x-text="getTopWeight(w.sets) + ' kg'"></td>
-                                        <td class="p-4 text-center text-emerald-500 font-bold" x-text="(w.cardio && w.cardio.time > 0) ? w.cardio.time + 'm @ ' + w.cardio.speed + 'kph' : '--'"></td>
-                                        <td class="p-4 text-center font-black" x-text="calculateVolume(w.sets) + ' kg'"></td>
+                                        <td class="p-4 text-center text-emerald-500 font-bold text-xs">
+                                            <span x-show="w.workoutType === 'cycling'" x-text="(w.cycling && w.cycling.distanceKm ? w.cycling.distanceKm + 'km' : '') + (w.cycling && w.cycling.durationMin ? ' ' + w.cycling.durationMin + 'min' : '')"></span>
+                                            <span x-show="w.workoutType !== 'cycling'" x-text="(w.cardio && w.cardio.time > 0) ? w.cardio.time + 'm @ ' + (w.cardio.speed||0) + 'kph' : '--'"></span>
+                                        </td>
+                                        <td class="p-4 text-center font-black" x-text="w.workoutType === 'cycling' ? (w.cycling && w.cycling.distanceKm ? w.cycling.distanceKm + ' km' : '--') : calculateVolume(w.sets) + ' kg'"></td>
                                         <td class="p-4 text-right no-print space-x-2">
                                             <button @click="editWorkout(w.id)" class="text-brand-500 font-bold hover:underline">Edit</button>
                                             <button @click="duplicateRecord('workout', w.id)" class="text-emerald-500 font-bold hover:underline">Clone</button>
@@ -713,7 +743,7 @@
             </div>
 
             <!-- Diet -->
-            <div x-show="activeTab === 'diet'" x-transition.opacity.duration.300ms class="space-y-8 absolute inset-0 p-4 md:p-8 lg:p-12 overflow-y-auto pb-24">
+            <div x-show="activeTab === 'diet'" class="space-y-8 p-4 md:p-8 lg:p-12 pb-32">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-3xl font-extrabold tracking-tight">Nutrition Tracking</h2>
@@ -727,13 +757,13 @@
                 </div>
 
                 <div x-show="dietLogs.length > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[2rem] h-64 lg:col-span-2 shadow-sm">
-                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Protein Intake Stability Vectors</p>
-                        <div class="h-48 relative" id="chart-protein-parent"><canvas id="canvas-diet-protein"></canvas></div>
+                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[2rem] lg:col-span-2 shadow-sm" style="min-height:260px;">
+                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Protein &amp; Calorie Trend (last 14 days)</p>
+                        <div style="position:relative;height:200px;"><canvas id="canvas-diet-protein" style="display:block;width:100%;height:100%;"></canvas></div>
                     </div>
-                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[2rem] flex flex-col justify-between shadow-sm">
-                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Latest Nutrient Distribution Range</p>
-                        <div class="h-44 relative" id="chart-macros-parent"><canvas id="canvas-diet-macros"></canvas></div>
+                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[2rem] flex flex-col shadow-sm" style="min-height:260px;">
+                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Macro Distribution (Latest Day)</p>
+                        <div style="position:relative;flex:1;min-height:180px;"><canvas id="canvas-diet-macros" style="display:block;width:100%;height:100%;"></canvas></div>
                     </div>
                 </div>
 
@@ -778,7 +808,7 @@
             </div>
 
             <!-- Metrics -->
-            <div x-show="activeTab === 'metrics'" x-transition.opacity.duration.300ms class="space-y-8 absolute inset-0 p-4 md:p-8 lg:p-12 overflow-y-auto pb-24">
+            <div x-show="activeTab === 'metrics'" class="space-y-8 p-4 md:p-8 lg:p-12 pb-32">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-3xl font-extrabold tracking-tight">Body Metrics Log</h2>
@@ -831,24 +861,53 @@
             </div>
 
             <!-- Goals -->
-            <div x-show="activeTab === 'goals'" x-transition.opacity.duration.300ms class="space-y-8 absolute inset-0 p-4 md:p-8 lg:p-12 overflow-y-auto pb-24">
+            <div x-show="activeTab === 'goals'" class="space-y-8 p-4 md:p-8 lg:p-12 pb-32">
                 <div>
-                    <h2 class="text-3xl font-extrabold tracking-tight">Goals Center</h2>
-                    <p class="text-sm text-slate-500">Configure target objectives and parameters.</p>
+                    <h2 class="text-3xl font-extrabold tracking-tight">Goals & Targets</h2>
+                    <p class="text-sm text-slate-500">Set body composition goals and daily nutrition targets.</p>
+                </div>
+
+                <!-- Nutrition Daily Targets Card -->
+                <div class="bg-gradient-to-br from-brand-500/10 via-purple-500/5 to-transparent border border-brand-500/20 rounded-[2rem] p-6 md:p-8">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="w-8 h-8 bg-brand-500/20 rounded-xl flex items-center justify-center text-brand-500 font-black text-sm">🎯</div>
+                        <div>
+                            <h3 class="text-base font-extrabold tracking-tight">Daily Nutrition Targets</h3>
+                            <p class="text-xs text-slate-400">Your daily macro & calorie goals. Shown as progress bars in the dashboard.</p>
+                        </div>
+                    </div>
+                    <!-- Live targets display -->
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+                        <template x-for="[key, label, color] in [['calories','Calories','text-purple-400'],['protein','Protein','text-brand-400'],['carbs','Carbs','text-emerald-400'],['fat','Fat','text-orange-400'],['fiber','Fiber','text-teal-400']]" :key="key">
+                            <div class="bg-white/60 dark:bg-slate-900/60 border border-white/40 dark:border-slate-700/40 rounded-2xl p-4 text-center">
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1" x-text="label"></p>
+                                <p class="text-xl font-black" :class="color" x-text="(profile.nutritionTargets || {})[key] || '—'"></p>
+                                <p class="text-[9px] text-slate-400 mt-0.5" x-text="key === 'calories' ? 'kcal' : 'g'"></p>
+                            </div>
+                        </template>
+                    </div>
+                    <form @submit.prevent="updateProfileGoals" class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        <div><label class="text-[9px] font-black text-slate-400 block mb-1">CALORIES (kcal)</label><input type="number" x-model="goalsForm.calTarget" min="500" placeholder="e.g. 2000"></div>
+                        <div><label class="text-[9px] font-black text-slate-400 block mb-1">PROTEIN (g)</label><input type="number" x-model="goalsForm.proteinTarget" min="0" placeholder="e.g. 150"></div>
+                        <div><label class="text-[9px] font-black text-slate-400 block mb-1">CARBS (g)</label><input type="number" x-model="goalsForm.carbsTarget" min="0" placeholder="e.g. 200"></div>
+                        <div><label class="text-[9px] font-black text-slate-400 block mb-1">FAT (g)</label><input type="number" x-model="goalsForm.fatTarget" min="0" placeholder="e.g. 65"></div>
+                        <div><label class="text-[9px] font-black text-slate-400 block mb-1">FIBER (g)</label><input type="number" x-model="goalsForm.fiberTarget" min="0" placeholder="e.g. 25"></div>
+                        <button type="submit" class="sm:col-span-5 bg-brand-500 hover:bg-brand-600 text-white font-black py-3 rounded-xl text-xs uppercase tracking-widest shadow-md transition-all">Save Nutrition Targets</button>
+                    </form>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-8 rounded-3xl space-y-4 shadow-sm">
-                        <h3 class="text-lg font-bold tracking-tight uppercase italic border-b border-slate-100 dark:border-slate-800 pb-2">Edit Goal Settings</h3>
-                        <form @submit.prevent="updateProfileGoals" class="space-y-4">
-                            <div><label class="text-[9px] font-black text-slate-400 block mb-1">TARGET WEIGHT (KG) *</label><input type="number" step="0.1" x-model="goalsForm.targetWeight" min="1" required></div>
-                            <div><label class="text-[9px] font-black text-slate-400 block mb-1">TARGET BODY FAT %</label><input type="number" step="0.1" x-model="goalsForm.targetBodyFat" min="0"></div>
+                        <h3 class="text-lg font-bold tracking-tight uppercase italic border-b border-slate-100 dark:border-slate-800 pb-2">Body Goal Settings</h3>
+                        <div class="space-y-3">
+                            <div><label class="text-[9px] font-black text-slate-400 block mb-1">TARGET WEIGHT (KG)</label><input type="number" step="any" x-model="goalsForm.targetWeight" min="1"></div>
+                            <div><label class="text-[9px] font-black text-slate-400 block mb-1">TARGET BODY FAT %</label><input type="number" step="any" x-model="goalsForm.targetBodyFat" min="0"></div>
                             <div><label class="text-[9px] font-black text-slate-400 block mb-1">GOAL DEADLINE DATE</label><input type="date" x-model="goalsForm.targetDate"></div>
-                            <button type="submit" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-widest shadow-md">Update Profile Targets</button>
-                        </form>
+                            <button @click="updateProfileGoals()" class="w-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold py-3.5 rounded-xl text-xs uppercase tracking-widest hover:bg-brand-500 hover:text-white transition-all">Save Body Targets</button>
+                        </div>
                         
                         <div class="pt-6 mt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
-                            <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest">Create Custom Target Goal</h4>
+                            <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest">Add Custom Goal</h4>
                             <form @submit.prevent="addCustomGoal" class="flex flex-col gap-2">
                                 <input type="text" x-model="newCustomGoal" placeholder="e.g. Bench 100kg" required>
                                 <button type="submit" class="w-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Save Custom Goal</button>
@@ -857,7 +916,7 @@
                     </div>
                     
                     <div class="lg:col-span-2 bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-8 rounded-3xl space-y-6 shadow-sm flex flex-col">
-                        <h3 class="text-lg font-bold tracking-tight uppercase italic mb-2">Active Milestones Matrix</h3>
+                        <h3 class="text-lg font-bold tracking-tight uppercase italic mb-2">Active Milestones</h3>
                         
                         <div class="space-y-3 mx-auto w-full text-center py-8 text-slate-400 font-bold italic" x-show="customGoals.length === 0 && (!profile || profile.goals.length === 0)">
                             No goals added yet. Create an active target marker rule.
@@ -867,7 +926,7 @@
                             <template x-for="g in (profile ? profile.goals : [])">
                                 <div class="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-xs font-bold">
                                     <span class="text-emerald-500">✓</span>
-                                    <span class="text-slate-700 dark:text-slate-300 uppercase tracking-tight" x-text="'Active Objective: ' + g"></span>
+                                    <span class="text-slate-700 dark:text-slate-300 uppercase tracking-tight" x-text="'Active: ' + g"></span>
                                 </div>
                             </template>
                             <template x-for="g in customGoals" :key="g.id">
@@ -885,7 +944,7 @@
             </div>
 
             <!-- Photos -->
-            <div x-show="activeTab === 'photos'" x-transition.opacity.duration.300ms class="space-y-8 absolute inset-0 p-4 md:p-8 lg:p-12 overflow-y-auto pb-24">
+            <div x-show="activeTab === 'photos'" class="space-y-8 p-4 md:p-8 lg:p-12 pb-32">
                 <div>
                     <h2 class="text-3xl font-extrabold tracking-tight">Progress Photos</h2>
                     <p class="text-sm text-slate-500">Compare composition before vs after tracking grids images assets safely mapped.</p>
@@ -917,7 +976,7 @@
             </div>
 
             <!-- Reports -->
-            <div x-show="activeTab === 'reports'" x-transition.opacity.duration.300ms class="space-y-8 absolute inset-0 p-4 md:p-8 lg:p-12 overflow-y-auto pb-24">
+            <div x-show="activeTab === 'reports'" class="space-y-8 p-4 md:p-8 lg:p-12 pb-32">
                 <div>
                     <h2 class="text-3xl font-extrabold tracking-tight">Report Center</h2>
                     <p class="text-sm text-slate-500">Extract high fidelity records histories logs into clean printable print modules.</p>
@@ -932,8 +991,102 @@
                 </div>
             </div>
 
+            <!-- Challenges -->
+            <div x-show="activeTab === 'challenges'" class="space-y-8 p-4 md:p-8 lg:p-12 pb-32">
+                <div>
+                    <h2 class="text-3xl font-extrabold tracking-tight">Challenges</h2>
+                    <p class="text-sm text-slate-500">Invite friends to compete on fitness goals — workouts, diet logs, or body metrics.</p>
+                </div>
+
+                <!-- Create Challenge Card -->
+                <div class="bg-gradient-to-br from-orange-500/10 via-yellow-500/5 to-transparent border border-orange-500/20 rounded-[2rem] p-6 md:p-8">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="w-8 h-8 bg-orange-500/20 rounded-xl flex items-center justify-center text-lg">⚔️</div>
+                        <div>
+                            <h3 class="text-base font-extrabold tracking-tight">Send a Challenge</h3>
+                            <p class="text-xs text-slate-400">Your friend receives an invitation when they log into Vytara with the same email.</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                        <div><label class="text-[9px] font-black text-slate-400 block mb-1">FRIEND'S EMAIL *</label><input type="text" x-model="challengeForm.friendEmail" placeholder="friend@email.com"></div>
+                        <div><label class="text-[9px] font-black text-slate-400 block mb-1">CHALLENGE NAME *</label><input type="text" x-model="challengeForm.name" placeholder="e.g. 30-Day Shred"></div>
+                        <div>
+                            <label class="text-[9px] font-black text-slate-400 block mb-1">COMPETE ON</label>
+                            <select x-model="challengeForm.metric">
+                                <option value="workouts">🏋️ Workout Sessions</option>
+                                <option value="diet">🥗 Nutrition Logs</option>
+                                <option value="metrics">📊 Body Check-ins</option>
+                            </select>
+                        </div>
+                        <div><label class="text-[9px] font-black text-slate-400 block mb-1">DURATION (DAYS)</label><input type="number" x-model="challengeForm.durationDays" min="1" max="365" placeholder="30"></div>
+                    </div>
+                    <button @click="sendChallenge()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-3.5 rounded-xl text-xs uppercase tracking-widest shadow-lg transition-all">⚔️ Send Challenge Invite</button>
+                </div>
+
+                <!-- Active Challenges -->
+                <div>
+                    <h3 class="text-base font-extrabold tracking-tight mb-4">Your Challenges <span class="text-brand-500" x-text="challenges.length ? '(' + challenges.length + ')' : ''"></span></h3>
+                    <div x-show="challenges.length === 0" class="p-12 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem] bg-white/60 dark:bg-panelDark/40 text-sm text-slate-400 font-bold italic">
+                        No challenges yet. Challenge a friend to get started!
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <template x-for="ch in challenges" :key="ch.id">
+                            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-sm">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 class="font-extrabold text-sm tracking-tight" x-text="ch.name"></h4>
+                                        <p class="text-[10px] text-slate-400 mt-0.5" x-text="ch.startDate + ' → ' + ch.endDate"></p>
+                                    </div>
+                                    <span class="px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider"
+                                          :class="ch.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'"
+                                          x-text="ch.status"></span>
+                                </div>
+                                <!-- Versus display -->
+                                <div class="flex items-center gap-3">
+                                    <div class="flex-1 text-center bg-brand-500/10 rounded-xl p-3">
+                                        <p class="text-[9px] font-black text-brand-400 uppercase tracking-wider mb-1" x-text="ch.myName || 'You'"></p>
+                                        <p class="text-2xl font-black text-brand-500" x-text="getChallengeProgress(ch)"></p>
+                                        <p class="text-[9px] text-slate-400" x-text="ch.metric"></p>
+                                    </div>
+                                    <div class="text-slate-400 font-black text-lg">VS</div>
+                                    <div class="flex-1 text-center bg-orange-500/10 rounded-xl p-3">
+                                        <p class="text-[9px] font-black text-orange-400 uppercase tracking-wider mb-1 truncate" x-text="ch.friendEmail"></p>
+                                        <p class="text-2xl font-black text-orange-500" x-text="ch.friendScore || 0"></p>
+                                        <p class="text-[9px] text-slate-400" x-text="ch.metric"></p>
+                                    </div>
+                                </div>
+                                <!-- Progress bar -->
+                                <div class="space-y-1">
+                                    <div class="flex justify-between text-[9px] font-bold text-slate-400">
+                                        <span>Your progress</span>
+                                        <span x-text="Math.round(((new Date() - new Date(ch.startDate)) / (new Date(ch.endDate) - new Date(ch.startDate))) * 100) + '% time elapsed'"></span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full">
+                                        <div class="bg-brand-500 h-full rounded-full transition-all" :style="`width: ${Math.min(100, Math.round(((new Date() - new Date(ch.startDate)) / (new Date(ch.endDate) - new Date(ch.startDate))) * 100))}%`"></div>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 pt-1">
+                                    <button @click="deleteChallenge(ch.id)" class="flex-1 text-red-500 border border-red-500/20 hover:bg-red-500/10 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors">Remove</button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Invite Friends info card -->
+                <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[2rem] p-6 space-y-3">
+                    <h3 class="text-sm font-extrabold tracking-tight flex items-center gap-2">📩 How Invites Work</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-slate-500">
+                        <div class="flex gap-3"><span class="text-brand-500 font-black">1.</span><span>Enter your friend's email and send the challenge above.</span></div>
+                        <div class="flex gap-3"><span class="text-brand-500 font-black">2.</span><span>Your friend signs up or logs into Vytara with that email.</span></div>
+                        <div class="flex gap-3"><span class="text-brand-500 font-black">3.</span><span>They'll see the challenge appear in their Challenges tab automatically.</span></div>
+                    </div>
+                    <p class="text-[10px] text-slate-400 italic">Note: Real-time score sync requires Firebase to be configured. Without it, challenges are tracked locally.</p>
+                </div>
+            </div>
+
             <!-- Settings -->
-            <div x-show="activeTab === 'system'" x-transition.opacity.duration.300ms class="space-y-8 absolute inset-0 p-4 md:p-8 lg:p-12 overflow-y-auto pb-24">
+            <div x-show="activeTab === 'system'" class="space-y-8 p-4 md:p-8 lg:p-12 pb-32">
                 <div>
                     <h2 class="text-3xl font-extrabold tracking-tight">Settings & Storage Workspace</h2>
                     <p class="text-sm text-slate-500">Export or restore system records instances blocks cleanly into local device storage formats.</p>
@@ -941,9 +1094,10 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-8 rounded-[2.5rem] space-y-4 shadow-sm">
                         <h3 class="text-base font-black uppercase tracking-tight italic">Memory Storage Backups</h3>
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-3 gap-2">
                             <button @click="exportJSON()" class="bg-slate-50 dark:bg-slate-800 font-bold py-3 rounded-xl text-xs uppercase tracking-wider hover:bg-brand-500 hover:text-white transition-colors border border-slate-200 dark:border-transparent">Export JSON</button>
                             <button @click="exportCSV()" class="bg-slate-50 dark:bg-slate-800 font-bold py-3 rounded-xl text-xs uppercase tracking-wider hover:bg-brand-500 hover:text-white transition-colors border border-slate-200 dark:border-transparent">Export CSV</button>
+                            <button @click="exportToDoc()" class="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-bold py-3 rounded-xl text-xs uppercase tracking-wider hover:bg-indigo-500 hover:text-white transition-colors">Export .DOC</button>
                         </div>
                         <div class="pt-4 border-t border-slate-100 dark:border-slate-800/80 space-y-1">
                             <label class="text-[10px] font-black text-slate-400 tracking-widest block">RESTORE VAULT VIA JSON FILE</label>
@@ -951,11 +1105,51 @@
                         </div>
                         <button @click="hardReset()" class="w-full bg-red-500/10 hover:bg-red-600 text-red-600 hover:text-white border border-red-500/20 py-3.5 rounded-xl text-xs font-black tracking-widest uppercase tracking-wider transition-colors mt-2">Purge Local Databases Memory</button>
                     </div>
-                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-8 rounded-[2.5rem] space-y-4 shadow-sm text-xs font-semibold text-slate-400">
-                        <div class="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1.5"><span>Athlete Identity Name:</span><strong class="text-slate-950 dark:text-white" x-text="profile ? profile.name : '--'"></strong></div>
-                        <div class="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1.5"><span>Height Index:</span><strong class="text-slate-950 dark:text-white" x-text="profile ? profile.height + ' cm' : '--'"></strong></div>
-                        <div class="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1.5"><span>Onboarded Baseline Mass:</span><strong class="text-slate-950 dark:text-white" x-text="profile ? profile.currentWeight + ' kg' : '--'"></strong></div>
-                        <div class="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1.5"><span>Target Weight Goal:</span><strong class="text-slate-950 dark:text-white" x-text="profile ? profile.targetWeight + ' kg' : '--'"></strong></div>
+                    <div class="space-y-6">
+                        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-8 rounded-[2.5rem] space-y-4 shadow-sm text-xs font-semibold text-slate-400">
+                            <div class="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1.5"><span>Athlete Name:</span><strong class="text-slate-950 dark:text-white" x-text="profile ? profile.name : '--'"></strong></div>
+                            <div class="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1.5"><span>Height:</span><strong class="text-slate-950 dark:text-white" x-text="profile ? profile.height + ' cm' : '--'"></strong></div>
+                            <div class="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1.5"><span>Current Weight:</span><strong class="text-slate-950 dark:text-white" x-text="profile ? profile.currentWeight + ' kg' : '--'"></strong></div>
+                            <div class="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1.5"><span>Target Weight:</span><strong class="text-slate-950 dark:text-white" x-text="profile ? profile.targetWeight + ' kg' : '--'"></strong></div>
+                            <div class="flex justify-between"><span>Logical Day Start:</span><strong class="text-brand-500 dark:text-brand-400" x-text="profile && profile.dayStartHour != null ? (profile.dayStartHour === 0 ? 'Midnight (default)' : profile.dayStartHour + ':00') : 'Midnight'"></strong></div>
+                        </div>
+
+                        <!-- Night Shift / Day Start Time setting -->
+                        <div class="bg-gradient-to-br from-indigo-500/10 to-purple-500/5 border border-indigo-500/20 p-6 rounded-[2rem] space-y-4">
+                            <div class="flex items-center gap-3 mb-1">
+                                <div class="w-7 h-7 bg-indigo-500/20 rounded-lg flex items-center justify-center text-sm">🌙</div>
+                                <div>
+                                    <h4 class="text-sm font-extrabold tracking-tight">Night Shift / Custom Day Start</h4>
+                                    <p class="text-[10px] text-slate-400">Set when your day starts. Entries logged before this time belong to the previous day's window.</p>
+                                </div>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-900/60 rounded-xl p-3 text-xs text-slate-500 italic">
+                                Example: If you set Day Start to <strong class="text-indigo-400">18:00 (6 PM)</strong>, then anything logged at 2AM on June 9th will be counted as June 8th's data — your full 24h window from 6PM Jun 8 to 6PM Jun 9.
+                            </div>
+                            <div class="flex items-end gap-3">
+                                <div class="flex-1">
+                                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Day Start Hour (0–23)</label>
+                                    <select x-model.number="profile.dayStartHour" @change="persist(); syncEcosystemChanges()">
+                                        <option value="0">0:00 — Midnight (default)</option>
+                                        <option value="1">1:00 AM</option>
+                                        <option value="2">2:00 AM</option>
+                                        <option value="3">3:00 AM</option>
+                                        <option value="4">4:00 AM</option>
+                                        <option value="5">5:00 AM</option>
+                                        <option value="6">6:00 AM</option>
+                                        <option value="12">12:00 PM — Noon</option>
+                                        <option value="14">2:00 PM</option>
+                                        <option value="16">4:00 PM</option>
+                                        <option value="18">18:00 — 6 PM (Night shift)</option>
+                                        <option value="20">20:00 — 8 PM</option>
+                                        <option value="22">22:00 — 10 PM</option>
+                                    </select>
+                                </div>
+                                <div class="text-xs text-slate-500 pb-3">
+                                    Logical today: <strong class="text-brand-400" x-text="getLogicalToday()"></strong>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -999,22 +1193,28 @@
             <thead>
                 <tr class="bg-slate-100">
                     <th class="p-3 border border-slate-300 text-left font-bold">Date</th>
-                    <th class="p-3 border border-slate-300 text-center font-bold">Total Calories</th>
-                    <th class="p-3 border border-slate-300 text-center font-bold">Macros (P/C/F)</th>
-                    <th class="p-3 border border-slate-300 text-center font-bold">Water</th>
+                    <th class="p-3 border border-slate-300 text-center font-bold">Calories (kcal)</th>
+                    <th class="p-3 border border-slate-300 text-center font-bold">Protein (g)</th>
+                    <th class="p-3 border border-slate-300 text-center font-bold">Carbs (g)</th>
+                    <th class="p-3 border border-slate-300 text-center font-bold">Fats (g)</th>
+                    <th class="p-3 border border-slate-300 text-center font-bold">Fiber (g)</th>
+                    <th class="p-3 border border-slate-300 text-center font-bold">Water (ml)</th>
                 </tr>
             </thead>
             <tbody>
                 <template x-for="d in dietLogs.filter(log => log.date >= reportStart && log.date <= reportEnd)" :key="d.id">
                     <tr>
                         <td class="p-3 border border-slate-300 font-bold" x-text="d.date"></td>
-                        <td class="p-3 border border-slate-300 text-center" x-text="d.calories + ' kcal'"></td>
-                        <td class="p-3 border border-slate-300 text-center" x-text="d.protein + 'g / ' + d.carbs + 'g / ' + d.fats + 'g'"></td>
+                        <td class="p-3 border border-slate-300 text-center font-bold" x-text="d.calories"></td>
+                        <td class="p-3 border border-slate-300 text-center text-blue-700" x-text="d.protein + 'g'"></td>
+                        <td class="p-3 border border-slate-300 text-center text-green-700" x-text="d.carbs + 'g'"></td>
+                        <td class="p-3 border border-slate-300 text-center text-yellow-700" x-text="d.fats + 'g'"></td>
+                        <td class="p-3 border border-slate-300 text-center text-teal-700" x-text="(d.fiber || 0) + 'g'"></td>
                         <td class="p-3 border border-slate-300 text-center" x-text="d.water + ' ml'"></td>
                     </tr>
                 </template>
                 <tr x-show="dietLogs.filter(log => log.date >= reportStart && log.date <= reportEnd).length === 0">
-                    <td colspan="4" class="p-4 text-center text-slate-500 italic">No nutrition data logged in this period.</td>
+                    <td colspan="7" class="p-4 text-center text-slate-500 italic">No nutrition data logged in this period.</td>
                 </tr>
             </tbody>
         </table>
@@ -1127,12 +1327,12 @@
             </div>
             <form @submit.prevent="saveMetricsLog" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1"><label class="text-[9px] font-black text-slate-400 block">Date Vector *</label><input type="date" x-model="metricsForm.date" required></div>
-                <div class="space-y-1"><label class="text-[9px] font-black text-slate-400 block">Weight Scale Mass (kg) *</label><input type="number" step="0.1" x-model="metricsForm.weight" required min="1"></div>
-                <div class="space-y-1"><label class="text-[9px] font-black text-slate-400 block">Waist Size Length (in)</label><input type="number" step="0.1" x-model="metricsForm.waist" min="0"></div>
-                <div class="space-y-1"><label class="text-[9px] font-black text-slate-400 block">Chest Expansion Size (in)</label><input type="number" step="0.1" x-model="metricsForm.chest" min="0"></div>
-                <div class="space-y-1"><label class="text-[9px] font-black text-slate-400 block">Arms Thickness Index (in)</label><input type="number" step="0.1" x-model="metricsForm.arms" min="0"></div>
-                <div class="space-y-1"><label class="text-[9px] font-black text-slate-400 block">Body Fat Scale Value %</label><input type="number" step="0.1" x-model="metricsForm.bodyFat" min="0"></div>
-                <div class="space-y-1"><label class="text-[9px] font-black text-slate-400 block">Sleep Window Duration (hrs)</label><input type="number" step="0.5" x-model="metricsForm.sleep" min="0"></div>
+                <div class="space-y-1"><label class="text-[9px] font-black text-slate-400 block">Weight Scale Mass (kg) *</label><input type="number" step="any" x-model="metricsForm.weight" required min="0.01"></div>
+                <div class="space-y-1"><label class="text-[9px] font-black text-slate-400 block">Waist Size Length (in)</label><input type="number" step="any" x-model="metricsForm.waist" min="0"></div>
+                <div class="space-y-1"><label class="text-[9px] font-black text-slate-400 block">Chest Expansion Size (in)</label><input type="number" step="any" x-model="metricsForm.chest" min="0"></div>
+                <div class="space-y-1"><label class="text-[9px] font-black text-slate-400 block">Arms Thickness Index (in)</label><input type="number" step="any" x-model="metricsForm.arms" min="0"></div>
+                <div class="space-y-1"><label class="text-[9px] font-black text-slate-400 block">Body Fat Scale Value %</label><input type="number" step="any" x-model="metricsForm.bodyFat" min="0"></div>
+                <div class="space-y-1"><label class="text-[9px] font-black text-slate-400 block">Sleep Window Duration (hrs)</label><input type="number" step="any" x-model="metricsForm.sleep" min="0"></div>
                 <div class="space-y-1"><label class="text-[9px] font-black text-slate-400 block">Steps Count Vector</label><input type="number" x-model="metricsForm.steps" min="0"></div>
                 <button type="submit" class="w-full sm:col-span-2 bg-brand-500 hover:bg-brand-600 text-white font-black py-4 rounded-xl text-xs uppercase tracking-widest shadow-md">Commit Body Vitals</button>
             </form>
@@ -1140,42 +1340,67 @@
     </div>
 
     <!-- Workout Modal -->
-    <div x-show="activeModal === 'modalWorkout'" x-cloak class="no-print fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200" @click.self="closeModal()">
-        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-6 md:p-8 flex flex-col gap-6 shadow-2xl relative">
+    <div x-show="activeModal === 'modalWorkout'" x-cloak class="no-print fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50" @click.self="closeModal()">
+        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-[2.5rem] p-6 md:p-8 flex flex-col gap-5 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-4">
-                <h3 class="text-xl font-black uppercase italic tracking-tight" x-text="workoutForm.editId ? 'Edit Workout Session' : 'Add Workout'"></h3>
-                <button @click="closeModal()" class="text-xs font-bold text-slate-400 tracking-widest uppercase hover:text-red-500">Close</button>
+                <h3 class="text-xl font-black uppercase italic tracking-tight" x-text="workoutForm.editId ? 'Edit Workout' : 'Add Workout'"></h3>
+                <button @click="closeModal()" class="text-xs font-bold text-slate-400 tracking-widest uppercase hover:text-red-500">✕ Close</button>
             </div>
-            <form @submit.prevent="saveWorkoutLog" class="space-y-6">
+            <form @submit.prevent="saveWorkoutLog" class="space-y-5">
+                <!-- Date + Name -->
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-1"><label class="text-[10px] font-black text-slate-400 block">Date *</label><input type="date" x-model="workoutForm.date" required></div>
-                    <div class="space-y-1"><label class="text-[10px] font-black text-slate-400 block">Exercise Name *</label><input type="text" x-model="workoutForm.name" required placeholder="e.g. Bench Press"></div>
+                    <div><label class="text-[9px] font-black text-slate-400 block mb-1">DATE *</label><input type="date" x-model="workoutForm.date" required></div>
+                    <div><label class="text-[9px] font-black text-slate-400 block mb-1">EXERCISE / ACTIVITY NAME *</label><input type="text" x-model="workoutForm.name" required placeholder="e.g. Bench Press, Running, Cycling"></div>
                 </div>
-                
-                <div class="space-y-2">
-                    <label class="text-[10px] font-black text-slate-400 block uppercase tracking-wider">Muscle Groups Worked</label>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+
+                <!-- Workout Type Selector -->
+                <div>
+                    <label class="text-[9px] font-black text-slate-400 block mb-2 uppercase tracking-widest">Workout Type</label>
+                    <div class="flex gap-2">
+                        <button type="button" @click="workoutForm.type='strength'"
+                            :class="workoutForm.type==='strength' ? 'bg-brand-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'"
+                            class="flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all">🏋️ Strength</button>
+                        <button type="button" @click="workoutForm.type='cardio'"
+                            :class="workoutForm.type==='cardio' ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'"
+                            class="flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all">🏃 Cardio</button>
+                        <button type="button" @click="workoutForm.type='cycling'"
+                            :class="workoutForm.type==='cycling' ? 'bg-orange-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'"
+                            class="flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all">🚴 Cycling</button>
+                    </div>
+                </div>
+
+                <!-- Muscle Groups (Strength + Cardio) -->
+                <div x-show="workoutForm.type !== 'cycling'">
+                    <label class="text-[9px] font-black text-slate-400 block mb-2 uppercase tracking-widest">Muscle Groups Worked</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                         <template x-for="m in systemMuscleGroups" :key="m">
-                            <label class="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                            <label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-600 dark:text-slate-400 cursor-pointer">
                                 <input type="checkbox" :value="m" x-model="workoutForm.muscles"> <span x-text="m"></span>
                             </label>
                         </template>
                     </div>
                 </div>
-                
-                <div class="grid grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800">
-                    <div class="space-y-1 text-center"><label class="text-[10px] font-black text-slate-400">Sets *</label><input type="number" x-model="workoutForm.sets" required class="text-center font-black" min="1"></div>
-                    <div class="space-y-1 text-center"><label class="text-[10px] font-black text-slate-400">Reps *</label><input type="number" x-model="workoutForm.reps" required class="text-center font-black" min="1"></div>
-                    <div class="space-y-1 text-center"><label class="text-[10px] font-black text-brand-500">Weight (kg) *</label><input type="number" step="0.5" x-model="workoutForm.weight" required class="text-center font-black text-brand-500" min="0"></div>
+
+                <!-- STRENGTH FIELDS -->
+                <div x-show="workoutForm.type==='strength'" class="grid grid-cols-3 gap-4 bg-brand-500/5 border border-brand-500/20 p-4 rounded-2xl">
+                    <div class="text-center"><label class="text-[9px] font-black text-brand-400 block mb-1">SETS *</label><input type="number" x-model="workoutForm.sets" min="1" class="text-center font-black"></div>
+                    <div class="text-center"><label class="text-[9px] font-black text-brand-400 block mb-1">REPS *</label><input type="number" x-model="workoutForm.reps" min="1" class="text-center font-black"></div>
+                    <div class="text-center"><label class="text-[9px] font-black text-brand-400 block mb-1">WEIGHT (KG)</label><input type="number" step="any" x-model="workoutForm.weight" min="0" class="text-center font-black text-brand-500"></div>
                 </div>
 
-                <div class="space-y-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <label class="text-[10px] font-black text-emerald-500 block uppercase tracking-wider">Cardio Profile (Optional)</label>
-                    <div class="grid grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800">
-                        <div class="space-y-1 text-center"><label class="text-[10px] font-black text-slate-400">Time (min)</label><input type="number" x-model="workoutForm.cardio.time" class="text-center font-bold" min="0"></div>
-                        <div class="space-y-1 text-center"><label class="text-[10px] font-black text-slate-400">Speed (kph)</label><input type="number" step="0.1" x-model="workoutForm.cardio.speed" class="text-center font-bold" min="0"></div>
-                        <div class="space-y-1 text-center"><label class="text-[10px] font-black text-slate-400">Incline %</label><input type="number" step="0.1" x-model="workoutForm.cardio.incline" class="text-center font-bold" min="0"></div>
-                    </div>
+                <!-- CARDIO FIELDS -->
+                <div x-show="workoutForm.type==='cardio'" class="grid grid-cols-3 gap-4 bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-2xl">
+                    <div class="text-center"><label class="text-[9px] font-black text-emerald-400 block mb-1">DURATION (MIN) *</label><input type="number" x-model="workoutForm.cardio.time" min="1" class="text-center font-black"></div>
+                    <div class="text-center"><label class="text-[9px] font-black text-emerald-400 block mb-1">SPEED (KPH)</label><input type="number" step="any" x-model="workoutForm.cardio.speed" min="0" class="text-center font-bold"></div>
+                    <div class="text-center"><label class="text-[9px] font-black text-emerald-400 block mb-1">INCLINE (%)</label><input type="number" step="any" x-model="workoutForm.cardio.incline" min="0" class="text-center font-bold"></div>
+                </div>
+
+                <!-- CYCLING FIELDS -->
+                <div x-show="workoutForm.type==='cycling'" class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-orange-500/5 border border-orange-500/20 p-4 rounded-2xl">
+                    <div class="text-center"><label class="text-[9px] font-black text-orange-400 block mb-1">DURATION (MIN) *</label><input type="number" x-model="workoutForm.cycling.durationMin" min="1" class="text-center font-black"></div>
+                    <div class="text-center"><label class="text-[9px] font-black text-orange-400 block mb-1">DISTANCE (KM)</label><input type="number" step="any" x-model="workoutForm.cycling.distanceKm" min="0" class="text-center font-bold"></div>
+                    <div class="text-center"><label class="text-[9px] font-black text-orange-400 block mb-1">AVG SPEED (KPH)</label><input type="number" step="any" x-model="workoutForm.cycling.avgSpeedKph" min="0" class="text-center font-bold"></div>
+                    <div class="text-center"><label class="text-[9px] font-black text-orange-400 block mb-1">RESISTANCE (1-20)</label><input type="number" x-model="workoutForm.cycling.resistance" min="1" max="20" class="text-center font-bold"></div>
                 </div>
 
                 <button type="submit" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-extrabold py-4 rounded-xl text-xs tracking-widest uppercase transition-all shadow-lg">Save Workout</button>
@@ -1218,7 +1443,9 @@
                 
                 wizard: { name: '', age: '', gender: '', height: '', currentWeight: '', currentBodyFat: '', targetWeight: '', targetBodyFat: '', targetDate: '', goals: [] },
                 
-                profile: { name: '', age: 0, gender: '', height: 0, currentWeight: 0, currentBodyFat: 0, targetWeight: 0, targetBodyFat: 0, targetDate: '', goals: [] }, 
+                profile: { name: '', age: 0, gender: '', height: 0, currentWeight: 0, currentBodyFat: 0, targetWeight: 0, targetBodyFat: 0, targetDate: '', goals: [],
+                    nutritionTargets: { calories: 2000, protein: 150, carbs: 200, fat: 65, fiber: 25 },
+                    dayStartHour: 0 },  // 0=midnight, 18=6PM (for night shift workers) 
                 dietLogs: [], 
                 workouts: [], 
                 metricsLogs: [], 
@@ -1229,8 +1456,15 @@
 
                 dietForm: { editId: '', date: '', water: '', comments: '', meals: [], newMeal: { time: '', name: '', foodItems: '', calories: '', protein: '', carbs: '', fats: '' } },
                 metricsForm: { editId: '', date: '', weight: '', waist: '', chest: '', arms: '', bodyFat: '', sleep: '', steps: '' },
-                workoutForm: { editId: '', date: '', name: '', muscles: [], sets: '', reps: '', weight: '', cardio: { time: '', speed: '', incline: '' } },
-                goalsForm: { targetWeight: '', targetBodyFat: '', targetDate: '' },
+                workoutForm: { editId: '', date: '', name: '', type: 'strength', muscles: [], sets: '', reps: '', weight: '',
+                    cardio: { time: '', speed: '', incline: '' },
+                    cycling: { distanceKm: '', durationMin: '', avgSpeedKph: '', resistance: '' } },
+                goalsForm: { targetWeight: '', targetBodyFat: '', targetDate: '',
+                    calTarget: '', proteinTarget: '', carbsTarget: '', fatTarget: '', fiberTarget: '' },
+                // Challenges/friends state
+                challengeForm: { friendEmail: '', name: '', durationDays: 30, metric: 'workouts' },
+                challenges: [],
+                activeChallengeTab: 'mine',
                 photoForm: { date: '', type: 'Front' },
                 newCustomGoal: '',
                 reportStart: '',
@@ -1255,6 +1489,22 @@
                     this.setDefaultDates();
                     this.currentDateStr = this.getFormattedDate();
                     this.syncEcosystemChanges();
+
+                    // ── Mobile back-button fix ──
+                    // Push a state so back-button navigates within the app instead of closing it
+                    history.pushState({ vytara: true }, '', location.href);
+                    window.addEventListener('popstate', (e) => {
+                        // Intercept back: close modals, then navigate views
+                        if (this.activeModal) { this.activeModal = null; history.pushState({ vytara: true }, '', location.href); return; }
+                        if (this.mobileMenuOpen) { this.mobileMenuOpen = false; history.pushState({ vytara: true }, '', location.href); return; }
+                        if (this.currentView === 'app' && this.activeTab !== 'dashboard') {
+                            this.activeTab = 'dashboard'; history.pushState({ vytara: true }, '', location.href); return;
+                        }
+                        if (this.currentView === 'app') { /* stay in app */ history.pushState({ vytara: true }, '', location.href); return; }
+                        if (this.currentView === 'onboarding' && this.wizardStep > 1) { this.wizardStep--; history.pushState({ vytara: true }, '', location.href); return; }
+                        if (this.currentView !== 'landing') { this.currentView = 'landing'; history.pushState({ vytara: true }, '', location.href); return; }
+                        // On landing, allow natural back
+                    });
 
                     // Listen for Firebase auth state changes
                     document.addEventListener('fb-auth-change', async (e) => {
@@ -1301,7 +1551,13 @@
 
                 _applyLoadedData(parsed) {
                     this.theme = parsed.theme || 'dark';
-                    this.profile = parsed.profile || this.profile;
+                    // Merge profile carefully so new fields (nutritionTargets) are not lost
+                    const defaults = { name:'', age:0, gender:'', height:0, currentWeight:0, currentBodyFat:0,
+                        targetWeight:0, targetBodyFat:0, targetDate:'', goals:[],
+                        nutritionTargets: { calories:2000, protein:150, carbs:200, fat:65, fiber:25 },
+                        dayStartHour: 0 };
+                    this.profile = Object.assign({}, defaults, parsed.profile || {});
+                    if (!this.profile.nutritionTargets) this.profile.nutritionTargets = defaults.nutritionTargets;
                     this.dietLogs = (parsed.dietLogs || []).map(d => {
                         if (!d.meals) {
                             d.meals = [{ id: Date.now() + Math.random(), time: '12:00', name: 'Legacy Log', foodItems: d.foodItems || '', calories: d.calories||0, protein: d.protein||0, carbs: d.carbs||0, fats: d.fats||0 }];
@@ -1314,6 +1570,7 @@
                     this.metricsLogs = parsed.metricsLogs || [];
                     this.customGoals = parsed.customGoals || [];
                     this.photos = parsed.photos || [];
+                    this.challenges = parsed.challenges || [];
                 },
 
                 // ——— AUTH METHODS ———
@@ -1414,7 +1671,8 @@
                         workouts: this.workouts,
                         metricsLogs: this.metricsLogs,
                         customGoals: this.customGoals,
-                        photos: this.photos
+                        photos: this.photos,
+                        challenges: this.challenges
                     }));
                     // Also sync to Firestore if signed in
                     this.persistCloud();
@@ -1438,6 +1696,39 @@
                     return new Date().toISOString().split('T')[0];
                 },
 
+                // Returns the logical date string accounting for day start hour
+                // If dayStartHour=18 (6PM) and now is 2026-06-09 03:00, 
+                // logical day is still 2026-06-08 (because 3AM < 18 means prev day's window)
+                getLogicalToday() {
+                    const h = (this.profile && this.profile.dayStartHour != null) ? parseInt(this.profile.dayStartHour) : 0;
+                    if (h === 0) return this.getToday();
+                    const now = new Date();
+                    const hour = now.getHours();
+                    // If current hour < dayStartHour, we are still in "yesterday's" logical day
+                    if (hour < h) {
+                        const yesterday = new Date(now);
+                        yesterday.setDate(yesterday.getDate() - 1);
+                        return yesterday.toISOString().split('T')[0];
+                    }
+                    return now.toISOString().split('T')[0];
+                },
+
+                // Convert a calendar date+time string to a logical date, given the dayStartHour setting
+                // Used when a user enters a time that might cross midnight
+                getLogicalDate(dateStr, timeStr) {
+                    if (!dateStr) return dateStr;
+                    const h = (this.profile && this.profile.dayStartHour != null) ? parseInt(this.profile.dayStartHour) : 0;
+                    if (h === 0 || !timeStr) return dateStr;
+                    const entryHour = parseInt((timeStr||'00:00').split(':')[0]);
+                    // If the logged time is before dayStartHour, it belongs to the previous calendar date
+                    if (entryHour < h) {
+                        const d = new Date(dateStr + 'T12:00:00');
+                        d.setDate(d.getDate() - 1);
+                        return d.toISOString().split('T')[0];
+                    }
+                    return dateStr;
+                },
+
                 getFormattedDate() {
                     return new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 },
@@ -1447,22 +1738,36 @@
                     localStorage.setItem('asc_theme_mode', this.theme);
                     document.documentElement.classList.toggle('dark', this.theme === 'dark');
                     this.persist();
-                    this.$nextTick(() => this.renderDataCharts());
+                    setTimeout(() => this.renderDataCharts(), 60);
                 },
 
                 switchTab(tabId) {
                     this.activeTab = tabId;
                     this.persist();
                     if (tabId === 'goals') {
-                        this.goalsForm.targetWeight = this.profile.targetWeight || '';
+                        this.goalsForm.targetWeight  = this.profile.targetWeight || '';
                         this.goalsForm.targetBodyFat = this.profile.targetBodyFat || '';
-                        this.goalsForm.targetDate = this.profile.targetDate || '';
+                        this.goalsForm.targetDate    = this.profile.targetDate || '';
+                        const nt = this.profile.nutritionTargets || {};
+                        this.goalsForm.calTarget     = nt.calories || 2000;
+                        this.goalsForm.proteinTarget = nt.protein  || 150;
+                        this.goalsForm.carbsTarget   = nt.carbs    || 200;
+                        this.goalsForm.fatTarget     = nt.fat      || 65;
+                        this.goalsForm.fiberTarget   = nt.fiber    || 25;
                     }
-                    this.$nextTick(() => this.renderDataCharts());
+                    // Re-render charts after a short delay to ensure DOM is visible
+                    setTimeout(() => this.renderDataCharts(), 80);
                 },
 
                 openModal(id) {
+                    this.activeModal = id;
                     const timeStr = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                    if (id === 'modalWorkout') {
+                        const today = this.getLogicalToday();
+                        this.workoutForm = { editId: '', date: today, name: '', type: 'strength', muscles: [], sets: '', reps: '', weight: '',
+                            cardio: { time: '', speed: '', incline: '' },
+                            cycling: { distanceKm: '', durationMin: '', avgSpeedKph: '', resistance: '' } };
+                    }
                     if (id === 'modalDiet') {
                         this.dietForm = { editId: '', date: this.getToday(), water: '', comments: '', meals: [], newMeal: { time: timeStr, name: '', foodItems: '', calories: '', protein: '', carbs: '', fats: '' } };
                     } else if (id === 'modalMetrics') {
@@ -1610,21 +1915,32 @@
                 },
 
                 saveWorkoutLog() {
-                    if (!this.workoutForm.date || !this.workoutForm.name || !this.workoutForm.sets || !this.workoutForm.reps || this.workoutForm.weight === '') return;
-                    const setsArr = [];
-                    for(let i=0; i < parseInt(this.workoutForm.sets); i++) {
-                        setsArr.push({ reps: parseInt(this.workoutForm.reps), weight: parseFloat(this.workoutForm.weight) });
+                    if (!this.workoutForm.date || !this.workoutForm.name) { alert('Please fill in date and exercise name.'); return; }
+                    const wType = this.workoutForm.type || 'strength';
+                    let setsArr = [];
+                    if (wType === 'strength') {
+                        if (!this.workoutForm.sets || !this.workoutForm.reps) { alert('Please enter sets and reps.'); return; }
+                        for(let i=0; i < parseInt(this.workoutForm.sets); i++) {
+                            setsArr.push({ reps: parseInt(this.workoutForm.reps), weight: parseFloat(this.workoutForm.weight)||0 });
+                        }
                     }
                     const payload = {
                         id: this.workoutForm.editId || 'workout_' + Date.now(),
                         date: this.workoutForm.date,
                         name: this.workoutForm.name,
-                        muscles: this.workoutForm.muscles.length ? this.workoutForm.muscles : ['General'],
+                        workoutType: wType,
+                        muscles: this.workoutForm.muscles.length ? this.workoutForm.muscles : (wType === 'cycling' ? ['Legs/Cardio'] : ['Cardio']),
                         sets: setsArr,
                         cardio: {
                             time: Number(this.workoutForm.cardio.time) || 0,
                             speed: parseFloat(this.workoutForm.cardio.speed) || 0,
                             incline: parseFloat(this.workoutForm.cardio.incline) || 0
+                        },
+                        cycling: {
+                            distanceKm: parseFloat(this.workoutForm.cycling.distanceKm) || 0,
+                            durationMin: parseFloat(this.workoutForm.cycling.durationMin) || 0,
+                            avgSpeedKph: parseFloat(this.workoutForm.cycling.avgSpeedKph) || 0,
+                            resistance: parseInt(this.workoutForm.cycling.resistance) || 0
                         }
                     };
                     if (this.workoutForm.editId) {
@@ -1646,11 +1962,13 @@
                             editId: t.id, 
                             date: t.date, 
                             name: t.name, 
+                            type: t.workoutType || (t.cycling && t.cycling.distanceKm ? 'cycling' : t.cardio && t.cardio.time ? 'cardio' : 'strength'),
                             muscles: [...(t.muscles || t.muscleGroups || [])], 
-                            sets: t.sets.length, 
-                            reps: t.sets[0] ? t.sets[0].reps : 1, 
-                            weight: t.sets[0] ? t.sets[0].weight : 0,
-                            cardio: t.cardio ? { ...t.cardio } : { time: '', speed: '', incline: '' }
+                            sets: t.sets ? t.sets.length : 0, 
+                            reps: (t.sets && t.sets[0]) ? t.sets[0].reps : 1, 
+                            weight: (t.sets && t.sets[0]) ? t.sets[0].weight : 0,
+                            cardio: t.cardio ? { ...t.cardio } : { time: '', speed: '', incline: '' },
+                            cycling: t.cycling ? { ...t.cycling } : { distanceKm: '', durationMin: '', avgSpeedKph: '', resistance: '' }
                         };
                         this.activeModal = 'modalWorkout';
                     }
@@ -1702,8 +2020,15 @@
                     this.profile.targetWeight = parseFloat(this.goalsForm.targetWeight) || 0;
                     this.profile.targetBodyFat = parseFloat(this.goalsForm.targetBodyFat) || 0;
                     this.profile.targetDate = this.goalsForm.targetDate;
+                    if (!this.profile.nutritionTargets) this.profile.nutritionTargets = {};
+                    this.profile.nutritionTargets.calories = parseInt(this.goalsForm.calTarget) || 2000;
+                    this.profile.nutritionTargets.protein  = parseInt(this.goalsForm.proteinTarget) || 150;
+                    this.profile.nutritionTargets.carbs    = parseInt(this.goalsForm.carbsTarget) || 200;
+                    this.profile.nutritionTargets.fat      = parseInt(this.goalsForm.fatTarget) || 65;
+                    this.profile.nutritionTargets.fiber    = parseInt(this.goalsForm.fiberTarget) || 25;
                     this.persist();
                     this.syncEcosystemChanges();
+                    alert('Targets saved successfully!');
                 },
 
                 addCustomGoal() {
@@ -1810,10 +2135,115 @@
                     }
                 },
 
+                // ──── CHALLENGE / FRIENDS METHODS ────
+                sendChallenge() {
+                    const { friendEmail, name, durationDays, metric } = this.challengeForm;
+                    if (!friendEmail || !name) { alert('Please enter friend email and challenge name.'); return; }
+                    const challenge = {
+                        id: 'ch_' + Date.now(),
+                        name: name.trim(),
+                        friendEmail: friendEmail.trim().toLowerCase(),
+                        myEmail: this.firebaseUser ? this.firebaseUser.email : (this.profile.email || 'local'),
+                        myName: this.profile.name || 'Me',
+                        metric,
+                        durationDays: parseInt(durationDays) || 30,
+                        startDate: this.getToday(),
+                        endDate: (() => { const d = new Date(); d.setDate(d.getDate() + (parseInt(durationDays)||30)); return d.toISOString().split('T')[0]; })(),
+                        myScore: 0,
+                        friendScore: 0,
+                        status: 'active',
+                        createdAt: Date.now()
+                    };
+                    this.challenges.unshift(challenge);
+                    this.persist();
+                    // If Firebase configured, write to Firestore invites collection
+                    if (window._fb && this.firebaseUser) {
+                        const { db, collection, addDoc } = window._fb;
+                        addDoc(collection(db, 'challenges'), { ...challenge, inviteEmail: friendEmail.trim().toLowerCase() })
+                            .catch(e => console.warn('Challenge Firestore write:', e));
+                    }
+                    this.challengeForm = { friendEmail: '', name: '', durationDays: 30, metric: 'workouts' };
+                    alert('Challenge sent! Your friend will see it when they log in with ' + friendEmail);
+                },
+
+                deleteChallenge(id) {
+                    if (confirm('Remove this challenge?')) {
+                        this.challenges = this.challenges.filter(c => c.id !== id);
+                        this.persist();
+                    }
+                },
+
+                getChallengeProgress(ch) {
+                    const start = ch.startDate, end = ch.endDate;
+                    if (ch.metric === 'workouts') return this.workouts.filter(w => w.date >= start && w.date <= end).length;
+                    if (ch.metric === 'diet') return this.dietLogs.filter(d => d.date >= start && d.date <= end).length;
+                    if (ch.metric === 'metrics') return this.metricsLogs.filter(m => m.date >= start && m.date <= end).length;
+                    return 0;
+                },
+
+                // ──── EXPORT TO DOC (HTML→Word) ────
+                exportToDoc() {
+                    const today = this.getToday();
+                    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8"><title>VYTARA Backup ${today}</title>
+<style>body{font-family:Arial,sans-serif;font-size:11pt;}h1{color:#1d4ed8;}h2{color:#1d4ed8;border-bottom:2px solid #ddd;padding-bottom:4px;}table{width:100%;border-collapse:collapse;margin-bottom:20pt;}th{background:#e0effe;color:#1d4ed8;padding:6pt;text-align:left;font-size:9pt;border:1px solid #ccc;}td{padding:5pt;border:1px solid #ddd;font-size:9pt;}tr:nth-child(even){background:#f8fafc;}</style>
+</head><body>`;
+                    html += `<h1>VYTARA — Full Data Backup</h1>`;
+                    html += `<p><strong>Athlete:</strong> ${this.profile.name || 'N/A'} &nbsp;|&nbsp; <strong>Generated:</strong> ${today}</p>`;
+
+                    // Profile section
+                    html += `<h2>Profile</h2><table>`;
+                    const pf = this.profile;
+                    html += `<tr><th>Field</th><th>Value</th></tr>`;
+                    [['Name',pf.name],['Age',pf.age],['Gender',pf.gender],['Height',pf.height+' cm'],
+                     ['Current Weight',pf.currentWeight+' kg'],['Target Weight',pf.targetWeight+' kg'],
+                     ['Target Body Fat',pf.targetBodyFat+'%'],['Goal Deadline',pf.targetDate],
+                     ['Goals',( pf.goals||[]).join(', ')]].forEach(([k,v])=>{html+=`<tr><td>${k}</td><td>${v||'—'}</td></tr>`;});
+                    html += `</table>`;
+
+                    // Nutrition targets
+                    const nt = pf.nutritionTargets || {};
+                    html += `<h2>Nutrition Targets</h2><table><tr><th>Calories</th><th>Protein</th><th>Carbs</th><th>Fat</th><th>Fiber</th></tr>`;
+                    html += `<tr><td>${nt.calories||'—'} kcal</td><td>${nt.protein||'—'} g</td><td>${nt.carbs||'—'} g</td><td>${nt.fat||'—'} g</td><td>${nt.fiber||'—'} g</td></tr></table>`;
+
+                    // Diet logs
+                    html += `<h2>Nutrition Logs (${this.dietLogs.length} entries)</h2>`;
+                    if (this.dietLogs.length) {
+                        html += `<table><tr><th>Date</th><th>Calories</th><th>Protein</th><th>Carbs</th><th>Fats</th><th>Water</th><th>Notes</th></tr>`;
+                        this.dietLogs.forEach(d=>{html+=`<tr><td>${d.date}</td><td>${d.calories} kcal</td><td>${d.protein}g</td><td>${d.carbs}g</td><td>${d.fats}g</td><td>${d.water} ml</td><td>${d.comments||''}</td></tr>`;});
+                        html += `</table>`;
+                    } else { html += `<p><em>No diet logs.</em></p>`; }
+
+                    // Workouts
+                    html += `<h2>Workout History (${this.workouts.length} sessions)</h2>`;
+                    if (this.workouts.length) {
+                        html += `<table><tr><th>Date</th><th>Exercise</th><th>Muscles</th><th>Sets</th><th>Top Weight</th><th>Volume</th></tr>`;
+                        this.workouts.forEach(w=>{html+=`<tr><td>${w.date}</td><td>${w.name}</td><td>${(w.muscles||[]).join(', ')}</td><td>${w.sets.length}</td><td>${this.getTopWeight(w.sets)} kg</td><td>${this.calculateVolume(w.sets)} kg</td></tr>`;});
+                        html += `</table>`;
+                    } else { html += `<p><em>No workouts.</em></p>`; }
+
+                    // Metrics
+                    html += `<h2>Body Metrics (${this.metricsLogs.length} entries)</h2>`;
+                    if (this.metricsLogs.length) {
+                        html += `<table><tr><th>Date</th><th>Weight</th><th>Waist</th><th>Chest</th><th>Arms</th><th>Body Fat</th><th>Sleep</th><th>Steps</th></tr>`;
+                        this.metricsLogs.forEach(m=>{html+=`<tr><td>${m.date}</td><td>${m.weight} kg</td><td>${m.waist||'—'}</td><td>${m.chest||'—'}</td><td>${m.arms||'—'}</td><td>${m.bodyFat||'—'}%</td><td>${m.sleep||'—'} hrs</td><td>${m.steps||'—'}</td></tr>`;});
+                        html += `</table>`;
+                    } else { html += `<p><em>No body metrics.</em></p>`; }
+
+                    html += `<p style="margin-top:40pt;color:#94a3b8;font-size:8pt;border-top:1px solid #eee;padding-top:8pt;">VYTARA OS — Developed by Revanth Reddy Abbati &nbsp;|&nbsp; Exported ${today}</p>`;
+                    html += `</body></html>`;
+
+                    const blob = new Blob([html], { type: 'application/msword' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `Vytara_Backup_${today}.doc`;
+                    a.click();
+                },
+
                 syncEcosystemChanges() {
                     if (!this.profile) return;
                     
-                    const todayStr = this.getToday();
+                    const todayStr = this.getLogicalToday();
                     const dietToday = this.dietLogs.filter(d => d.date === todayStr);
 
                     const calToday = dietToday.reduce((s,d) => s + d.calories, 0);
@@ -1874,7 +2304,7 @@
                     };
 
                     this.generateHeatmapData();
-                    this.$nextTick(() => this.renderDataCharts());
+                    setTimeout(() => this.renderDataCharts(), 60);
                 },
 
                 generateHeatmapData() {
@@ -1953,81 +2383,107 @@
                 },
 
                 renderDataCharts() {
-                    if (this.activeTab !== 'dashboard' && this.activeTab !== 'workouts' && this.activeTab !== 'diet') return;
-
                     const isDark = this.theme === 'dark';
                     const textColor = isDark ? '#94a3b8' : '#64748b';
-                    const gridColor = isDark ? 'rgba(30, 41, 59, 0.4)' : 'rgba(226, 232, 240, 0.6)';
+                    const gridColor = isDark ? 'rgba(30,41,59,0.5)' : 'rgba(226,232,240,0.7)';
 
-                    const chronoMetrics = [...this.metricsLogs].reverse().slice(-14);
-                    const metricLabels = chronoMetrics.map(l => l.date.split('-').slice(1).join('/'));
-
-                    const dietChrono = [...this.dietLogs].reverse().slice(-14);
-                    const dietLabels = dietChrono.map(d => d.date.split('-').slice(1).join('/'));
+                    const makeChart = (id, type, cfg) => {
+                        if (GlobalCharts[id]) { try { GlobalCharts[id].destroy(); } catch(e){} delete GlobalCharts[id]; }
+                        const el = document.getElementById(id);
+                        if (!el) return;
+                        // Only render if element is visible
+                        if (el.offsetParent === null && !document.getElementById(id)) return;
+                        try { GlobalCharts[id] = new Chart(el, { type, ...cfg }); } catch(e) { console.warn('Chart error', id, e); }
+                    };
 
                     const scales = {
-                        x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10, weight: 'bold' } } },
-                        y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10 } } }
+                        x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10, weight: '700' }, maxRotation: 45 } },
+                        y: { grid: { color: gridColor, lineWidth: 1 }, ticks: { color: textColor, font: { size: 10 } }, border: { display: false } }
                     };
 
-                    const datasetProps = (label, data, color) => ({
-                        label, data, borderColor: color, backgroundColor: color + '10',
-                        fill: true, tension: 0.35, pointRadius: 4, borderWidth: 2.5
+                    const lineDs = (label, data, color, fill=false) => ({
+                        label, data, borderColor: color,
+                        backgroundColor: fill ? color.replace(')', ',0.12)').replace('rgb','rgba') : 'transparent',
+                        fill, tension: 0.4, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2.5, pointBackgroundColor: color
                     });
 
-                    const instantiateChart = (canvasId, type, config) => {
-                        if (GlobalCharts[canvasId]) GlobalCharts[canvasId].destroy();
-                        const ctx = document.getElementById(canvasId);
-                        if (ctx) GlobalCharts[canvasId] = new Chart(ctx, config);
-                    };
-
-                    if (this.activeTab === 'dashboard') {
-                        if (this.metricsLogs.length > 0) {
-                            instantiateChart('canvas-dash-weight', 'line', {
-                                data: { labels: metricLabels, datasets: [datasetProps('Weight (kg)', chronoMetrics.map(l => l.weight), '#3b82f6')] },
-                                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales }
-                            });
-                        }
-                        if (this.dietLogs.length > 0) {
-                            instantiateChart('canvas-dash-calories', 'line', {
-                                data: { labels: dietLabels, datasets: [datasetProps('Calories (kcal)', dietChrono.map(l => l.calories), '#8b5cf6')] },
-                                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales }
-                            });
-                        }
+                    // ── Dashboard charts ──────────────────────────────────
+                    if (this.metricsLogs.length > 0) {
+                        const src = [...this.metricsLogs].sort((a,b)=>a.date.localeCompare(b.date)).slice(-20);
+                        makeChart('canvas-dash-weight','line', {
+                            data: { labels: src.map(l=>l.date.slice(5)), datasets:[lineDs('Weight (kg)', src.map(l=>l.weight), '#3b82f6', true)] },
+                            options: { responsive:true, maintainAspectRatio:false, animation:false,
+                                plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => c.parsed.y + ' kg' }}},
+                                scales }
+                        });
                     }
-
-                    if (this.activeTab === 'workouts' && this.workouts.length > 0) {
-                        const workoutsChrono = [...this.workouts].reverse().slice(-10);
-                        instantiateChart('canvas-workout-volume', 'bar', {
-                            data: {
-                                labels: workoutsChrono.map(w => w.date.split('-').slice(1).join('/') + ` ${w.name}`),
-                                datasets: [{ label: 'Lift Volume Tonnage', data: workoutsChrono.map(w => this.calculateVolume(w.sets)), backgroundColor: '#3b82f6', borderRadius: 4 }]
-                            },
-                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales }
+                    if (this.dietLogs.length > 0) {
+                        const src = [...this.dietLogs].sort((a,b)=>a.date.localeCompare(b.date)).slice(-20);
+                        makeChart('canvas-dash-calories','line', {
+                            data: { labels: src.map(l=>l.date.slice(5)), datasets:[lineDs('Calories', src.map(l=>l.calories), '#8b5cf6', true)] },
+                            options: { responsive:true, maintainAspectRatio:false, animation:false,
+                                plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => c.parsed.y + ' kcal' }}},
+                                scales }
                         });
                     }
 
-                    if (this.activeTab === 'diet' && this.dietLogs.length > 0) {
-                        instantiateChart('canvas-diet-protein', 'line', {
-                            data: { labels: dietLabels, datasets: [datasetProps('Protein (g)', dietChrono.map(l => l.protein), '#3b82f6')] },
-                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales }
-                        });
-
-                        const modernLog = this.dietLogs[0];
-                        instantiateChart('canvas-diet-macros', 'doughnut', {
+                    // ── Workout chart ─────────────────────────────────────
+                    if (this.workouts.length > 0) {
+                        const src = [...this.workouts].sort((a,b)=>a.date.localeCompare(b.date)).slice(-15);
+                        makeChart('canvas-workout-volume','bar', {
                             data: {
-                                labels: ['Protein', 'Carbs', 'Fats'],
-                                datasets: [{
-                                    data: [parseInt(modernLog.protein) || 1, parseInt(modernLog.carbs) || 1, parseInt(modernLog.fats) || 1],
-                                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'], borderWidth: 0
-                                }]
+                                labels: src.map(w => w.date.slice(5) + ' ' + (w.name||'').slice(0,8)),
+                                datasets:[{ label:'Volume (kg)', data: src.map(w=>this.calculateVolume(w.sets)),
+                                    backgroundColor: src.map((_,i)=> i%3===0?'#3b82f6':i%3===1?'#8b5cf6':'#10b981'),
+                                    borderRadius:6, borderSkipped:false }]
                             },
-                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: textColor, font: { size: 10, weight: 'bold' } } } } }
+                            options: { responsive:true, maintainAspectRatio:false, animation:false,
+                                plugins:{ legend:{display:false} }, scales }
                         });
+                    }
+
+                    // ── Diet / Nutrition charts ───────────────────────────
+                    if (this.dietLogs.length > 0) {
+                        const src = [...this.dietLogs].sort((a,b)=>a.date.localeCompare(b.date)).slice(-14);
+                        makeChart('canvas-diet-protein','line', {
+                            data: { labels: src.map(l=>l.date.slice(5)),
+                                datasets:[
+                                    lineDs('Protein (g)', src.map(l=>l.protein), '#3b82f6'),
+                                    lineDs('Carbs (g)', src.map(l=>l.carbs), '#10b981'),
+                                    lineDs('Fats (g)', src.map(l=>l.fats), '#f59e0b')
+                                ]
+                            },
+                            options: { responsive:true, maintainAspectRatio:false, animation:false,
+                                plugins:{ legend:{ display:true, position:'top', labels:{ color:textColor, font:{size:9,weight:'700'}, boxWidth:10 }}},
+                                scales }
+                        });
+                        const latest = this.dietLogs[0];
+                        const pVal = parseFloat(latest.protein)||0;
+                        const cVal = parseFloat(latest.carbs)||0;
+                        const fVal = parseFloat(latest.fats)||0;
+                        if (pVal+cVal+fVal > 0) {
+                            makeChart('canvas-diet-macros','doughnut', {
+                                data: {
+                                    labels:['Protein','Carbs','Fats'],
+                                    datasets:[{ data:[pVal||0.1,cVal||0.1,fVal||0.1],
+                                        backgroundColor:['#3b82f6','#10b981','#f59e0b'], borderWidth:0, hoverOffset:6 }]
+                                },
+                                options: { responsive:true, maintainAspectRatio:false, animation:false, cutout:'60%',
+                                    plugins:{ legend:{ position:'right', labels:{ color:textColor, font:{size:10,weight:'700'}, boxWidth:12, padding:10 }},
+                                        tooltip:{ callbacks:{ label: c => c.label + ': ' + c.parsed + 'g' }} } }
+                            });
+                        }
                     }
                 }
             };
         }
     </script>
+    <!-- Fixed Developer Footer -->
+    <div class="no-print fixed bottom-0 left-0 right-0 z-30 pointer-events-none">
+        <div class="text-center py-1.5 px-4 text-[10px] font-bold text-slate-400/70 dark:text-slate-600/80 tracking-widest uppercase bg-white/60 dark:bg-slateDark/60 backdrop-blur-sm border-t border-slate-200/30 dark:border-slate-800/30">
+            Developed by <span class="text-brand-500/80">Revanth Reddy Abbati</span> &nbsp;·&nbsp; VYTARA OS
+        </div>
+    </div>
+
 </body>
 </html>
