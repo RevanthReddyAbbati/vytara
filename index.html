@@ -17,7 +17,7 @@
                 extend: {
                     fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
                     colors: {
-                        brand: { 50: '#f0f7ff', 100: '#e0effe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' },
+                        brand: { 50: '#f0f7ff', 100: '#e0effe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 900: '#1e3a8a' },
                         slateDark: '#020617',
                         panelDark: '#0f172a',
                         borderDark: '#1e293b'
@@ -78,22 +78,59 @@
             filter: invert(0);
             opacity: 0.5;
         }
+        select[multiple] option { padding: 8px 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; }
+        select[multiple]:focus option:checked { background: #3b82f6 linear-gradient(0deg, #3b82f6 0%, #3b82f6 100%); color: white; }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .dynamic-flex-stack { display: flex; flex-direction: column; gap: 1.25rem; width: 100%; box-sizing: border-box; }
         .grid-rows-7 { grid-template-rows: repeat(7, minmax(0, 1fr)); }
 
+        /* Goal checkbox pill style */
+        .goal-pill input[type="checkbox"] {
+            width: 1rem !important;
+            height: 1rem !important;
+            accent-color: #3b82f6;
+            flex-shrink: 0;
+        }
+        .goal-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 0.85rem;
+            border-radius: 0.75rem;
+            border: 1.5px solid #1e293b;
+            background: #0f172a;
+            cursor: pointer;
+            transition: all 0.15s;
+            user-select: none;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 0.03em;
+        }
+        .goal-pill:hover {
+            border-color: #3b82f6;
+            color: #e2e8f0;
+        }
+        .goal-pill.selected {
+            border-color: #3b82f6;
+            background: rgba(59,130,246,0.12);
+            color: #60a5fa;
+        }
+
         @media print {
             .no-print { display: none !important; }
             .print-only { display: block !important; }
-            body { background: white !important; color: black !important; padding: 0 !important; }
+            body { background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #000 !important; padding: 8px !important; text-align: left !important; color: black !important; }
+            th, td { padding: 10px !important; text-align: left !important; color: black !important; }
+            th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            tr { page-break-inside: avoid; }
         }
     </style>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-slate-50 dark:bg-slateDark text-slate-900 dark:text-slate-50 min-h-screen antialiased flex flex-col lg:flex-row overflow-x-hidden" x-data="vytaraApp()" x-init="initPlatform()" @keydown.escape.window="closeAllModals()">
+<body class="bg-slate-50 dark:bg-slateDark text-slate-900 dark:text-slate-50 min-h-screen antialiased flex flex-col lg:flex-row overflow-x-hidden" x-data="vytaraApp()" x-init="initPlatform()" @keydown.escape.window="closeAllModals(); mobileMenuOpen = false;">
 
     <div class="no-print fixed top-6 right-6 z-[100]">
         <button @click="toggleTheme()" class="p-3 rounded-2xl bg-white/90 dark:bg-panelDark/90 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800 transition-all hover:scale-105 active:scale-95">
@@ -102,6 +139,7 @@
         </button>
     </div>
 
+    <!-- LANDING -->
     <div x-show="currentView === 'landing'" class="w-full min-h-screen flex flex-col justify-between p-6 lg:p-12 animate-in fade-in duration-300">
         <header class="flex justify-between items-center max-w-7xl w-full mx-auto">
             <div class="flex items-center gap-3">
@@ -131,6 +169,7 @@
         </footer>
     </div>
 
+    <!-- ONBOARDING -->
     <div x-show="currentView === 'onboarding'" x-cloak class="w-full min-h-screen bg-slate-100 dark:bg-slateDark p-4 md:p-12 flex items-center justify-center animate-in fade-in duration-300">
         <div class="w-full max-w-3xl bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-8 md:p-12 rounded-[2.5rem] shadow-2xl space-y-8">
             <div class="flex justify-between items-center text-xs font-black text-slate-400 uppercase tracking-widest">
@@ -139,6 +178,7 @@
             </div>
 
             <div class="space-y-6">
+                <!-- Step 1 -->
                 <div x-show="wizardStep === 1" class="space-y-4">
                     <h3 class="text-2xl font-extrabold tracking-tight">Personal Details</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -148,6 +188,7 @@
                     </div>
                 </div>
 
+                <!-- Step 2 -->
                 <div x-show="wizardStep === 2" class="space-y-4">
                     <h3 class="text-2xl font-extrabold tracking-tight">Body Details</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -157,25 +198,41 @@
                     </div>
                 </div>
 
+                <!-- Step 3: FIXED - Checkbox goals instead of multi-select -->
                 <div x-show="wizardStep === 3" class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-2xl font-extrabold tracking-tight">Select Goals</h3>
-                        <button @click="wizard.goals = []; navigateWizardStep(1);" class="text-xs font-bold text-brand-500 hover:underline">Skip & Add Later ➔</button>
-                    </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-64 overflow-y-auto pr-1 no-scrollbar">
-                        <template x-for="g in systemGoalOptions">
-                            <label class="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 cursor-pointer text-xs font-bold transition-all hover:border-brand-500/50">
-                                <input type="checkbox" :value="g" x-model="wizard.goals">
+                    <h3 class="text-2xl font-extrabold tracking-tight">Select Your Goals</h3>
+                    <p class="text-sm text-slate-400">Choose one or more goals that match your fitness journey. You can skip this step.</p>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-2">
+                        <template x-for="g in systemGoalOptions" :key="g">
+                            <label class="goal-pill" :class="wizard.goals.includes(g) ? 'selected' : ''">
+                                <input type="checkbox"
+                                    :value="g"
+                                    :checked="wizard.goals.includes(g)"
+                                    @change="toggleWizardGoal(g)"
+                                    style="width:1rem!important;height:1rem!important;flex-shrink:0;">
                                 <span x-text="g"></span>
                             </label>
                         </template>
                     </div>
+
+                    <div x-show="wizard.goals.length > 0" class="mt-3 flex flex-wrap gap-1.5">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider self-center mr-1">Selected:</span>
+                        <template x-for="g in wizard.goals" :key="g">
+                            <span class="px-2.5 py-1 bg-brand-500/20 text-brand-400 rounded-full text-[10px] font-bold" x-text="g"></span>
+                        </template>
+                    </div>
+
+                    <div class="flex justify-end mt-2">
+                        <button type="button" @click="wizard.goals = []; navigateWizardStep(1)" class="text-xs font-bold text-brand-500 hover:text-brand-400 transition-colors">Skip for now ➔</button>
+                    </div>
                 </div>
 
+                <!-- Step 4 -->
                 <div x-show="wizardStep === 4" class="space-y-4">
                     <div class="flex justify-between items-center">
                         <h3 class="text-2xl font-extrabold tracking-tight">Target Metrics</h3>
-                        <button @click="wizard.targetWeight=''; wizard.targetBodyFat=''; wizard.targetDate=''; navigateWizardStep(1);" class="text-xs font-bold text-brand-500 hover:underline">Configure Later ➔</button>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">(Optional)</span>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Target Weight (kg)</label><input type="number" step="0.1" x-model="wizard.targetWeight"></div>
@@ -184,9 +241,18 @@
                     </div>
                 </div>
 
+                <!-- Step 5 -->
                 <div x-show="wizardStep === 5" class="space-y-2">
                     <h3 class="text-2xl font-extrabold tracking-tight">Review & Confirm</h3>
                     <p class="text-sm text-slate-400 leading-relaxed">Profile structure verified. Ready to launch the Vytara operating system.</p>
+                    <div x-show="wizard.goals.length > 0" class="mt-4 p-4 rounded-xl bg-brand-500/10 border border-brand-500/20">
+                        <p class="text-[10px] font-black text-brand-400 uppercase tracking-widest mb-2">Selected Goals</p>
+                        <div class="flex flex-wrap gap-1.5">
+                            <template x-for="g in wizard.goals" :key="g">
+                                <span class="px-2.5 py-1 bg-brand-500/20 text-brand-400 rounded-full text-xs font-bold" x-text="g"></span>
+                            </template>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex justify-between items-center pt-6 border-t border-slate-100 dark:border-slate-800/80">
@@ -198,35 +264,67 @@
         </div>
     </div>
 
-    <div x-show="currentView === 'app'" x-cloak class="w-full min-h-screen flex flex-col lg:flex-row">
+    <!-- APP -->
+    <div x-show="currentView === 'app'" x-cloak class="w-full min-h-screen flex flex-col lg:flex-row relative pt-16 lg:pt-0">
         
-        <aside class="no-print w-full lg:w-80 bg-white dark:bg-panelDark border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800 p-6 flex flex-col gap-6 shrink-0 z-30">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 bg-brand-500 rounded-2xl flex items-center justify-center text-white font-black italic">V</div>
-                <div>
-                    <h1 class="text-xl font-black tracking-tighter uppercase italic leading-none">VYTARA</h1>
-                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-1" x-text="'User: ' + (profile.name || 'Athlete')"></p>
+        <!-- Mobile top header -->
+        <header class="lg:hidden flex justify-between items-center p-4 bg-white dark:bg-panelDark border-b border-slate-200 dark:border-slate-800 z-40 fixed top-0 left-0 w-full no-print">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-brand-500 rounded-xl flex items-center justify-center text-white font-black italic text-xs">V</div>
+                <h1 class="text-lg font-black tracking-tighter uppercase italic leading-none">VYTARA</h1>
+            </div>
+            <button @click="mobileMenuOpen = true" class="p-2 text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-lg focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+        </header>
+
+        <!-- FIXED: Mobile overlay - only covers behind sidebar, click closes menu -->
+        <div x-show="mobileMenuOpen"
+             x-transition:enter="transition-opacity ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[50] lg:hidden no-print"
+             @click="mobileMenuOpen = false"></div>
+
+        <!-- FIXED: Sidebar - w-72 max, slides in from left, does NOT cover full screen -->
+        <aside class="no-print fixed inset-y-0 left-0 z-[60] w-72 max-w-[85vw] bg-white dark:bg-panelDark border-r border-slate-200 dark:border-slate-800 p-6 flex flex-col gap-6 shrink-0 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 h-full overflow-y-auto shadow-2xl lg:shadow-none"
+              :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-brand-500 rounded-2xl flex items-center justify-center text-white font-black italic">V</div>
+                    <div>
+                        <h1 class="text-xl font-black tracking-tighter uppercase italic leading-none">VYTARA</h1>
+                        <p class="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-1" x-text="'User: ' + (profile.name || 'Athlete')"></p>
+                    </div>
                 </div>
+                <!-- FIXED: Close button always visible on mobile -->
+                <button @click="mobileMenuOpen = false" class="lg:hidden p-2 text-slate-400 hover:text-white bg-slate-100 dark:bg-slate-800 rounded-xl transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
 
             <nav class="space-y-1 flex-1">
-                <button @click="switchTab('dashboard')" :class="activeTab === 'dashboard' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Overview</button>
-                <button @click="switchTab('workouts')" :class="activeTab === 'workouts' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Workout History</button>
-                <button @click="switchTab('diet')" :class="activeTab === 'diet' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Nutrition Tracking</button>
-                <button @click="switchTab('metrics')" :class="activeTab === 'metrics' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Body Metrics Log</button>
-                <button @click="switchTab('goals')" :class="activeTab === 'goals' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Goals</button>
-                <button @click="switchTab('photos')" :class="activeTab === 'photos' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Progress Photos</button>
-                <button @click="switchTab('reports')" :class="activeTab === 'reports' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Reports</button>
-                <button @click="switchTab('system')" :class="activeTab === 'system' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Settings</button>
+                <button @click="switchTab('dashboard'); mobileMenuOpen = false" :class="activeTab === 'dashboard' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Overview</button>
+                <button @click="switchTab('workouts'); mobileMenuOpen = false" :class="activeTab === 'workouts' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Workout History</button>
+                <button @click="switchTab('diet'); mobileMenuOpen = false" :class="activeTab === 'diet' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Nutrition Tracking</button>
+                <button @click="switchTab('metrics'); mobileMenuOpen = false" :class="activeTab === 'metrics' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Body Metrics Log</button>
+                <button @click="switchTab('goals'); mobileMenuOpen = false" :class="activeTab === 'goals' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Goals</button>
+                <button @click="switchTab('photos'); mobileMenuOpen = false" :class="activeTab === 'photos' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Progress Photos</button>
+                <button @click="switchTab('reports'); mobileMenuOpen = false" :class="activeTab === 'reports' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Reports</button>
+                <button @click="switchTab('system'); mobileMenuOpen = false" :class="activeTab === 'system' ? 'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all">Settings</button>
             </nav>
 
             <div class="space-y-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <button @click="openModal('modalDiet')" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-black py-3.5 rounded-xl text-xs tracking-widest uppercase transition-all shadow-md shadow-brand-500/10">Add Nutrition Log</button>
-                <button @click="openModal('modalMetrics')" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-black py-3.5 rounded-xl text-xs tracking-widest uppercase transition-all">Add Body Metrics</button>
-                <button @click="openModal('modalWorkout')" class="w-full border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-black py-3.5 rounded-xl text-xs tracking-widest uppercase transition-all">Add Workout</button>
+                <button @click="openModal('modalDiet'); mobileMenuOpen = false" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-black py-3.5 rounded-xl text-xs tracking-widest uppercase transition-all shadow-md shadow-brand-500/10">Add Nutrition Log</button>
+                <button @click="openModal('modalMetrics'); mobileMenuOpen = false" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-black py-3.5 rounded-xl text-xs tracking-widest uppercase transition-all">Add Body Metrics</button>
+                <button @click="openModal('modalWorkout'); mobileMenuOpen = false" class="w-full border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-black py-3.5 rounded-xl text-xs tracking-widest uppercase transition-all">Add Workout</button>
             </div>
         </aside>
 
+        <!-- Mobile bottom nav -->
         <nav class="no-print lg:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-panelDark border-t border-slate-200 dark:border-slate-800 flex justify-around py-3 z-40 shadow-2xl">
             <button @click="switchTab('dashboard')" :class="activeTab === 'dashboard' ? 'text-brand-500' : 'text-slate-400'" class="flex flex-col items-center"><span class="text-[10px] font-black uppercase tracking-wider">Summary</span></button>
             <button @click="switchTab('workouts')" :class="activeTab === 'workouts' ? 'text-brand-500' : 'text-slate-400'" class="flex flex-col items-center"><span class="text-[10px] font-black uppercase tracking-wider">Gym</span></button>
@@ -236,6 +334,7 @@
 
         <main class="flex-1 overflow-y-auto h-screen p-4 md:p-8 lg:p-12 pb-24 lg:pb-12 no-scrollbar no-print relative">
             
+            <!-- Dashboard -->
             <div x-show="activeTab === 'dashboard'" x-transition.opacity.duration.300ms class="space-y-8 absolute inset-0 p-4 md:p-8 lg:p-12 overflow-y-auto pb-24">
                 <div class="flex justify-between items-center">
                     <div>
@@ -299,14 +398,29 @@
                 <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[2rem] space-y-4 shadow-sm overflow-hidden">
                     <div>
                         <h3 class="text-base font-extrabold tracking-tight">Consistency Tracker</h3>
-                        <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">365-day activity heatmap tracking all your log entries.</p>
+                        <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">365-day activity heatmap tracking your intensity across all logs.</p>
                     </div>
                     <div class="overflow-x-auto no-scrollbar pt-2">
                         <div class="grid grid-rows-7 grid-flow-col gap-1 min-w-max">
                             <template x-for="day in heatmapDays" :key="day.date">
-                                <div class="w-3.5 h-3.5 rounded-[3px] transition-colors" :class="day.active ? 'bg-brand-500' : 'bg-slate-100 dark:bg-slate-800/60'" :title="day.date"></div>
+                                <div class="w-3.5 h-3.5 rounded-[4px] transition-all hover:scale-125 hover:ring-2 ring-brand-500 cursor-pointer" 
+                                     :class="{
+                                        'bg-slate-100 dark:bg-slate-800/60': day.level === 0,
+                                        'bg-brand-300 dark:bg-brand-900/60': day.level === 1,
+                                        'bg-brand-500': day.level === 2,
+                                        'bg-brand-700 dark:bg-brand-400': day.level === 3
+                                     }" 
+                                     :title="day.date + ': ' + day.count + ' activity records'"></div>
                             </template>
                         </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 pt-2 text-[10px] font-bold text-slate-400 uppercase">
+                        <span>Less</span>
+                        <div class="w-3 h-3 rounded-[3px] bg-slate-100 dark:bg-slate-800/60"></div>
+                        <div class="w-3 h-3 rounded-[3px] bg-brand-300 dark:bg-brand-900/60"></div>
+                        <div class="w-3 h-3 rounded-[3px] bg-brand-500"></div>
+                        <div class="w-3 h-3 rounded-[3px] bg-brand-700 dark:bg-brand-400"></div>
+                        <span>More</span>
                     </div>
                 </div>
 
@@ -328,13 +442,14 @@
                 </div>
             </div>
 
+            <!-- Workouts -->
             <div x-show="activeTab === 'workouts'" x-transition.opacity.duration.300ms class="space-y-8 absolute inset-0 p-4 md:p-8 lg:p-12 overflow-y-auto pb-24">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-3xl font-extrabold tracking-tight">Workout History</h2>
                         <p class="text-sm text-slate-500">Track your workouts, exercises, sets, reps and progress.</p>
                     </div>
-                    <button @click="openModal('modalWorkout')" class="bg-brand-500 hover:bg-brand-600 text-white px-5 py-3 rounded-xl font-bold text-sm transition-all shadow-md">Add Workout</button>
+                    <button @click="openModal('modalWorkout')" class="bg-brand-500 hover:bg-brand-600 text-white px-5 py-3 rounded-xl font-bold text-sm transition-all shadow-md hidden md:block">Add Workout</button>
                 </div>
 
                 <div x-show="workouts.length === 0" class="p-12 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem] bg-white/60 dark:bg-panelDark/40 text-sm text-slate-400 font-bold italic shadow-sm">
@@ -361,7 +476,7 @@
 
                 <div x-show="workouts.length > 0" class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-sm">
+                        <table class="w-full text-left border-collapse text-sm min-w-[600px]">
                             <thead>
                                 <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold text-xs">
                                     <th class="p-4">Date</th>
@@ -397,13 +512,14 @@
                 </div>
             </div>
 
+            <!-- Diet -->
             <div x-show="activeTab === 'diet'" x-transition.opacity.duration.300ms class="space-y-8 absolute inset-0 p-4 md:p-8 lg:p-12 overflow-y-auto pb-24">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-3xl font-extrabold tracking-tight">Nutrition Tracking</h2>
                         <p class="text-sm text-slate-500">Track your meals incrementally to balance daily calories and macros.</p>
                     </div>
-                    <button @click="openModal('modalDiet')" class="bg-brand-500 hover:bg-brand-600 text-white px-5 py-3 rounded-xl font-bold text-sm transition-all shadow-md">Add Daily Diet Log</button>
+                    <button @click="openModal('modalDiet')" class="bg-brand-500 hover:bg-brand-600 text-white px-5 py-3 rounded-xl font-bold text-sm transition-all shadow-md hidden md:block">Add Daily Diet Log</button>
                 </div>
 
                 <div x-show="dietLogs.length === 0" class="p-12 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem] bg-white/60 dark:bg-panelDark/40 text-sm text-slate-400 font-bold italic shadow-sm">
@@ -423,7 +539,7 @@
 
                 <div x-show="dietLogs.length > 0" class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-sm">
+                        <table class="w-full text-left border-collapse text-sm min-w-[600px]">
                             <thead>
                                 <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold text-xs">
                                     <th class="p-4">Date</th>
@@ -461,13 +577,14 @@
                 </div>
             </div>
 
+            <!-- Metrics -->
             <div x-show="activeTab === 'metrics'" x-transition.opacity.duration.300ms class="space-y-8 absolute inset-0 p-4 md:p-8 lg:p-12 overflow-y-auto pb-24">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-3xl font-extrabold tracking-tight">Body Metrics Log</h2>
                         <p class="text-sm text-slate-500">Track Weight, Waist, Chest, Arms, Body Fat %, Sleep and Steps tracking layers indices.</p>
                     </div>
-                    <button @click="openModal('modalMetrics')" class="bg-brand-500 hover:bg-brand-600 text-white px-5 py-3 rounded-xl font-bold text-sm transition-all shadow-md">Add Body Metrics</button>
+                    <button @click="openModal('modalMetrics')" class="bg-brand-500 hover:bg-brand-600 text-white px-5 py-3 rounded-xl font-bold text-sm transition-all shadow-md hidden md:block">Add Body Metrics</button>
                 </div>
 
                 <div x-show="metricsLogs.length === 0" class="p-12 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem] bg-white/60 dark:bg-panelDark/40 text-sm text-slate-400 font-bold italic shadow-sm">
@@ -476,7 +593,7 @@
 
                 <div x-show="metricsLogs.length > 0" class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-sm">
+                        <table class="w-full text-left border-collapse text-sm min-w-[600px]">
                             <thead>
                                 <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold text-xs">
                                     <th class="p-4">Date</th>
@@ -513,6 +630,7 @@
                 </div>
             </div>
 
+            <!-- Goals -->
             <div x-show="activeTab === 'goals'" x-transition.opacity.duration.300ms class="space-y-8 absolute inset-0 p-4 md:p-8 lg:p-12 overflow-y-auto pb-24">
                 <div>
                     <h2 class="text-3xl font-extrabold tracking-tight">Goals Center</h2>
@@ -566,6 +684,7 @@
                 </div>
             </div>
 
+            <!-- Photos -->
             <div x-show="activeTab === 'photos'" x-transition.opacity.duration.300ms class="space-y-8 absolute inset-0 p-4 md:p-8 lg:p-12 overflow-y-auto pb-24">
                 <div>
                     <h2 class="text-3xl font-extrabold tracking-tight">Progress Photos</h2>
@@ -597,6 +716,7 @@
                 </div>
             </div>
 
+            <!-- Reports -->
             <div x-show="activeTab === 'reports'" x-transition.opacity.duration.300ms class="space-y-8 absolute inset-0 p-4 md:p-8 lg:p-12 overflow-y-auto pb-24">
                 <div>
                     <h2 class="text-3xl font-extrabold tracking-tight">Report Center</h2>
@@ -608,10 +728,11 @@
                         <div class="space-y-1"><label class="text-[9px] font-bold text-slate-400">START DATE</label><input type="date" x-model="reportStart"></div>
                         <div class="space-y-1"><label class="text-[9px] font-bold text-slate-400">END DATE</label><input type="date" x-model="reportEnd"></div>
                     </div>
-                    <button @click="triggerPrint()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-black py-4 rounded-xl text-xs uppercase tracking-widest transition-transform active:scale-95 shadow-lg">Generate Printable Report Summary (PDF)</button>
+                    <button @click="triggerPrint()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-black py-4 rounded-xl text-xs uppercase tracking-widest transition-transform active:scale-95 shadow-lg">Generate Professional PDF</button>
                 </div>
             </div>
 
+            <!-- Settings -->
             <div x-show="activeTab === 'system'" x-transition.opacity.duration.300ms class="space-y-8 absolute inset-0 p-4 md:p-8 lg:p-12 overflow-y-auto pb-24">
                 <div>
                     <h2 class="text-3xl font-extrabold tracking-tight">Settings & Storage Workspace</h2>
@@ -641,31 +762,94 @@
         </main>
     </div>
 
-    <div class="print-only hidden p-12 w-full text-black bg-white">
-        <h2 class="text-2xl font-black uppercase text-black">Vytara Performance History Report</h2>
-        <p class="text-xs mb-4 text-black">Athlete Profile: <strong x-text="profile ? profile.name : 'Unknown'"></strong> | Selected Range: <span x-text="reportStart"></span> to <span x-text="reportEnd"></span></p>
-        <table class="w-full text-sm border-collapse text-black" style="color: black !important">
+    <!-- Print view -->
+    <div class="print-only hidden p-8 w-full text-black bg-white font-sans max-w-5xl mx-auto">
+        <div class="flex justify-between items-end border-b-4 border-slate-900 pb-4 mb-6">
+            <div>
+                <h1 class="text-4xl font-black uppercase tracking-tighter italic">VYTARA</h1>
+                <p class="text-sm font-bold text-slate-500 uppercase tracking-widest mt-1">Performance & Biometrics Report</p>
+            </div>
+            <div class="text-right">
+                <p class="text-sm font-bold uppercase">Athlete: <span class="text-brand-600" x-text="profile ? profile.name : 'Unknown'"></span></p>
+                <p class="text-xs text-slate-500">Generated: <span x-text="new Date().toLocaleDateString()"></span></p>
+            </div>
+        </div>
+
+        <div class="mb-8 grid grid-cols-4 gap-4">
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <p class="text-[10px] font-black uppercase text-slate-500">Period Start</p>
+                <p class="text-lg font-bold" x-text="reportStart"></p>
+            </div>
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <p class="text-[10px] font-black uppercase text-slate-500">Period End</p>
+                <p class="text-lg font-bold" x-text="reportEnd"></p>
+            </div>
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <p class="text-[10px] font-black uppercase text-slate-500">Current Weight</p>
+                <p class="text-lg font-bold text-brand-600" x-text="computedMetrics.currentWeight + ' kg'"></p>
+            </div>
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <p class="text-[10px] font-black uppercase text-slate-500">Target Weight</p>
+                <p class="text-lg font-bold text-slate-900" x-text="computedMetrics.targetWeight + ' kg'"></p>
+            </div>
+        </div>
+
+        <h3 class="text-lg font-black uppercase mb-2 border-b-2 border-slate-200 pb-1">Nutrition Logs</h3>
+        <table class="w-full text-sm border-collapse mb-8">
             <thead>
                 <tr class="bg-slate-100">
-                    <th class="p-2 border border-black text-black">Date</th>
-                    <th class="p-2 border border-black text-black">Calories</th>
-                    <th class="p-2 border border-black text-black">Protein Ingested</th>
-                    <th class="p-2 border border-black text-black">Water Summary</th>
+                    <th class="p-3 border border-slate-300 text-left font-bold">Date</th>
+                    <th class="p-3 border border-slate-300 text-center font-bold">Total Calories</th>
+                    <th class="p-3 border border-slate-300 text-center font-bold">Macros (P/C/F)</th>
+                    <th class="p-3 border border-slate-300 text-center font-bold">Water</th>
                 </tr>
             </thead>
             <tbody>
                 <template x-for="d in dietLogs.filter(log => log.date >= reportStart && log.date <= reportEnd)" :key="d.id">
                     <tr>
-                        <td class="p-2 border border-black text-black font-bold" x-text="d.date"></td>
-                        <td class="p-2 border border-black text-black" x-text="d.calories + ' kcal'"></td>
-                        <td class="p-2 border border-black text-black" x-text="d.protein + ' g'"></td>
-                        <td class="p-2 border border-black text-black" x-text="d.water + ' ml'"></td>
+                        <td class="p-3 border border-slate-300 font-bold" x-text="d.date"></td>
+                        <td class="p-3 border border-slate-300 text-center" x-text="d.calories + ' kcal'"></td>
+                        <td class="p-3 border border-slate-300 text-center" x-text="d.protein + 'g / ' + d.carbs + 'g / ' + d.fats + 'g'"></td>
+                        <td class="p-3 border border-slate-300 text-center" x-text="d.water + ' ml'"></td>
                     </tr>
                 </template>
+                <tr x-show="dietLogs.filter(log => log.date >= reportStart && log.date <= reportEnd).length === 0">
+                    <td colspan="4" class="p-4 text-center text-slate-500 italic">No nutrition data logged in this period.</td>
+                </tr>
             </tbody>
         </table>
+
+        <h3 class="text-lg font-black uppercase mb-2 border-b-2 border-slate-200 pb-1">Workout Sessions</h3>
+        <table class="w-full text-sm border-collapse mb-8">
+            <thead>
+                <tr class="bg-slate-100">
+                    <th class="p-3 border border-slate-300 text-left font-bold">Date</th>
+                    <th class="p-3 border border-slate-300 text-left font-bold">Exercise</th>
+                    <th class="p-3 border border-slate-300 text-center font-bold">Sets Tracked</th>
+                    <th class="p-3 border border-slate-300 text-center font-bold">Total Volume</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="w in workouts.filter(log => log.date >= reportStart && log.date <= reportEnd)" :key="w.id">
+                    <tr>
+                        <td class="p-3 border border-slate-300 font-bold" x-text="w.date"></td>
+                        <td class="p-3 border border-slate-300 font-medium uppercase" x-text="w.name"></td>
+                        <td class="p-3 border border-slate-300 text-center" x-text="w.sets.length"></td>
+                        <td class="p-3 border border-slate-300 text-center font-bold" x-text="calculateVolume(w.sets) + ' kg'"></td>
+                    </tr>
+                </template>
+                <tr x-show="workouts.filter(log => log.date >= reportStart && log.date <= reportEnd).length === 0">
+                    <td colspan="4" class="p-4 text-center text-slate-500 italic">No workout data logged in this period.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="mt-12 text-center text-xs text-slate-400 font-bold uppercase border-t border-slate-200 pt-4">
+            End of Report &nbsp;&bull;&nbsp; Powered by VYTARA OS
+        </div>
     </div>
 
+    <!-- Diet Modal -->
     <div x-show="activeModal === 'modalDiet'" x-cloak class="no-print fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200" @click.self="closeModal()">
         <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-[2.5rem] p-6 md:p-10 flex flex-col gap-6 shadow-2xl relative no-scrollbar">
             <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -688,11 +872,15 @@
                         <template x-for="(m, idx) in dietForm.meals" :key="m.id">
                             <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl relative">
                                 <button type="button" @click="removeMeal(idx)" class="absolute top-2 right-2 text-red-500 font-bold text-xs hover:underline">Remove</button>
-                                <div class="grid grid-cols-2 gap-4 mt-2">
+                                <div class="grid grid-cols-2 gap-4 mt-2 border-b border-slate-200/50 dark:border-slate-700/50 pb-3">
                                     <div><span class="text-[9px] font-bold text-slate-400 block">Time</span><span class="font-bold text-sm" x-text="m.time"></span></div>
                                     <div><span class="text-[9px] font-bold text-slate-400 block">Meal</span><span class="font-bold text-sm" x-text="m.name"></span></div>
                                     <div><span class="text-[9px] font-bold text-slate-400 block">Calories</span><span class="font-black text-purple-500" x-text="m.calories + ' kcal'"></span></div>
-                                    <div><span class="text-[9px] font-bold text-slate-400 block">Macros (P/C/F)</span><span class="font-bold text-sm" x-text="m.protein + 'g / ' + m.carbs + 'g / ' + m.fats + 'g'"></span></div>
+                                    <div><span class="text-[9px] font-bold text-slate-400 block">Macros (P/C/F)</span><span class="font-bold text-sm" x-text="(m.protein||0) + 'g / ' + (m.carbs||0) + 'g / ' + (m.fats||0) + 'g'"></span></div>
+                                </div>
+                                <div class="pt-3">
+                                    <span class="text-[9px] font-bold text-slate-400 block mb-1">What you ate</span>
+                                    <span class="font-medium text-xs text-slate-700 dark:text-slate-300" x-text="m.foodItems || 'No specific food logged'"></span>
                                 </div>
                             </div>
                         </template>
@@ -706,8 +894,11 @@
                         <div class="space-y-1"><label class="text-[9px] font-black text-slate-400 block">Time</label><input type="time" x-model="dietForm.newMeal.time"></div>
                         <div class="space-y-1"><label class="text-[9px] font-black text-slate-400 block">Meal Name</label><input type="text" x-model="dietForm.newMeal.name" placeholder="e.g. Lunch"></div>
                     </div>
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="space-y-1"><label class="text-[9px] font-bold text-slate-400 block">Food Items (What you ate)</label><input type="text" x-model="dietForm.newMeal.foodItems" placeholder="e.g. 200g Chicken breast, 150g Rice, 1 Apple"></div>
+                    </div>
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        <div class="space-y-1"><label class="text-[8px] font-bold text-slate-400 block">Calories</label><input type="number" x-model="dietForm.newMeal.calories" min="0"></div>
+                        <div class="space-y-1"><label class="text-[8px] font-bold text-slate-400 block">Calories *</label><input type="number" x-model="dietForm.newMeal.calories" min="0"></div>
                         <div class="space-y-1"><label class="text-[8px] font-bold text-slate-400 block">Protein (g)</label><input type="number" x-model="dietForm.newMeal.protein" min="0"></div>
                         <div class="space-y-1"><label class="text-[8px] font-bold text-slate-400 block">Carbs (g)</label><input type="number" x-model="dietForm.newMeal.carbs" min="0"></div>
                         <div class="space-y-1"><label class="text-[8px] font-bold text-slate-400 block">Fats (g)</label><input type="number" x-model="dietForm.newMeal.fats" min="0"></div>
@@ -727,6 +918,7 @@
         </div>
     </div>
 
+    <!-- Metrics Modal -->
     <div x-show="activeModal === 'modalMetrics'" x-cloak class="no-print fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200" @click.self="closeModal()">
         <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-[2.5rem] p-6 md:p-10 flex flex-col gap-6 shadow-2xl relative">
             <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -747,6 +939,7 @@
         </div>
     </div>
 
+    <!-- Workout Modal -->
     <div x-show="activeModal === 'modalWorkout'" x-cloak class="no-print fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200" @click.self="closeModal()">
         <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-6 md:p-8 flex flex-col gap-6 shadow-2xl relative">
             <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -793,7 +986,7 @@
     <script>
         const SYSTEM_MUSCLE_GROUPS = ['Chest', 'Shoulders', 'Triceps', 'Back', 'Biceps', 'Legs', 'Core', 'Forearms', 'Glutes', 'Calves'];
         const SYSTEM_EXTENDED_GOALS = ['Muscle Gain', 'Fat Loss', 'Strength Gain', 'Weight Loss', 'Weight Gain', 'Bulking', 'Cutting', 'Stay Fit', 'Body Recomposition', 'Endurance', 'Improve Cardio', 'Athletic Performance', 'Maintain Weight', 'Improve Mobility', 'General Fitness', 'Better Sleep', 'Better Nutrition'];
-        const BIND_LOCAL_VAULT_KEY = 'vytara_production_os_vault_v7';
+        const BIND_LOCAL_VAULT_KEY = 'vytara_production_os_vault_v8';
         let GlobalCharts = {};
 
         function vytaraApp() {
@@ -803,13 +996,14 @@
                 wizardStep: 1,
                 activeTab: 'dashboard',
                 activeModal: null,
+                mobileMenuOpen: false,
                 
                 systemMuscleGroups: SYSTEM_MUSCLE_GROUPS,
+                systemGoalOptions: SYSTEM_EXTENDED_GOALS,
                 goalOptions: SYSTEM_EXTENDED_GOALS,
                 
                 wizard: { name: '', age: '', gender: '', height: '', currentWeight: '', currentBodyFat: '', targetWeight: '', targetBodyFat: '', targetDate: '', goals: [] },
                 
-                // Secure Alpine Default Data
                 profile: { name: '', age: 0, gender: '', height: 0, currentWeight: 0, currentBodyFat: 0, targetWeight: 0, targetBodyFat: 0, targetDate: '', goals: [] }, 
                 dietLogs: [], 
                 workouts: [], 
@@ -819,8 +1013,7 @@
                 computedMetrics: { currentWeight: 0, targetWeight: 0, caloriesToday: 0, proteinToday: 0, waterToday: 0, workoutCount: 0, goalsCount: 0, progressPercent: 0, daysRemaining: null, personalRecords: [], aiInsightText: '' },
                 heatmapDays: [],
 
-                // Form bindings
-                dietForm: { editId: '', date: '', water: '', comments: '', meals: [], newMeal: { time: '', name: '', calories: '', protein: '', carbs: '', fats: '' } },
+                dietForm: { editId: '', date: '', water: '', comments: '', meals: [], newMeal: { time: '', name: '', foodItems: '', calories: '', protein: '', carbs: '', fats: '' } },
                 metricsForm: { editId: '', date: '', weight: '', waist: '', chest: '', arms: '', bodyFat: '', sleep: '', steps: '' },
                 workoutForm: { editId: '', date: '', name: '', muscles: [], sets: '', reps: '', weight: '', cardio: { time: '', speed: '', incline: '' } },
                 goalsForm: { targetWeight: '', targetBodyFat: '', targetDate: '' },
@@ -830,18 +1023,29 @@
                 reportEnd: '',
                 currentDateStr: '',
 
+                // FIXED: Toggle goal in wizard array
+                toggleWizardGoal(goal) {
+                    const idx = this.wizard.goals.indexOf(goal);
+                    if (idx > -1) {
+                        this.wizard.goals.splice(idx, 1);
+                    } else {
+                        this.wizard.goals.push(goal);
+                    }
+                },
+
                 initPlatform() {
-                    const raw = localStorage.getItem(BIND_LOCAL_VAULT_KEY);
+                    const raw = localStorage.getItem(BIND_LOCAL_VAULT_KEY) || localStorage.getItem('vytara_production_os_vault_v7');
                     if (raw) {
                         try {
                             const parsed = JSON.parse(raw);
                             this.theme = parsed.theme || 'dark';
                             this.profile = parsed.profile || this.profile;
                             
-                            // Safe migration payload structure checks
                             this.dietLogs = (parsed.dietLogs || []).map(d => {
                                 if(!d.meals) {
-                                    d.meals = [{ id: Date.now() + Math.random(), time: '12:00', name: 'Legacy Log', calories: d.calories||0, protein: d.protein||0, carbs: d.carbs||0, fats: d.fats||0 }];
+                                    d.meals = [{ id: Date.now() + Math.random(), time: '12:00', name: 'Legacy Log', foodItems: d.foodItems || '', calories: d.calories||0, protein: d.protein||0, carbs: d.carbs||0, fats: d.fats||0 }];
+                                } else {
+                                    d.meals = d.meals.map(m => ({...m, foodItems: m.foodItems || ''}));
                                 }
                                 return d;
                             });
@@ -923,7 +1127,7 @@
                 openModal(id) {
                     const timeStr = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
                     if (id === 'modalDiet') {
-                        this.dietForm = { editId: '', date: this.getToday(), water: '', comments: '', meals: [], newMeal: { time: timeStr, name: '', calories: '', protein: '', carbs: '', fats: '' } };
+                        this.dietForm = { editId: '', date: this.getToday(), water: '', comments: '', meals: [], newMeal: { time: timeStr, name: '', foodItems: '', calories: '', protein: '', carbs: '', fats: '' } };
                     } else if (id === 'modalMetrics') {
                         this.metricsForm = { editId: '', date: this.getToday(), weight: '', waist: '', chest: '', arms: '', bodyFat: '', sleep: '', steps: '' };
                     } else if (id === 'modalWorkout') {
@@ -938,21 +1142,6 @@
 
                 closeAllModals() {
                     this.activeModal = null;
-                },
-
-                launchOnboardingWizard() {
-                    this.currentView = 'onboarding';
-                    this.wizardStep = 1;
-                },
-
-                skipWizardStep(step) {
-                    if (step === 3) this.wizard.goals = [];
-                    if (step === 4) {
-                        this.wizard.targetWeight = '';
-                        this.wizard.targetBodyFat = '';
-                        this.wizard.targetDate = '';
-                    }
-                    this.navigateWizardStep(1);
                 },
 
                 navigateWizardStep(dir) {
@@ -976,7 +1165,6 @@
                     this.syncEcosystemChanges();
                 },
 
-                // --- DIET INCREMENTAL MODULE ---
                 addMealToForm() {
                     if(!this.dietForm.newMeal.name || !this.dietForm.newMeal.calories) {
                         alert("Meal Name and Calories are required to append a meal block.");
@@ -987,7 +1175,7 @@
                         id: Date.now() + Math.random()
                     });
                     const timeStr = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-                    this.dietForm.newMeal = { time: timeStr, name: '', calories: '', protein: '', carbs: '', fats: '' };
+                    this.dietForm.newMeal = { time: timeStr, name: '', foodItems: '', calories: '', protein: '', carbs: '', fats: '' };
                 },
 
                 removeMeal(idx) {
@@ -1001,7 +1189,6 @@
                 saveDietLog() {
                     if (!this.dietForm.date) return;
                     
-                    // Summarize arrays
                     const totals = this.dietForm.meals.reduce((acc, m) => {
                         acc.cal += Number(m.calories)||0;
                         acc.pro += Number(m.protein)||0;
@@ -1043,14 +1230,13 @@
                             date: t.date, 
                             water: t.water || '', 
                             comments: t.comments || '', 
-                            meals: JSON.parse(JSON.stringify(t.meals || [])),
-                            newMeal: { time: timeStr, name: '', calories: '', protein: '', carbs: '', fats: '' }
+                            meals: JSON.parse(JSON.stringify(t.meals || [])).map(m => ({...m, foodItems: m.foodItems || ''})),
+                            newMeal: { time: timeStr, name: '', foodItems: '', calories: '', protein: '', carbs: '', fats: '' }
                         };
                         this.activeModal = 'modalDiet';
                     }
                 },
 
-                // --- METRICS MODULE ---
                 saveMetricsLog() {
                     if (!this.metricsForm.date || this.metricsForm.weight === '') return;
                     const payload = {
@@ -1084,7 +1270,6 @@
                     }
                 },
 
-                // --- WORKOUT MODULE ---
                 saveWorkoutLog() {
                     if (!this.workoutForm.date || !this.workoutForm.name || !this.workoutForm.sets || !this.workoutForm.reps || this.workoutForm.weight === '') return;
                     const setsArr = [];
@@ -1142,7 +1327,6 @@
                     return sets.reduce((sum, s) => sum + (s.reps * s.weight), 0);
                 },
 
-                // --- GLOBAL CRUD ACTIONS ---
                 deleteRecord(type, id) {
                     if (confirm("Permanently delete this record?")) {
                         if (type === 'workout') this.workouts = this.workouts.filter(w => w.id !== id);
@@ -1175,7 +1359,6 @@
                     this.syncEcosystemChanges();
                 },
 
-                // --- GOALS MODULE ---
                 updateProfileGoals() {
                     this.profile.targetWeight = parseFloat(this.goalsForm.targetWeight) || 0;
                     this.profile.targetBodyFat = parseFloat(this.goalsForm.targetBodyFat) || 0;
@@ -1212,7 +1395,6 @@
                     this.syncEcosystemChanges();
                 },
 
-                // --- PHOTOS MODULE ---
                 savePhoto() {
                     const fileInput = document.getElementById('photo-file-upload');
                     if (fileInput.files && fileInput.files[0]) {
@@ -1239,7 +1421,6 @@
                     }
                 },
 
-                // --- REPORTS & EXPORTS ---
                 triggerPrint() {
                     if (!this.reportStart || !this.reportEnd) { alert("Configure report boundaries."); return; }
                     window.print();
@@ -1290,7 +1471,6 @@
                     }
                 },
 
-                // --- CORE ANALYTICS ---
                 syncEcosystemChanges() {
                     if (!this.profile) return;
                     
@@ -1358,27 +1538,26 @@
                     this.$nextTick(() => this.renderDataCharts());
                 },
 
-                // Consistency Heatmap Generation
                 generateHeatmapData() {
                     const days = [];
                     const today = new Date();
-                    const logSet = new Set([
-                        ...this.workouts.map(w => w.date),
-                        ...this.dietLogs.map(d => d.date),
-                        ...this.metricsLogs.map(m => m.date)
-                    ]);
+                    
+                    const activityCounts = {};
+                    [...this.workouts, ...this.dietLogs, ...this.metricsLogs].forEach(log => {
+                        activityCounts[log.date] = (activityCounts[log.date] || 0) + 1;
+                    });
 
-                    // Generate exactly 364 days back, aligned to a 7-day grid block
                     let start = new Date(today);
                     start.setDate(today.getDate() - 364);
-                    // align back to nearest Sunday to prevent grid staircase jumps
                     start.setDate(start.getDate() - start.getDay()); 
 
                     while (start <= today) {
                         const dStr = start.toISOString().split('T')[0];
+                        const count = activityCounts[dStr] || 0;
                         days.push({
                             date: dStr,
-                            active: logSet.has(dStr)
+                            count: count,
+                            level: count === 0 ? 0 : count === 1 ? 1 : count === 2 ? 2 : 3
                         });
                         start.setDate(start.getDate() + 1);
                     }
