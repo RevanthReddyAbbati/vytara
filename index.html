@@ -469,7 +469,7 @@
     </div>
 
     <!-- Consistency Trackers (Workout + Nutrition separate) -->
-<div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+<div class="grid grid-cols-1 gap-4">
 
     <!-- WORKOUT Consistency -->
     <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] overflow-hidden shadow-sm">
@@ -840,6 +840,36 @@
             </template>
         </div>
         <button @click="updateProfileGoals()" class="bg-brand-500/10 border border-brand-500/30 text-brand-400 font-black py-2 px-5 rounded-xl text-xs uppercase tracking-wider hover:bg-brand-500/20 transition-all">Save Goals</button>
+    </div>
+
+    <!-- Goal-based Nutrition Suggestion Card -->
+    <div x-show="(profile.goals||[]).length>0"
+         class="bg-gradient-to-r from-brand-500/10 to-purple-500/5 border border-brand-500/20 rounded-[1.5rem] p-5 space-y-4">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="space-y-0.5">
+                <h3 class="text-sm font-black text-brand-400 flex items-center gap-2">🎯 Recommended Targets
+                    <span class="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full"
+                          x-text="getGoalNutritionSuggestion(profile.goals).label"></span>
+                </h3>
+                <p class="text-[10px] text-slate-400 font-medium">Calculated from your goals, weight, height &amp; age.</p>
+            </div>
+            <button @click="applyGoalNutritionSuggestion(profile.goals)"
+                    class="bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-black py-2 px-5 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md">
+                ✓ Apply These Targets
+            </button>
+        </div>
+        <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            <template x-for="[key,label,color] in [['calories','Calories','text-purple-400'],['protein','Protein','text-brand-400'],['carbs','Carbs','text-emerald-400'],['fat','Fat','text-orange-400'],['fibre','Fibre','text-lime-400'],['water','Water','text-blue-400']]" :key="key">
+                <div class="bg-white/60 dark:bg-slate-800/60 rounded-xl p-3 text-center border border-white/20 dark:border-slate-700/50">
+                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1" x-text="label"></p>
+                    <p class="text-base sm:text-lg font-black" :class="color" x-text="getGoalNutritionSuggestion(profile.goals)[key]"></p>
+                    <p class="text-[8px] text-slate-500 font-medium" x-text="key==='calories'?'kcal':key==='water'?'ml':'g'"></p>
+                </div>
+            </template>
+        </div>
+        <p class="text-[10px] text-slate-500 font-medium">
+            Estimated TDEE: <span class="font-black text-slate-400" x-text="getGoalNutritionSuggestion(profile.goals).tdee+' kcal/day'"></span>
+        </p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1472,6 +1502,193 @@
     </div>
 </div>
 
+
+<!-- ═══ HOW TO USE GUIDE TAB ═══ -->
+<div x-show="activeTab==='guide'" class="space-y-6 p-4 md:p-8 lg:p-10">
+    <div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">📖 How to Use VYTARA</h2>
+        <p class="text-xs text-slate-400 font-medium mt-1.5">Your complete guide to getting the most out of the app.</p>
+    </div>
+
+    <!-- Quick Start -->
+    <div class="bg-gradient-to-r from-brand-500/10 to-purple-500/5 border border-brand-500/20 rounded-[1.5rem] p-6 space-y-3">
+        <h3 class="text-sm font-black text-brand-400 uppercase tracking-widest">⚡ Quick Start — 3 Steps</h3>
+        <ol class="space-y-2">
+            <li class="flex gap-3 items-start"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-[10px] font-black flex items-center justify-center">1</span><p class="text-xs text-slate-600 dark:text-slate-300 font-medium">Complete onboarding — enter name, weight, height, age, and select your goals</p></li>
+            <li class="flex gap-3 items-start"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-[10px] font-black flex items-center justify-center">2</span><p class="text-xs text-slate-600 dark:text-slate-300 font-medium">Log your first workout or meal using the sidebar or bottom navigation</p></li>
+            <li class="flex gap-3 items-start"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-[10px] font-black flex items-center justify-center">3</span><p class="text-xs text-slate-600 dark:text-slate-300 font-medium">Sign in with email to sync your data across devices using Firebase cloud</p></li>
+        </ol>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+        <!-- Dashboard -->
+        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm space-y-3">
+            <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">📊 Dashboard</h3>
+            <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                <li>• <strong class="text-slate-800 dark:text-white">Today's Nutrition Rings</strong> — 5 progress bars for Calories, Protein, Carbs, Fat, and Fibre vs your daily targets</li>
+                <li>• <strong class="text-slate-800 dark:text-white">💪 Workout Consistency (Blue)</strong> — 365-day heatmap showing workout days. Streak = consecutive days you worked out</li>
+                <li>• <strong class="text-slate-800 dark:text-white">🥗 Nutrition Consistency (Green)</strong> — 365-day heatmap for days you logged meals. Tracked separately from workouts</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Personal Records</strong> — Your heaviest set ever for each exercise, auto-calculated from your logs</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Click any heatmap cell</strong> to view that day's stats in the nutrition and water cards</li>
+            </ul>
+        </div>
+
+        <!-- Workouts -->
+        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm space-y-3">
+            <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">💪 Workouts</h3>
+            <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                <li>• <strong class="text-slate-800 dark:text-white">Log Workout</strong> — Add exercises with Sets, Reps (or Seconds for timed exercises like Plank) and Weight</li>
+                <li>• <strong class="text-slate-800 dark:text-white">⏱ Timed Exercises</strong> — Plank, Side Plank, Wall Sit, Dead Hang etc. automatically switch to Seconds input</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Exercise Guide (ℹ️)</strong> — Click the info button on any exercise to see the muscle diagram and instructions</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Sets & Max Weight</strong> — Each exercise shows total sets completed and your heaviest set (not volume sum)</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Clone Workout</strong> — Repeat a previous workout with one click from the history list</li>
+            </ul>
+        </div>
+
+        <!-- Nutrition -->
+        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm space-y-3">
+            <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">🥗 Nutrition</h3>
+            <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                <li>• <strong class="text-slate-800 dark:text-white">Log Meals</strong> — Click "+ Log Meal", choose a meal type (Breakfast, Lunch, Supplements…), add food items</li>
+                <li>• <strong class="text-slate-800 dark:text-white">✨ AI Search</strong> — Type a food name + quantity → click "AI Search" → Gemini AI auto-fills Calories, Protein, Carbs, Fat, Fibre</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Food Library</strong> — Save custom foods to your library. They appear in autocomplete next time</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Meal Presets</strong> — Create preset meals in Settings for one-tap logging of regular meals</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Units</strong> — Choose g, ml, pc (pieces), tablet, capsule, scoop etc. — great for supplements</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Same-day logs merge</strong> — All meals logged on the same logical day show as one entry in history</li>
+            </ul>
+        </div>
+
+        <!-- Goals -->
+        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm space-y-3">
+            <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">🎯 Goals</h3>
+            <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                <li>• <strong class="text-slate-800 dark:text-white">Select Goal Tags</strong> — Choose from Bulking, Cutting, Fat Loss, Build Muscle, Endurance etc.</li>
+                <li>• <strong class="text-slate-800 dark:text-white">AI Nutrition Suggestion</strong> — Once a goal is selected, a card appears with recommended Calories, Protein, Carbs, Fat, Fibre and Water targets calculated from your weight, height and goal type</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Apply Targets</strong> — Click "Apply These Targets" to set them as your daily nutrition goals</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Manual Targets</strong> — You can also set custom targets in the Daily Nutrition Targets section below</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Body Composition Goals</strong> — Set target weight, body fat %, and a deadline</li>
+            </ul>
+        </div>
+
+        <!-- Body Metrics -->
+        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm space-y-3">
+            <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">📐 Body Metrics</h3>
+            <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                <li>• <strong class="text-slate-800 dark:text-white">Log Weight &amp; Body Fat</strong> — Track changes over time with date-stamped entries</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Sleep &amp; Stress</strong> — Optional fields to track wellness metrics alongside body measurements</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Progress Chart</strong> — Weight trend chart updates automatically as you add entries</li>
+            </ul>
+        </div>
+
+        <!-- Progress Photos -->
+        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm space-y-3">
+            <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">📸 Progress Photos</h3>
+            <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                <li>• <strong class="text-slate-800 dark:text-white">Upload Photos</strong> — Add front, back, or side progress photos with a date label</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Before &amp; After</strong> — Photos are sorted by date so you can see your transformation journey</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Cloud Sync</strong> — Photos sync to Firebase when signed in (compressed for storage efficiency)</li>
+            </ul>
+        </div>
+
+        <!-- Challenges -->
+        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm space-y-3">
+            <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">⚡ Challenges</h3>
+            <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                <li>• <strong class="text-slate-800 dark:text-white">Send Challenge</strong> — Enter a friend's email, choose a metric (workouts / calories / volume), and set an end date</li>
+                <li>• <strong class="text-slate-800 dark:text-white">📬 Incoming Requests</strong> — When someone challenges you, it appears here — you can Accept or Decline</li>
+                <li>• <strong class="text-slate-800 dark:text-white">🔥 Active Challenges</strong> — Only shows after both sides accept. Live scores update in real time via Firebase</li>
+                <li>• <strong class="text-slate-800 dark:text-white">📤 Sent Challenges</strong> — Track status of challenges you sent: Awaiting Response, Active, or Declined</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Requires Sign In</strong> — Firebase account needed for real-time sync between users</li>
+            </ul>
+        </div>
+
+        <!-- Cloud Sync -->
+        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm space-y-3">
+            <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">☁️ Cloud Sync & Google Fit</h3>
+            <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                <li>• <strong class="text-slate-800 dark:text-white">Sign In</strong> — Use email + password to create an account. Your data syncs to Firebase and is available on any device</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Continue Offline</strong> — You can use the app without an account. Data stays on this device only</li>
+                <li>• <strong class="text-slate-800 dark:text-white">🏃 Google Fit</strong> — In Settings → Google Fit, click "Sign in with Google" to sync steps, calories burned and active minutes from your Google account's Fit data</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Why Google Sign-In?</strong> — Google Fit data is private to each user. Signing in lets the app read only YOUR Fit data with your permission — just like any fitness app</li>
+            </ul>
+        </div>
+
+        <!-- Settings -->
+        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm space-y-3">
+            <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">⚙️ Settings</h3>
+            <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                <li>• <strong class="text-slate-800 dark:text-white">Night Shift</strong> — Set a "day start hour" so meals logged after midnight count for the previous logical day</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Meal Presets</strong> — Create quick-add templates with food items for meals you eat regularly</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Food Library</strong> — Edit saved foods, adjust default amounts and macros per 100g</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Custom Exercises</strong> — Add exercises not in the built-in list</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Export</strong> — Download your complete data as PDF, JSON or CSV</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Dark / Light Mode</strong> — Toggle in the header</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <!-- Pro tips -->
+    <div class="bg-amber-500/8 border border-amber-500/20 rounded-[1.5rem] p-5 space-y-3">
+        <h3 class="text-sm font-black text-amber-400 uppercase tracking-widest">💡 Pro Tips</h3>
+        <ul class="space-y-1.5 text-xs text-slate-400 font-medium">
+            <li>• Log meals immediately after eating for accuracy — AI Search makes it fast</li>
+            <li>• Use the Exercise Guide (ℹ️) on each exercise in the workout modal to see muscle diagrams and form cues</li>
+            <li>• Set up Meal Presets for your regular meals — saves time logging breakfast every day</li>
+            <li>• Your streak resets if you miss a day — log even a light session or a single meal to keep it going</li>
+            <li>• Use Clone on past workouts to repeat the same routine without re-entering all exercises</li>
+            <li>• Supplements like Creatine, Fish Oil etc. can be logged under "💊 Supplements" meal type with units: tablet, capsule, scoop</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ═══ FEEDBACK TAB ═══ -->
+<div x-show="activeTab==='feedback'" class="space-y-6 p-4 md:p-8 lg:p-10">
+    <div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">💬 Feedback</h2>
+        <p class="text-xs text-slate-400 font-medium mt-1.5">Share your thoughts, report bugs, or suggest features.</p>
+    </div>
+    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[1.5rem] shadow-sm space-y-5 max-w-xl">
+        <div x-show="feedbackSent" class="p-5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-center space-y-2">
+            <p class="text-2xl">✅</p>
+            <p class="font-black text-emerald-400">Feedback sent! Thank you.</p>
+            <button @click="feedbackSent=false;feedbackForm={name:'',email:'',message:'',rating:5}" class="text-xs text-slate-400 underline mt-1">Send another</button>
+        </div>
+        <div x-show="!feedbackSent" class="space-y-4">
+            <!-- Star Rating -->
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-2">Rating</label>
+                <div class="flex gap-2">
+                    <template x-for="star in [1,2,3,4,5]" :key="star">
+                        <button @click="feedbackForm.rating=star"
+                                class="text-2xl transition-transform hover:scale-125"
+                                :class="star<=feedbackForm.rating?'text-amber-400':'text-slate-300 dark:text-slate-600'">★</button>
+                    </template>
+                </div>
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Your Name</label>
+                <input type="text" x-model="feedbackForm.name" placeholder="Your name">
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Email (optional)</label>
+                <input type="email" x-model="feedbackForm.email" placeholder="you@example.com">
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Message</label>
+                <textarea x-model="feedbackForm.message" rows="4" placeholder="Share what you love, what bugs you, or what you'd like to see added…"></textarea>
+            </div>
+            <button @click="sendFeedback()" :disabled="!feedbackForm.message.trim()"
+                    class="w-full bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-black py-3 rounded-xl text-xs uppercase tracking-widest transition-all shadow-md disabled:opacity-40">
+                Send Feedback
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
     </main><!-- end main content -->
 
     <!-- ── Fixed Footer ── -->
@@ -2070,7 +2287,11 @@
 // ==================== CONSTANTS ====================
 const VAULT_KEY = 'vytara_v10_vault';
 
-
+// ══════════════════════════════════════════════════════════════
+// DEVELOPER: Replace these keys before publishing to production
+// Users never see or configure these — they are registered once
+// by the app developer in Google Cloud Console / Google AI Studio
+// ══════════════════════════════════════════════════════════════
 const GEMINI_API_KEY = 'AQ.Ab8RN6L_LK0bXau5FIJfGmarqubmCy_AeFMvknbpi-e7h5HqCg';
 // Google OAuth2 Client ID — registered ONCE by developer for this domain.
 // All users sign in with their OWN Google accounts using this single client ID.
@@ -4635,24 +4856,35 @@ function vytaraApp() {
             const qty = amount > 0 ? `${amount} ${unit}` : '100g';
             const prompt = `Give nutritional values for ${qty} of "${food}". Reply ONLY with this JSON, no extra text: {"calories":number,"protein":number,"carbs":number,"fat":number,"fibre":number}`;
             let lastErr = null;
-            for(const model of models) {
+            // Try multiple API variations to support both AIza and AQ.Ab key formats
+            const variations = [
+                { url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, useHeader: false },
+                { url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`, useHeader: true },
+                { url: `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, useHeader: false },
+                { url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, useHeader: false },
+                { url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`, useHeader: false },
+            ];
+            for(const v of variations) {
                 try {
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-                    const res = await fetch(url, {
+                    const headers = {'Content-Type':'application/json'};
+                    if(v.useHeader) { headers['x-goog-api-key'] = GEMINI_API_KEY; }
+                    const res = await fetch(v.url, {
                         method:'POST',
-                        headers:{'Content-Type':'application/json'},
+                        headers,
                         body:JSON.stringify({
                             contents:[{parts:[{text:prompt}]}],
-                            generationConfig:{temperature:0,maxOutputTokens:150,responseMimeType:'application/json'}
+                            generationConfig:{temperature:0.1,maxOutputTokens:200}
                         })
                     });
                     const data = await res.json();
-                    if(!res.ok) { lastErr = (data.error?.message||'HTTP '+res.status); continue; }
-                    if(data.error) { lastErr = data.error.message; continue; }
-                    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-                    const clean = raw.replace(/```json|```/g,'').replace(/\n/g,'').trim();
-                    const n = JSON.parse(clean.startsWith('{') ? clean : '{}');
-                    if((n.calories||n.protein)>0) {
+                    if(!res.ok || data.error) { lastErr = data?.error?.message||'HTTP '+res.status; continue; }
+                    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                    if(!raw) { lastErr='Empty'; continue; }
+                    // Extract JSON — handle markdown code blocks
+                    const jsonMatch = raw.match(/\{[^{}]*\}/s);
+                    if(!jsonMatch) { lastErr='No JSON'; continue; }
+                    const n = JSON.parse(jsonMatch[0]);
+                    if((n.calories||0)+(n.protein||0)+(n.carbs||0)+(n.fat||0) > 0) {
                         this.mealEntry.calories = Math.round(n.calories||0);
                         this.mealEntry.protein  = Math.round((n.protein||0)*10)/10;
                         this.mealEntry.carbs    = Math.round((n.carbs||0)*10)/10;
@@ -4662,8 +4894,8 @@ function vytaraApp() {
                         this.aiNutritionLoading = false;
                         return; // success
                     }
-                    lastErr = 'Empty response'; continue;
-                } catch(e) { lastErr = e.message; continue; }
+                    lastErr='Zero values'; continue;
+                } catch(e) { lastErr = e.message||String(e); continue; }
             }
             // All models failed
             console.warn('Gemini nutrition lookup failed:', lastErr);
