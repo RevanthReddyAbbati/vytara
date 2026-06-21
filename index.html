@@ -468,78 +468,93 @@
         </div>
     </div>
 
-    <!-- Heatmap -->
-    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[2rem] overflow-hidden shadow-sm">
-        <div class="relative px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-800/80">
-            <div class="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <!-- Consistency Trackers (Workout + Nutrition separate) -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+
+    <!-- WORKOUT Consistency -->
+    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] overflow-hidden shadow-sm">
+        <div class="px-5 pt-5 pb-3 border-b border-slate-100 dark:border-slate-800/60">
+            <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-base font-extrabold tracking-tight flex items-center gap-2">📈 Consistency Tracker</h3>
-                    <p class="text-xs text-slate-400 mt-1">365-day activity heatmap — every log counts.</p>
+                    <p class="text-[10px] font-black text-brand-400 uppercase tracking-widest">💪 Workout Consistency</p>
+                    <p class="text-[10px] text-slate-400 font-bold mt-0.5" x-text="computedMetrics.workoutsThisMonth+' this month'"></p>
                 </div>
-                <div class="flex gap-2 flex-wrap">
-                    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20">
-                        <span class="text-orange-400">🔥</span>
-                        <span class="text-xs font-black text-orange-400" x-text="currentStreak"></span>
-                        <span class="text-[10px] text-orange-300/70">day streak</span>
-                    </div>
-                    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-500/10 border border-brand-500/20">
-                        <span class="text-brand-400">⚡</span>
-                        <span class="text-xs font-black text-brand-400" x-text="totalActiveDays"></span>
-                        <span class="text-[10px] text-brand-300/70">active days</span>
-                    </div>
-                    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                        <span class="text-emerald-400">🏆</span>
-                        <span class="text-xs font-black text-emerald-400" x-text="longestStreak"></span>
-                        <span class="text-[10px] text-emerald-300/70">best streak</span>
-                    </div>
+                <div class="text-right">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Streak</p>
+                    <p class="text-2xl font-black text-brand-500" x-text="computedMetrics.workoutStreak"></p>
+                    <p class="text-[9px] text-slate-400">days</p>
                 </div>
             </div>
         </div>
-        <div class="px-6 pt-4 pb-2 overflow-x-auto no-scrollbar">
-            <div class="flex gap-1 min-w-max mb-1 ml-5">
-                <template x-for="(label,idx) in heatmapMonthLabels" :key="idx">
-                    <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest" :style="`width:${label.width}px;min-width:${label.width}px;`" x-text="label.name"></div>
+        <div class="px-4 pb-4 pt-3 overflow-x-auto no-scrollbar">
+            <div class="flex gap-1 min-w-max">
+                <template x-for="(week,wi) in (computedMetrics.heatmap||[])" :key="wi">
+                    <div class="flex flex-col gap-1">
+                        <template x-for="(cell,di) in week" :key="di">
+                            <div :title="cell.date+': '+(cell.workouts||0)+' workout(s)'"
+                                 class="w-3 h-3 rounded-[3px] cursor-pointer transition-colors"
+                                 :class="(cell.workouts||0)===0?'bg-slate-100 dark:bg-slate-800/70':(cell.workouts||0)===1?'bg-brand-300 dark:bg-brand-700':(cell.workouts||0)===2?'bg-brand-500':'bg-brand-600'"
+                                 @click="dashboardDate=cell.date"></div>
+                        </template>
+                    </div>
                 </template>
             </div>
-            <div class="flex gap-1 min-w-max">
-                <div class="grid grid-rows-7 gap-1 mr-1">
-                    <div class="w-4 h-3 text-[7px] font-black text-slate-400 leading-none flex items-center">M</div>
-                    <div class="w-4 h-3.5"></div>
-                    <div class="w-4 h-3.5 text-[8px] font-black text-slate-400 leading-none flex items-center">W</div>
-                    <div class="w-4 h-3.5"></div>
-                    <div class="w-4 h-3.5 text-[8px] font-black text-slate-400 leading-none flex items-center">F</div>
-                    <div class="w-4 h-3.5"></div>
-                    <div class="w-4 h-3.5 text-[8px] font-black text-slate-400 leading-none flex items-center">S</div>
-                </div>
-                <div class="grid grid-rows-7 grid-flow-col gap-1 min-w-max">
-                    <template x-for="day in heatmapDays" :key="day.date">
-                        <div class="w-3.5 h-3.5 rounded-[3px] cursor-pointer transition-all duration-150 hover:scale-125 relative group"
-                             :class="{'bg-slate-100 dark:bg-slate-800/50':day.level===0,'bg-brand-200 dark:bg-brand-900/70':day.level===1,'bg-brand-400 dark:bg-brand-500':day.level===2,'bg-brand-600 dark:bg-brand-300':day.level===3}">
-                            <div class="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 hidden group-hover:flex flex-col items-center pointer-events-none">
-                                <div class="bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-[9px] font-bold px-2 py-1 rounded-lg whitespace-nowrap shadow-xl" x-text="day.date+': '+day.count+' logs'"></div>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-            </div>
         </div>
-        <div class="px-6 pb-5 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800/60">
-            <div class="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                <span>Less</span>
-                <div class="w-3 h-3 rounded-[3px] bg-slate-100 dark:bg-slate-800/50"></div>
-                <div class="w-3 h-3 rounded-[3px] bg-brand-200 dark:bg-brand-900/70"></div>
-                <div class="w-3 h-3 rounded-[3px] bg-brand-400 dark:bg-brand-500"></div>
-                <div class="w-3 h-3 rounded-[3px] bg-brand-600 dark:bg-brand-300"></div>
-                <span>More</span>
+        <div class="px-5 pb-4 flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+                <span class="text-[9px] text-slate-400">None</span>
+                <div class="w-3 h-3 rounded-[3px] bg-slate-100 dark:bg-slate-800"></div>
+                <div class="w-3 h-3 rounded-[3px] bg-brand-300 dark:bg-brand-700"></div>
+                <div class="w-3 h-3 rounded-[3px] bg-brand-500"></div>
+                <div class="w-3 h-3 rounded-[3px] bg-brand-600"></div>
+                <span class="text-[9px] text-slate-400">3+</span>
             </div>
-            <div class="flex flex-wrap gap-3 text-[10px] font-bold text-slate-400">
-                <span>💪 Workout streak: <span class="text-brand-500 font-black" x-text="computedMetrics.workoutStreak+' days'"></span></span>
-                <span>🥗 Nutrition streak: <span class="text-emerald-500 font-black" x-text="computedMetrics.nutritionStreak+' days'"></span></span>
-                <span class="hidden sm:inline">Workouts: <span class="text-brand-400 font-black" x-text="workouts.length"></span></span>
-                <span class="hidden sm:inline">Meal logs: <span class="text-purple-400 font-black" x-text="dietLogs.length"></span></span>
-            </div>
+            <span class="text-[10px] font-bold text-slate-400" x-text="workouts.length+' total workouts logged'"></span>
         </div>
     </div>
+
+    <!-- NUTRITION Consistency -->
+    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] overflow-hidden shadow-sm">
+        <div class="px-5 pt-5 pb-3 border-b border-slate-100 dark:border-slate-800/60">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-[10px] font-black text-emerald-400 uppercase tracking-widest">🥗 Nutrition Consistency</p>
+                    <p class="text-[10px] text-slate-400 font-bold mt-0.5" x-text="computedMetrics.nutritionThisMonth+' this month'"></p>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Streak</p>
+                    <p class="text-2xl font-black text-emerald-500" x-text="computedMetrics.nutritionStreak"></p>
+                    <p class="text-[9px] text-slate-400">days</p>
+                </div>
+            </div>
+        </div>
+        <div class="px-4 pb-4 pt-3 overflow-x-auto no-scrollbar">
+            <div class="flex gap-1 min-w-max">
+                <template x-for="(week,wi) in (computedMetrics.heatmap||[])" :key="wi">
+                    <div class="flex flex-col gap-1">
+                        <template x-for="(cell,di) in week" :key="di">
+                            <div :title="cell.date+': '+(cell.meals||0)+' meal log(s)'"
+                                 class="w-3 h-3 rounded-[3px] cursor-pointer transition-colors"
+                                 :class="(cell.meals||0)===0?'bg-slate-100 dark:bg-slate-800/70':(cell.meals||0)===1?'bg-emerald-300 dark:bg-emerald-700':(cell.meals||0)===2?'bg-emerald-500':'bg-emerald-600'"
+                                 @click="dashboardDate=cell.date"></div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+        </div>
+        <div class="px-5 pb-4 flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+                <span class="text-[9px] text-slate-400">None</span>
+                <div class="w-3 h-3 rounded-[3px] bg-slate-100 dark:bg-slate-800"></div>
+                <div class="w-3 h-3 rounded-[3px] bg-emerald-300 dark:bg-emerald-700"></div>
+                <div class="w-3 h-3 rounded-[3px] bg-emerald-500"></div>
+                <div class="w-3 h-3 rounded-[3px] bg-emerald-600"></div>
+                <span class="text-[9px] text-slate-400">3+</span>
+            </div>
+            <span class="text-[10px] font-bold text-slate-400" x-text="dietLogs.length+' total nutrition logs'"></span>
+        </div>
+    </div>
+</div>
 
     <!-- Charts -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -573,7 +588,7 @@
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
         <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-[1.5rem] shadow-sm" style="height:260px;">
-            <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Training Volume</p>
+            <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Weekly Workouts</p>
             <div class="relative" style="height:200px;">
                 <div x-show="workouts.length===0" class="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-bold border border-dashed border-slate-200 dark:border-slate-800 rounded-xl italic">No workouts yet.</div>
                 <canvas id="canvas-workout-volume" x-show="workouts.length>0" style="display:block;width:100%;height:100%;"></canvas>
@@ -1115,7 +1130,8 @@
                 <ul class="text-xs text-slate-400 font-medium space-y-1.5 ml-10">
                     <li>• <strong class="text-slate-300">Today's Snapshot</strong> — Calories, protein, water intake and active goals for today</li>
                     <li>• <strong class="text-slate-300">Date Picker</strong> — Tap any date to view that day's stats. Click "Today" to return to the current date.</li>
-                    <li>• <strong class="text-slate-300">Activity Heatmap</strong> — 365-day calendar showing your consistency. Darker = more active. 1 rest day per week is allowed without breaking your streak.</li>
+                    <li>• <strong class="text-slate-300">Workout Consistency (Blue)</strong> — 365-day heatmap showing workout frequency. Streak counts consecutive days with a workout logged.</li>
+                    <li>• <strong class="text-slate-300">Nutrition Consistency (Green)</strong> — 365-day heatmap showing days nutrition was logged. Separate streak from workouts so you can track both independently.</li>
                     <li>• <strong class="text-slate-300">Charts</strong> — Weight trend (last 30 days) and calorie intake (last 14 days)</li>
                 </ul>
             </div>
@@ -1157,6 +1173,7 @@
                     <li>• <strong class="text-slate-300">Food Library</strong> — Type in the search box. If the food is in your library (📐 icon), selecting it shows the macro calculator.</li>
                     <li>• <strong class="text-slate-300">Quantity Calculator</strong> — After selecting a library food, enter the amount (e.g., 250g). Macros auto-calculate! Change the amount and macros update instantly.</li>
                     <li>• <strong class="text-slate-300">Multiple Items</strong> — Click "+ Add to Meal" after each food item. You can add rice, curry, eggs — as many items as you ate. All macros add up automatically in the Total row.</li>
+                    <li>• <strong class="text-slate-300">✨ AI Search</strong> — Type a food name, then click the "AI Search" button to auto-fill all nutrition values (Calories, Protein, Carbs, Fat, Fibre) using Gemini AI. Requires Gemini API key in Settings → AI & Integrations.</li>
                     <li>• <strong class="text-slate-300">Edit Items</strong> — Click the ✏️ button on any item to edit it. The form fills with that item's data. Click "Update Item" to save changes.</li>
                     <li>• <strong class="text-slate-300">Save to Library</strong> — After entering a food manually, click "💾 Save to Library" to save it for future use. Enter the quantity first so it saves with a default serving size.</li>
                     <li>• <strong class="text-slate-300">Meal Presets</strong> — Set up your typical meals in Settings → Meal Presets for quick one-tap adding.</li>
@@ -1253,6 +1270,7 @@
                     <li>• <strong class="text-slate-300">Auto Sync</strong> — All your data (workouts, nutrition, metrics, food library, photos) automatically syncs to the cloud.</li>
                     <li>• <strong class="text-slate-300">New Device</strong> — Sign in with the same email on any other device and all your data will be there.</li>
                     <li>• <strong class="text-slate-300">Local Mode</strong> — You can use the app without an account. Data is stored only on this device. If you clear browser data, it will be lost.</li>
+                    <li>• <strong class="text-slate-300">🏃 Google Fit</strong> — Go to Settings → Google Fit → enter your Google OAuth Client ID → click "Connect" to sync steps, calories burned and active minutes.</li>
                 </ul>
             </div>
         </div>
@@ -1274,6 +1292,7 @@
                     <li>• <strong class="text-slate-300">Food Library</strong> — Manage your saved foods, edit macros, set default servings.</li>
                     <li>• <strong class="text-slate-300">Data Export</strong> — Export all your data as PDF report, JSON backup, or CSV.</li>
                     <li>• <strong class="text-slate-300">Dark/Light Mode</strong> — Toggle in the top-right corner on any screen.</li>
+                    <li>• <strong class="text-slate-300">AI & Integrations</strong> — Enter your Gemini API key to enable AI nutrition search. Enter your Google OAuth Client ID to connect Google Fit.</li>
                 </ul>
             </div>
         </div>
@@ -1673,41 +1692,59 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">🏃 Google Fit</h3>
-                <p class="text-xs text-slate-400 font-medium mt-1">Sync steps, calories burned and active minutes</p>
+                <p class="text-xs text-slate-400 font-medium mt-1">
+                    <span x-show="!googleFitConnected">Sign in with Google to sync steps, calories burned and active minutes from Google Fit</span>
+                    <span x-show="googleFitConnected">Connected — your Google Fit activity data is syncing</span>
+                </p>
             </div>
-            <button x-show="!googleFitConnected" @click="connectGoogleFit()"
-                    class="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2.5 px-5 rounded-xl text-xs uppercase tracking-wider transition-all">
-                Connect Google Fit
-            </button>
-            <div x-show="googleFitConnected" class="flex items-center gap-2">
-                <span class="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg">✓ Connected</span>
-                <button @click="disconnectGoogleFit()" class="text-red-400 text-[10px] font-black border border-red-400/30 px-2 py-1 rounded-lg hover:bg-red-500/10">Disconnect</button>
+            <div class="flex items-center gap-2">
+                <button x-show="!googleFitConnected" @click="connectGoogleFit()"
+                        class="flex items-center gap-2.5 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 hover:border-blue-400 text-slate-700 dark:text-slate-200 font-semibold py-2.5 px-5 rounded-xl text-sm transition-all shadow-sm hover:shadow-md active:scale-95">
+                    <svg width="18" height="18" viewBox="0 0 24 24">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                    </svg>
+                    Sign in with Google
+                </button>
+                <div x-show="googleFitConnected" class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5 text-[11px] font-black text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
+                        Connected
+                    </div>
+                    <button @click="disconnectGoogleFit()" class="text-[11px] font-black text-slate-400 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg hover:text-red-400 hover:border-red-400/30 transition-all">Sign out</button>
+                </div>
             </div>
         </div>
-        <div x-show="googleFitConnected" class="grid grid-cols-3 gap-3">
-            <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 text-center">
-                <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Steps Today</p>
-                <p class="text-xl font-black text-emerald-400" x-text="(googleFitData.stepsToday||0).toLocaleString()"></p>
+        <div x-show="googleFitConnected" class="space-y-3">
+            <div class="grid grid-cols-3 gap-3">
+                <div class="rounded-2xl p-4 text-center space-y-1 bg-emerald-500/8 border border-emerald-500/15">
+                    <p class="text-2xl">🚶</p>
+                    <p class="text-2xl font-black text-emerald-400" x-text="(googleFitData.stepsToday||0).toLocaleString()"></p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Steps</p>
+                    <div class="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
+                        <div class="bg-emerald-400 h-full rounded-full" :style="'width:'+Math.min(100,Math.round((googleFitData.stepsToday||0)/10000*100))+'%'"></div>
+                    </div>
+                </div>
+                <div class="rounded-2xl p-4 text-center space-y-1 bg-orange-500/8 border border-orange-500/15">
+                    <p class="text-2xl">🔥</p>
+                    <p class="text-2xl font-black text-orange-400" x-text="(googleFitData.calsBurned||0)+'kcal'"></p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Burned</p>
+                </div>
+                <div class="rounded-2xl p-4 text-center space-y-1 bg-brand-500/8 border border-brand-500/15">
+                    <p class="text-2xl">⚡</p>
+                    <p class="text-2xl font-black text-brand-400" x-text="(googleFitData.activeMins||0)+'min'"></p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Active</p>
+                </div>
             </div>
-            <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 text-center">
-                <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Cals Burned</p>
-                <p class="text-xl font-black text-orange-400" x-text="(googleFitData.calsBurned||0)+' kcal'"></p>
-            </div>
-            <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 text-center">
-                <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Active Mins</p>
-                <p class="text-xl font-black text-brand-400" x-text="(googleFitData.activeMins||0)+' min'"></p>
-            </div>
-        </div>
-        <div x-show="googleFitConnected" class="flex gap-2">
             <button @click="syncGoogleFitData()" :disabled="googleFitSyncing"
-                    class="flex-1 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 font-black py-2 rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-40">
-                <span x-show="!googleFitSyncing">🔄 Sync Now</span>
-                <span x-show="googleFitSyncing">Syncing…</span>
+                    class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/40 transition-all disabled:opacity-40">
+                <span x-show="!googleFitSyncing">🔄 Refresh Data</span>
+                <span x-show="googleFitSyncing" class="flex items-center gap-1.5">
+                    <span class="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin"></span>Syncing…</span>
             </button>
         </div>
-        <p x-show="!googleFitConnected" class="text-[10px] text-slate-500 font-medium">
-            ⚙️ Requires a Google OAuth Client ID. Add yours in the code (search YOUR_GOOGLE_CLIENT_ID) and enable the Google Fitness API in Google Cloud Console.
-        </p>
     </div>
 
 <div class="bg-white dark:bg-panelDark border border-red-500/20 p-6 rounded-[1.5rem]">
@@ -1990,12 +2027,18 @@
 
                         <!-- Item action buttons -->
                         <div class="flex gap-2">
-                            <!-- 🤖 AI Nutrition Lookup (Gemini) -->
+                            <!-- AI Nutrition Lookup (Gemini) -->
                             <button @click="lookupNutritionAI()" :disabled="aiNutritionLoading||!mealEntry.name"
-                                    class="shrink-0 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-400 font-black py-2.5 px-3 rounded-xl text-xs transition-all disabled:opacity-40"
-                                    title="AI auto-fill: get nutrition data for this food">
-                                <span x-show="!aiNutritionLoading">🤖</span>
-                                <span x-show="aiNutritionLoading" class="block w-3.5 h-3.5 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin"></span>
+                                    class="shrink-0 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-400 font-black py-2 px-3 rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-40 flex items-center gap-1.5"
+                                    title="AI nutrition lookup — auto-fills macros">
+                                <span x-show="!aiNutritionLoading" class="flex items-center gap-1">
+                                    <span class="text-[10px]">✨</span>
+                                    <span class="hidden sm:inline">AI Search</span>
+                                </span>
+                                <span x-show="aiNutritionLoading" class="flex items-center gap-1">
+                                    <span class="w-3 h-3 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin inline-block"></span>
+                                    <span class="hidden sm:inline text-[10px]">Searching…</span>
+                                </span>
                             </button>
                             <button @click="addItemToActiveMeal()"
                                     class="flex-1 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all shadow-sm"
@@ -2307,6 +2350,19 @@
 <script>
 // ==================== CONSTANTS ====================
 const VAULT_KEY = 'vytara_v10_vault';
+
+// ══════════════════════════════════════════════════════════════
+// DEVELOPER: Replace these keys before publishing to production
+// Users never see or configure these — they are registered once
+// by the app developer in Google Cloud Console / Google AI Studio
+// ══════════════════════════════════════════════════════════════
+const GEMINI_API_KEY = 'AQ.Ab8RN6L_LK0bXau5FIJfGmarqubmCy_AeFMvknbpi-e7h5HqCg';
+// Google OAuth2 Client ID — registered ONCE by developer for this domain.
+// All users sign in with their OWN Google accounts using this single client ID.
+// Register at: https://console.cloud.google.com → APIs & Services → Credentials
+// → Create OAuth 2.0 Client ID → Web Application → add your domain as authorized origin
+const GFIT_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+// ══════════════════════════════════════════════════════════════
 const LEGACY_KEYS = ['vytara_v8_vault','vytara_v7_vault'];
 
 const SYSTEM_GOALS = ['Bulking','Cutting','Lean Bulk','Fat Loss','Body Recomposition','Maintain Weight','Build Muscle','Increase Strength','Improve Endurance','Lose Weight','Eat Healthier','Improve Flexibility','Better Sleep','Reduce Stress','Athletic Performance','Powerlifting','Bodybuilding','Cardio Fitness','Flexibility & Mobility','General Health'];
@@ -3339,7 +3395,7 @@ function vytaraApp() {
             goals:[], targetWeight:'', targetBodyFat:'', targetDate:'',
             nutritionTargets:{ calories:2000, protein:150, carbs:200, fat:65, water:2500, fiber:30 },
             mealPresets: [{name:'Meal 1',time:'07:00'},{name:'Meal 2',time:'10:00'},{name:'Meal 3',time:'13:00'},{name:'Meal 4',time:'16:00'},{name:'Meal 5',time:'19:00'},{name:'Meal 6',time:'21:30'}],
-            dayStartHour: 4
+            dayStartHour: 4,
         },
         workouts: [],
         dietLogs: [],
@@ -4828,60 +4884,78 @@ function vytaraApp() {
             const amount = parseFloat(this.mealEntryAmount) || 0;
             const unit = this.mealEntry._unit || 'g';
             if(!food) { alert('Enter a food name first.'); return; }
-            const apiKey = 'AQ.Ab8RN6L_LK0bXau5FIJfGmarqubmCy_AeFMvknbpi-e7h5HqCg'; 
-            if(apiKey === 'YOUR_GEMINI_API_KEY_HERE') {
-                alert('Please add your Gemini API key in the code (search for YOUR_GEMINI_API_KEY_HERE) to use AI nutrition lookup.');
+            if(!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
+                alert('AI nutrition search is not enabled for this version of the app.');
                 return;
             }
             this.aiNutritionLoading = true;
             try {
-                const qty = amount > 0 ? `${amount} ${unit}` : 'standard serving';
-                const prompt = `Give nutritional info for: ${qty} of "${food}". Return ONLY valid JSON: {"calories":number,"protein":number,"carbs":number,"fat":number,"fibre":number}. Use grams for macros. No explanation.`;
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                const qty = amount > 0 ? `${amount} ${unit}` : '100g';
+                const prompt = `Nutritional info for ${qty} of "${food}". Respond with ONLY a JSON object, no extra text: {"calories":number,"protein":number,"carbs":number,"fat":number,"fibre":number}`;
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                     method:'POST',
                     headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.1}})
+                    body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:200}})
                 });
+                if(!res.ok) throw new Error('API '+res.status);
                 const data = await res.json();
-                const text = data.candidates?.[0]?.content?.parts?.[0]?.text||'{}';
-                const clean = text.replace(/\`\`\`json|\`\`\`/g,'').trim();
-                const nutrition = JSON.parse(clean);
-                this.mealEntry.calories = Math.round(nutrition.calories||0);
-                this.mealEntry.protein  = Math.round((nutrition.protein||0)*10)/10;
-                this.mealEntry.carbs    = Math.round((nutrition.carbs||0)*10)/10;
-                this.mealEntry.fat      = Math.round((nutrition.fat||0)*10)/10;
-                this.mealEntry.fibre    = Math.round((nutrition.fibre||nutrition.fiber||0)*10)/10;
-                this.mealEntryFoodRef = null; // Show manual fields with filled values
+                if(data.error) throw new Error(data.error.message);
+                const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+                const clean = raw.replace(/```json|```/g,'').trim();
+                const n = JSON.parse(clean);
+                this.mealEntry.calories = Math.round(n.calories||0);
+                this.mealEntry.protein  = Math.round((n.protein||0)*10)/10;
+                this.mealEntry.carbs    = Math.round((n.carbs||0)*10)/10;
+                this.mealEntry.fat      = Math.round((n.fat||0)*10)/10;
+                this.mealEntry.fibre    = Math.round((n.fibre||n.fiber||0)*10)/10;
+                this.mealEntryFoodRef   = null;
             } catch(e) {
-                alert('AI lookup failed: '+(e.message||e)+'. Try again or enter manually.');
+                alert('AI lookup unavailable. Please enter macros manually.');
+                console.warn('Gemini error:', e);
             }
             this.aiNutritionLoading = false;
         },
 
         // ==================== GOOGLE FIT ====================
         connectGoogleFit() {
-            // Google Fit OAuth2 - requires a registered OAuth client ID
-            const CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com'; // Replace with your OAuth client ID
-            const SCOPE = 'https://www.googleapis.com/auth/fitness.activity.read https://www.googleapis.com/auth/fitness.body.read';
-            const REDIRECT = encodeURIComponent(window.location.href.split('?')[0]);
-            const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT}&response_type=token&scope=${encodeURIComponent(SCOPE)}&state=gfit`;
-            // Open OAuth popup
-            const popup = window.open(authUrl, 'googlefit', 'width=500,height=600,menubar=no,toolbar=no');
+            // GFIT_CLIENT_ID is the developer's registered OAuth client ID.
+            // Users sign in with their own Google accounts — they never need credentials.
+            if(!GFIT_CLIENT_ID || GFIT_CLIENT_ID.includes('YOUR_GOOGLE_CLIENT_ID')) {
+                alert('Google Fit integration is coming soon.');
+                return;
+            }
+            const SCOPE = encodeURIComponent([
+                'https://www.googleapis.com/auth/fitness.activity.read',
+                'https://www.googleapis.com/auth/fitness.body.read'
+            ].join(' '));
+            const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
+            const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
+                + '?client_id=' + GFIT_CLIENT_ID
+                + '&redirect_uri=' + redirectUri
+                + '&response_type=token'
+                + '&scope=' + SCOPE
+                + '&prompt=select_account'
+                + '&access_type=online';
+            const popup = window.open(authUrl, 'googlefit_auth', 'width=520,height=640,menubar=no,toolbar=no,location=yes');
+            if(!popup) { alert('Popups are blocked. Please allow popups for this site and try again.'); return; }
             const poll = setInterval(() => {
                 try {
-                    if(popup.closed) { clearInterval(poll); return; }
+                    if(!popup || popup.closed) { clearInterval(poll); return; }
                     const hash = popup.location.hash;
                     if(hash && hash.includes('access_token')) {
                         clearInterval(poll);
                         popup.close();
                         const params = new URLSearchParams(hash.slice(1));
-                        this.googleFitAccessToken = params.get('access_token');
-                        this.googleFitConnected = true;
-                        this.persist();
-                        this.syncGoogleFitData();
+                        const token = params.get('access_token');
+                        if(token) {
+                            this.googleFitAccessToken = token;
+                            this.googleFitConnected = true;
+                            this.persist();
+                            this.syncGoogleFitData();
+                        }
                     }
-                } catch(e) {}
-            }, 500);
+                } catch(e) { /* Cross-origin polling — expected until redirect back */ }
+            }, 700);
         },
 
         disconnectGoogleFit() {
