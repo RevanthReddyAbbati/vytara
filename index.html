@@ -473,16 +473,26 @@
 
     <!-- WORKOUT Consistency -->
     <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] overflow-hidden shadow-sm">
-        <div class="px-5 pt-5 pb-3 border-b border-slate-100 dark:border-slate-800/60">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-[10px] font-black text-brand-400 uppercase tracking-widest">💪 Workout Consistency</p>
-                    <p class="text-[10px] text-slate-400 font-bold mt-0.5" x-text="computedMetrics.workoutsThisMonth+' this month'"></p>
+        <div class="px-5 pt-4 pb-3 border-b border-slate-100 dark:border-slate-800/60">
+            <div class="flex items-center justify-between gap-2">
+                <p class="text-[10px] font-black text-brand-400 uppercase tracking-widest">💪 Workout Consistency</p>
+                <p class="text-[10px] text-slate-400 font-bold" x-text="computedMetrics.workoutsThisMonth"></p>
+            </div>
+            <div class="grid grid-cols-3 gap-2 mt-3">
+                <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-2.5 text-center">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Current</p>
+                    <p class="text-xl font-black text-brand-500" x-text="computedMetrics.workoutStreak"></p>
+                    <p class="text-[8px] text-slate-400">day streak</p>
                 </div>
-                <div class="text-right">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Streak</p>
-                    <p class="text-2xl font-black text-brand-500" x-text="computedMetrics.workoutStreak"></p>
-                    <p class="text-[9px] text-slate-400">days</p>
+                <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-2.5 text-center">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Best Ever</p>
+                    <p class="text-xl font-black text-amber-400" x-text="computedMetrics.workoutBestStreak"></p>
+                    <p class="text-[8px] text-slate-400">day streak</p>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-2.5 text-center">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Total</p>
+                    <p class="text-xl font-black text-emerald-400" x-text="workouts.length"></p>
+                    <p class="text-[8px] text-slate-400">workouts</p>
                 </div>
             </div>
         </div>
@@ -515,16 +525,26 @@
 
     <!-- NUTRITION Consistency -->
     <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] overflow-hidden shadow-sm">
-        <div class="px-5 pt-5 pb-3 border-b border-slate-100 dark:border-slate-800/60">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-[10px] font-black text-emerald-400 uppercase tracking-widest">🥗 Nutrition Consistency</p>
-                    <p class="text-[10px] text-slate-400 font-bold mt-0.5" x-text="computedMetrics.nutritionThisMonth+' this month'"></p>
+        <div class="px-5 pt-4 pb-3 border-b border-slate-100 dark:border-slate-800/60">
+            <div class="flex items-center justify-between gap-2">
+                <p class="text-[10px] font-black text-emerald-400 uppercase tracking-widest">🥗 Nutrition Consistency</p>
+                <p class="text-[10px] text-slate-400 font-bold" x-text="computedMetrics.nutritionThisMonth"></p>
+            </div>
+            <div class="grid grid-cols-3 gap-2 mt-3">
+                <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-2.5 text-center">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Current</p>
+                    <p class="text-xl font-black text-emerald-500" x-text="computedMetrics.nutritionStreak"></p>
+                    <p class="text-[8px] text-slate-400">day streak</p>
                 </div>
-                <div class="text-right">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Streak</p>
-                    <p class="text-2xl font-black text-emerald-500" x-text="computedMetrics.nutritionStreak"></p>
-                    <p class="text-[9px] text-slate-400">days</p>
+                <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-2.5 text-center">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Best Ever</p>
+                    <p class="text-xl font-black text-amber-400" x-text="computedMetrics.nutritionBestStreak"></p>
+                    <p class="text-[8px] text-slate-400">day streak</p>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-2.5 text-center">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Total</p>
+                    <p class="text-xl font-black text-purple-400" x-text="dietLogs.length"></p>
+                    <p class="text-[8px] text-slate-400">meal logs</p>
                 </div>
             </div>
         </div>
@@ -555,6 +575,93 @@
         </div>
     </div>
 </div>
+
+    <!-- ══ RANK & BADGES ══ -->
+    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] overflow-hidden shadow-sm">
+        <!-- Rank Header -->
+        <div class="relative px-6 py-5 border-b border-slate-100 dark:border-slate-800/60 overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-r from-brand-500/8 to-purple-500/5"></div>
+            <div class="relative flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500/20 to-purple-500/20 border border-brand-500/20 flex items-center justify-center text-3xl">
+                        <span x-text="getUserRank().icon"></span>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Your Rank</p>
+                        <p class="text-2xl font-black" :class="getUserRank().color" x-text="getUserRank().rank"></p>
+                        <p class="text-[10px] text-slate-400 font-bold mt-0.5" x-text="earnedBadges.length+' / '+computeBadges().length+' badges earned'"></p>
+                    </div>
+                </div>
+                <!-- Rank Progress Bar -->
+                <div class="flex-1 min-w-[160px] max-w-xs space-y-1.5">
+                    <div class="flex justify-between text-[9px] font-black text-slate-400 uppercase">
+                        <span x-text="getUserRank().rank"></span>
+                        <span x-text="earnedBadges.length+' badges'"></span>
+                    </div>
+                    <div class="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full bg-gradient-to-r from-brand-500 to-purple-500 transition-all duration-700"
+                             :style="'width:'+Math.min(100,Math.round(earnedBadges.length/computeBadges().length*100))+'%'"></div>
+                    </div>
+                    <p class="text-[9px] text-slate-500 font-medium text-right"
+                       x-text="(computeBadges().length-earnedBadges.length)+' badges to next rank'"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Earned Badges -->
+        <div x-show="earnedBadges.length>0" class="px-6 pt-5 pb-4 space-y-3">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">🏅 Earned Badges</p>
+            <div class="flex flex-wrap gap-2">
+                <template x-for="b in earnedBadges" :key="b.id">
+                    <div class="group relative flex items-center gap-2 px-3 py-2 rounded-xl border transition-all cursor-default"
+                         :class="{
+                             'bg-amber-500/15 border-amber-500/40 shadow-amber-500/20 shadow-sm': b.tier==='platinum',
+                             'bg-yellow-500/12 border-yellow-500/30': b.tier==='gold',
+                             'bg-slate-200/80 dark:bg-slate-700/50 border-slate-300/50 dark:border-slate-600/40': b.tier==='silver',
+                             'bg-amber-700/8 border-amber-700/20 dark:bg-slate-800/60 dark:border-slate-700/40': b.tier==='bronze',
+                         }">
+                        <span class="text-xl leading-none" x-text="b.icon"></span>
+                        <div>
+                            <p class="text-[10px] font-black leading-tight"
+                               :class="b.tier==='platinum'?'text-amber-300':b.tier==='gold'?'text-yellow-400':b.tier==='silver'?'text-slate-300':'text-amber-600 dark:text-amber-400'"
+                               x-text="b.name"></p>
+                            <p class="text-[8px] font-medium text-slate-400 leading-tight" x-text="b.desc"></p>
+                        </div>
+                        <!-- Tier pill -->
+                        <span class="hidden group-hover:block absolute -top-5 left-1/2 -translate-x-1/2 text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full whitespace-nowrap z-10"
+                              :class="b.tier==='platinum'?'bg-amber-400 text-white':b.tier==='gold'?'bg-yellow-400 text-black':b.tier==='silver'?'bg-slate-400 text-white':'bg-amber-700 text-white'"
+                              x-text="b.tier"></span>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Next Badges to unlock -->
+        <div x-show="nextBadges.length>0" class="px-6 pb-5 space-y-3">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">🔒 Up Next — Keep Going!</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                <template x-for="b in nextBadges" :key="b.id">
+                    <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-700/60 opacity-80 hover:opacity-100 transition-opacity">
+                        <span class="text-xl grayscale opacity-50" x-text="b.icon"></span>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[10px] font-black text-slate-500 dark:text-slate-400 leading-tight truncate" x-text="b.name"></p>
+                            <div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full mt-1 overflow-hidden">
+                                <div class="h-full rounded-full bg-gradient-to-r from-brand-400 to-purple-400 transition-all"
+                                     :style="'width:'+Math.round(b.progress/b.total*100)+'%'"></div>
+                            </div>
+                            <p class="text-[8px] text-slate-400 font-medium mt-0.5" x-text="b.progress+' / '+b.total"></p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Empty state -->
+        <div x-show="earnedBadges.length===0" class="px-6 pb-6 text-center space-y-2">
+            <p class="text-slate-400 text-sm font-bold">No badges yet — start logging to earn your first!</p>
+            <p class="text-slate-500 text-xs">Log a workout or meal to unlock your first badge 🏋️</p>
+        </div>
+    </div>
 
     <!-- Charts -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -3489,25 +3596,41 @@ function vytaraApp() {
                 `${waterToday>0?'💧 Water: '+waterToday+'ml logged.':'No water logged for this date.'} ${this.longestStreak>0?'Best streak: '+this.longestStreak+' days.':''}`
             ];
             const aiInsightText = aiTexts[new Date().getHours()%3];
-            // Compute separate workout & nutrition streaks
-            let wStrk=0, nStrk=0;
-            try {
+            // Compute streaks (current + best all-time)
+            const _streak = (dates) => {
+                const dateSet = new Set(dates);
+                let cur=0, best=0, run=0;
                 const td=this.getToday();
                 let dd=new Date(td+'T12:00:00');
                 for(let i=0;i<200;i++){
                     const ds=dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');
-                    if(this.workouts.some(w=>w.date===ds)) wStrk++; else if(i>0) break;
+                    if(dateSet.has(ds)){cur++; if(i===0||cur>0){}} else if(i>0) break;
                     dd.setDate(dd.getDate()-1);
                 }
-                dd=new Date(td+'T12:00:00');
-                for(let i=0;i<200;i++){
-                    const ds=dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');
-                    if(this.dietLogs.some(d=>d.date===ds)) nStrk++; else if(i>0) break;
-                    dd.setDate(dd.getDate()-1);
+                // Best streak — scan all sorted dates
+                const sorted=[...dateSet].sort();
+                let tmp=1;
+                for(let i=1;i<sorted.length;i++){
+                    const prev=new Date(sorted[i-1]+'T12:00:00'), curr=new Date(sorted[i]+'T12:00:00');
+                    const diff=Math.round((curr-prev)/86400000);
+                    if(diff===1){tmp++;best=Math.max(best,tmp);}else{best=Math.max(best,tmp);tmp=1;}
                 }
+                best=Math.max(best,tmp,cur);
+                return {cur,best};
+            };
+            let wStrk=0, wBest=0, nStrk=0, nBest=0;
+            try {
+                const wS=_streak(this.workouts.map(w=>w.date).filter(Boolean));
+                const nS=_streak(this.dietLogs.map(d=>d.date).filter(Boolean));
+                wStrk=wS.cur; wBest=wS.best; nStrk=nS.cur; nBest=nS.best;
             } catch(e){}
             const heatmap=this._buildHeatmap();
-            return { currentWeight, targetWeight, progressPercent, caloriesToday, proteinToday, carbsToday, fatToday, fibreToday: Math.round(fibreToday*10)/10, waterToday, prs, aiInsightText, workoutStreak:wStrk, nutritionStreak:nStrk, workoutsThisMonth:this.workouts.filter(w=>w.date&&w.date.startsWith(today.slice(0,7))).length+'× logged', nutritionThisMonth:this.dietLogs.filter(d=>d.date&&d.date.startsWith(today.slice(0,7))).length+'× logged', heatmap };
+            return { currentWeight, targetWeight, progressPercent, caloriesToday, proteinToday, carbsToday, fatToday, fibreToday: Math.round(fibreToday*10)/10, waterToday, prs, aiInsightText,
+                workoutStreak:wStrk, workoutBestStreak:wBest,
+                nutritionStreak:nStrk, nutritionBestStreak:nBest,
+                workoutsThisMonth:this.workouts.filter(w=>w.date&&w.date.startsWith(today.slice(0,7))).length+'× this month',
+                nutritionThisMonth:this.dietLogs.filter(d=>d.date&&d.date.startsWith(today.slice(0,7))).length+'× this month',
+                heatmap };
         },
 
         // ==================== INIT ====================
@@ -4763,62 +4886,71 @@ function vytaraApp() {
             const height = parseFloat(p.height) || 170;
             const age    = parseInt(p.age) || 25;
             const gender = (p.gender || 'male').toLowerCase();
-            const goalsList = (goals || p.goals || []).map(g => (g||'').toLowerCase());
+            const gl = (goals || p.goals || []).map(g => (g||'').toLowerCase().trim());
 
-            // BMR (Mifflin-St Jeor formula)
-            const bmr = gender.includes('female')
-                ? (10*weight)+(6.25*height)-(5*age)-161
-                : (10*weight)+(6.25*height)-(5*age)+5;
+            // BMR (Mifflin-St Jeor)
+            const bmr  = gender.includes('female') ? (10*weight)+(6.25*height)-(5*age)-161 : (10*weight)+(6.25*height)-(5*age)+5;
             const tdee = Math.round(bmr * 1.55);
 
-            // Extended goal mappings (handles all common phrasings)
-            let calMult=1, protMultiplier=1.6, carbPct=0.40, fatPct=0.30, fibre=30;
-            let label='Maintenance';
+            // Goal profile presets  {calMult, prot(g/kg), carbPct, fatPct, fibre, label, priority}
+            const PRESETS = {
+                muscle:   {calMult:1.15, prot:1.8,  carbPct:0.45, fatPct:0.25, fibre:35, label:'💪 Muscle Building / Bulking',   pri:5},
+                bulk:     {calMult:1.15, prot:1.8,  carbPct:0.45, fatPct:0.25, fibre:35, label:'💪 Muscle Building / Bulking',   pri:5},
+                fatLoss:  {calMult:0.80, prot:2.2,  carbPct:0.30, fatPct:0.25, fibre:35, label:'🔥 Fat Loss / Cutting',         pri:6},
+                cut:      {calMult:0.80, prot:2.2,  carbPct:0.30, fatPct:0.25, fibre:35, label:'🔥 Fat Loss / Cutting',         pri:6},
+                weightLoss:{calMult:0.82, prot:1.8, carbPct:0.35, fatPct:0.28, fibre:32, label:'⚖️ Weight Loss',               pri:6},
+                recomp:   {calMult:1.00, prot:2.0,  carbPct:0.38, fatPct:0.27, fibre:30, label:'🔄 Body Recomposition',        pri:4},
+                endurance:{calMult:1.20, prot:1.4,  carbPct:0.55, fatPct:0.20, fibre:35, label:'🏃 Endurance / Athletic',       pri:4},
+                strength: {calMult:1.12, prot:1.9,  carbPct:0.42, fatPct:0.28, fibre:30, label:'🏋️ Strength / Powerlifting',   pri:5},
+                maintain: {calMult:1.00, prot:1.6,  carbPct:0.40, fatPct:0.30, fibre:30, label:'✨ General Fitness',            pri:1},
+            };
 
-            const is = (kw) => goalsList.some(g=>g.includes(kw));
+            // Map each selected goal to a preset key
+            const keyMap = [
+                {k:'muscle',   w:['muscle building','build muscle','bodybuilding','muscle gain','hypertrophy']},
+                {k:'bulk',     w:['bulk','bulking','mass','lean bulk','weight gain']},
+                {k:'fatLoss',  w:['fat loss','cutting','cut','shred','lean','lean out']},
+                {k:'weightLoss',w:['lose weight','weight loss','slim','slimming']},
+                {k:'recomp',   w:['recomp','recomposition','body recomp','maintain muscle']},
+                {k:'endurance',w:['endurance','marathon','cardio','running','cardio fitness','athletic performance','improve endurance']},
+                {k:'strength', w:['strength','powerlifting','increase strength','bodybuilding','powerlifting']},
+                {k:'maintain', w:['maintain weight','general health','general fitness','flexibility','better sleep','reduce stress','eat healthier','improve flexibility','flexibility & mobility']},
+            ];
 
-            if(is('muscle building')||is('build muscle')||is('bulk')||is('muscle gain')||is('mass')||is('hypertrophy')) {
-                // MUSCLE BUILDING: High calories + high protein + high carbs for energy
-                calMult=1.15; protMultiplier=1.8; carbPct=0.45; fatPct=0.25; fibre=35;
-                label='💪 Muscle Building / Bulking';
-            } else if(is('fat loss')||is('cutting')||is('cut')||is('lean')||is('shred')) {
-                // FAT LOSS / CUTTING: Calorie deficit + high protein to preserve muscle
-                calMult=0.80; protMultiplier=2.2; carbPct=0.30; fatPct=0.25; fibre=35;
-                label='🔥 Fat Loss / Cutting';
-            } else if(is('weight loss')||is('lose weight')||is('slim')) {
-                // WEIGHT LOSS: Moderate deficit + balanced macros
-                calMult=0.82; protMultiplier=1.8; carbPct=0.35; fatPct=0.28; fibre=32;
-                label='⚖️ Weight Loss';
-            } else if(is('recomp')||is('recomposition')||is('body recomp')) {
-                // RECOMPOSITION: Maintenance calories + high protein
-                calMult=1.0; protMultiplier=2.0; carbPct=0.38; fatPct=0.27; fibre=30;
-                label='🔄 Body Recomposition';
-            } else if(is('endurance')||is('marathon')||is('running')||is('cardio')||is('athletic performance')) {
-                // ENDURANCE: High carbs for fuel
-                calMult=1.20; protMultiplier=1.4; carbPct=0.55; fatPct=0.20; fibre=35;
-                label='🏃 Endurance & Athletic Performance';
-            } else if(is('powerlifting')||is('strength')||is('strong')) {
-                // STRENGTH/POWERLIFTING: High calories + protein + carbs
-                calMult=1.12; protMultiplier=1.9; carbPct=0.42; fatPct=0.28; fibre=30;
-                label='🏋️ Strength & Powerlifting';
-            } else if(is('general fitness')||is('stay fit')||is('maintain')||is('flexibility')) {
-                // MAINTENANCE / GENERAL FITNESS
-                calMult=1.0; protMultiplier=1.6; carbPct=0.40; fatPct=0.30; fibre=30;
-                label='✨ General Fitness / Maintenance';
+            // Score each preset based on how many selected goals match it
+            const scores = {};
+            for(const {k,w} of keyMap) {
+                const matched = gl.filter(g => w.some(kw => g.includes(kw))).length;
+                if(matched > 0) scores[k] = (scores[k]||0) + matched * PRESETS[k].pri;
             }
 
-            const calories  = Math.round(tdee * calMult);
-            const protein   = Math.round(weight * protMultiplier);
-            const fat       = Math.round((calories * fatPct) / 9);
-            const carbs     = Math.round((calories - protein*4 - fat*9) / 4);
-            const water     = Math.round(weight * 35);
+            // If no goals matched, default to maintain
+            if(Object.keys(scores).length === 0) scores['maintain'] = 1;
 
-            return {
-                calories, protein,
-                carbs: Math.max(50, carbs),
-                fat: Math.max(30, fat),
-                fibre, water, label, tdee
-            };
+            // Take weighted blend of top 2 matched presets
+            const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+            const top    = sorted.slice(0,2);
+            const totalW = top.reduce((s,[,v])=>s+v, 0);
+
+            let calMult=0, prot=0, carbPct=0, fatPct=0, fibre=0;
+            let label = PRESETS[top[0][0]].label;
+            for(const [k,w] of top) {
+                const frac = w/totalW;
+                const pr = PRESETS[k];
+                calMult  += pr.calMult  * frac;
+                prot     += pr.prot     * frac;
+                carbPct  += pr.carbPct  * frac;
+                fatPct   += pr.fatPct   * frac;
+                fibre    += pr.fibre    * frac;
+            }
+            if(top.length>1) label += ' + '+PRESETS[top[1][0]].label.split(' ').slice(1,3).join(' ');
+
+            const calories = Math.round(tdee * calMult);
+            const protein  = Math.round(weight * prot);
+            const fat      = Math.round((calories * fatPct) / 9);
+            const carbs    = Math.round((calories - protein*4 - fat*9) / 4);
+            const water    = Math.round(weight * 35);
+            return { calories, protein, carbs:Math.max(50,carbs), fat:Math.max(30,fat), fibre:Math.round(fibre), water, label, tdee };
         },
 
         applyGoalNutritionSuggestion(goals) {
@@ -4846,56 +4978,53 @@ function vytaraApp() {
                 return;
             }
             this.aiNutritionLoading = true;
-            // Try multiple Gemini models in order (supports both old AIza and new AQ.Ab key formats)
-            const models = [
-                'gemini-2.0-flash',
-                'gemini-1.5-flash',
-                'gemini-1.5-flash-latest',
-                'gemini-pro'
-            ];
             const qty = amount > 0 ? `${amount} ${unit}` : '100g';
-            const prompt = `Give nutritional values for ${qty} of "${food}". Reply ONLY with this JSON, no extra text: {"calories":number,"protein":number,"carbs":number,"fat":number,"fibre":number}`;
+            const prompt = `Nutritional values for ${qty} of "${food}". JSON only: {"calories":number,"protein":number,"carbs":number,"fat":number,"fibre":number}`;
+            // Google changed key format: AQ.Ab... = new Auth keys (Bearer token)
+            //                            AIza...  = old Standard keys (URL param)
+            const isNewAuthKey = GEMINI_API_KEY.startsWith('AQ.');
+            // Try all endpoints systematically
+            const models = ['gemini-2.0-flash-lite','gemini-2.0-flash','gemini-1.5-flash','gemini-1.5-flash-8b','gemini-pro'];
+            const body = JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:180}});
             let lastErr = null;
-            // Try multiple API variations to support both AIza and AQ.Ab key formats
-            const variations = [
-                { url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, useHeader: false },
-                { url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`, useHeader: true },
-                { url: `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, useHeader: false },
-                { url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, useHeader: false },
-                { url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`, useHeader: false },
-            ];
-            for(const v of variations) {
-                try {
-                    const headers = {'Content-Type':'application/json'};
-                    if(v.useHeader) { headers['x-goog-api-key'] = GEMINI_API_KEY; }
-                    const res = await fetch(v.url, {
-                        method:'POST',
-                        headers,
-                        body:JSON.stringify({
-                            contents:[{parts:[{text:prompt}]}],
-                            generationConfig:{temperature:0.1,maxOutputTokens:200}
-                        })
-                    });
-                    const data = await res.json();
-                    if(!res.ok || data.error) { lastErr = data?.error?.message||'HTTP '+res.status; continue; }
-                    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                    if(!raw) { lastErr='Empty'; continue; }
-                    // Extract JSON — handle markdown code blocks
-                    const jsonMatch = raw.match(/\{[^{}]*\}/s);
-                    if(!jsonMatch) { lastErr='No JSON'; continue; }
-                    const n = JSON.parse(jsonMatch[0]);
-                    if((n.calories||0)+(n.protein||0)+(n.carbs||0)+(n.fat||0) > 0) {
-                        this.mealEntry.calories = Math.round(n.calories||0);
-                        this.mealEntry.protein  = Math.round((n.protein||0)*10)/10;
-                        this.mealEntry.carbs    = Math.round((n.carbs||0)*10)/10;
-                        this.mealEntry.fat      = Math.round((n.fat||0)*10)/10;
-                        this.mealEntry.fibre    = Math.round((n.fibre||n.fiber||0)*10)/10;
-                        this.mealEntryFoodRef   = null;
-                        this.aiNutritionLoading = false;
-                        return; // success
-                    }
-                    lastErr='Zero values'; continue;
-                } catch(e) { lastErr = e.message||String(e); continue; }
+            for(const model of models) {
+                // Build all auth variants for this model
+                const base = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+                const v1   = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent`;
+                const tries = isNewAuthKey
+                    // New AQ.Ab keys: Bearer token in Authorization header (Google's new auth format)
+                    ? [
+                        { url: base, headers: {'Content-Type':'application/json','Authorization':`Bearer ${GEMINI_API_KEY}`} },
+                        { url: v1,   headers: {'Content-Type':'application/json','Authorization':`Bearer ${GEMINI_API_KEY}`} },
+                        { url: base, headers: {'Content-Type':'application/json','x-goog-api-key': GEMINI_API_KEY} },
+                      ]
+                    // Old AIza keys: URL query param
+                    : [
+                        { url: base+'?key='+GEMINI_API_KEY, headers: {'Content-Type':'application/json'} },
+                        { url: v1+'?key='+GEMINI_API_KEY,   headers: {'Content-Type':'application/json'} },
+                      ];
+                for(const t of tries) {
+                    try {
+                        const res = await fetch(t.url, {method:'POST', headers:t.headers, body});
+                        const data = await res.json();
+                        if(!res.ok||data.error) { lastErr=(data?.error?.message||'HTTP '+res.status); continue; }
+                        const raw = (data.candidates?.[0]?.content?.parts?.[0]?.text)||'';
+                        const m = raw.match(/\{[\s\S]*?\}/);
+                        if(!m) { lastErr='No JSON in response'; continue; }
+                        const n = JSON.parse(m[0]);
+                        if((n.calories||0)+(n.protein||0)+(n.carbs||0)+(n.fat||0)>0) {
+                            this.mealEntry.calories = Math.round(n.calories||0);
+                            this.mealEntry.protein  = Math.round((n.protein||0)*10)/10;
+                            this.mealEntry.carbs    = Math.round((n.carbs||0)*10)/10;
+                            this.mealEntry.fat      = Math.round((n.fat||0)*10)/10;
+                            this.mealEntry.fibre    = Math.round((n.fibre||n.fiber||0)*10)/10;
+                            this.mealEntryFoodRef   = null;
+                            this.aiNutritionLoading = false;
+                            return; // ✅ Success
+                        }
+                        lastErr='Parsed but all zeros'; continue;
+                    } catch(e) { lastErr=e.message||String(e); continue; }
+                }
             }
             // All models failed
             console.warn('Gemini nutrition lookup failed:', lastErr);
@@ -4994,6 +5123,97 @@ function vytaraApp() {
                 this.persist();
             } catch(e) { console.warn('Google Fit sync error:', e); }
             this.googleFitSyncing = false;
+        },
+
+        // ==================== BADGE & RANKING SYSTEM ====================
+        computeBadges() {
+            const wCount = this.workouts.length;
+            const dlCount = this.dietLogs.length;
+            const today = this.getToday();
+            const prs = Object.keys(this.getDashboardMetrics().prs||{}).length;
+
+            // Compute streaks inline
+            const bestStreak = (dates) => {
+                const ds=[...new Set(dates.filter(Boolean))].sort();
+                let best=1,run=1;
+                for(let i=1;i<ds.length;i++){
+                    const diff=Math.round((new Date(ds[i]+'T12:00:00')-new Date(ds[i-1]+'T12:00:00'))/86400000);
+                    if(diff===1){run++;best=Math.max(best,run);}else run=1;
+                }
+                return ds.length>0?best:0;
+            };
+            const curStreak = (dates) => {
+                const ds=new Set(dates.filter(Boolean));
+                let s=0;const d=new Date(today+'T12:00:00');
+                for(let i=0;i<365;i++){
+                    const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+                    if(ds.has(k))s++; else if(i>0)break;
+                    d.setDate(d.getDate()-1);
+                }
+                return s;
+            };
+            const wBest=bestStreak(this.workouts.map(w=>w.date));
+            const wCur=curStreak(this.workouts.map(w=>w.date));
+            const nBest=bestStreak(this.dietLogs.map(d=>d.date));
+            const nCur=curStreak(this.dietLogs.map(d=>d.date));
+
+            // Days since first log (account age)
+            const allDates=[...this.workouts,...this.dietLogs,...this.metricsLogs].map(x=>x.date).filter(Boolean).sort();
+            const daysSinceStart=allDates.length>0?Math.round((new Date(today)-new Date(allDates[0]))/86400000)+1:0;
+
+            // Badge definitions { id, icon, name, desc, earned, progress, total, tier:'bronze'|'silver'|'gold'|'platinum' }
+            const B = (id,icon,name,desc,earned,prog,tot,tier='bronze') => ({id,icon,name,desc,earned,progress:Math.min(prog,tot),total:tot,tier});
+
+            return [
+                // ── Workout Count Badges ──────────────────────────────
+                B('first_workout','🏋️','First Rep','Log your very first workout',wCount>=1,wCount,1,'bronze'),
+                B('w5','💪','Getting Strong','Complete 5 workouts',wCount>=5,wCount,5,'bronze'),
+                B('w10','⚡','10 Strong','Log 10 workouts',wCount>=10,wCount,10,'silver'),
+                B('w25','🔰','Consistency King','Complete 25 workouts',wCount>=25,wCount,25,'silver'),
+                B('w50','🌟','Iron Will','Hit 50 workouts',wCount>=50,wCount,50,'gold'),
+                B('w100','👑','Century Club','Achieve 100 workouts',wCount>=100,wCount,100,'gold'),
+                B('w250','💎','Elite Lifter','Log 250 workouts',wCount>=250,wCount,250,'platinum'),
+                B('w500','🏆','VYTARA Legend','500 workouts logged',wCount>=500,wCount,500,'platinum'),
+
+                // ── Workout Streak Badges ─────────────────────────────
+                B('s3','🔥','On Fire','3-day workout streak',wBest>=3,Math.min(wCur,3),3,'bronze'),
+                B('s7','⚡','Week Warrior','7-day workout streak',wBest>=7,Math.min(wCur,7),7,'silver'),
+                B('s14','💎','Fortnight Fighter','14-day streak',wBest>=14,Math.min(wCur,14),14,'silver'),
+                B('s30','🌙','Iron Month','30 consecutive workout days',wBest>=30,Math.min(wCur,30),30,'gold'),
+                B('s100','🏆','100-Day Legend','Incredible 100-day streak',wBest>=100,Math.min(wCur,100),100,'platinum'),
+
+                // ── Nutrition Badges ──────────────────────────────────
+                B('n1','🥗','First Meal Log','Log your first meal',dlCount>=1,dlCount,1,'bronze'),
+                B('n7','🌿','Nutrition Habit','7 days of meal logging',nBest>=7,Math.min(nCur,7),7,'silver'),
+                B('n30','🧘','Nutrition Ninja','30 days of meal logging',nBest>=30,Math.min(nCur,30),30,'gold'),
+                B('n100','🏅','Macro Master','100 days of meal logging',nBest>=100,Math.min(nCur,100),100,'platinum'),
+
+                // ── PR Badges ─────────────────────────────────────────
+                B('pr1','🎯','First PR','Set your first personal record',prs>=1,prs,1,'bronze'),
+                B('pr5','🚀','PR Machine','Achieve 5 personal records',prs>=5,prs,5,'silver'),
+                B('pr10','💥','Record Breaker','10 personal records set',prs>=10,prs,10,'gold'),
+
+                // ── Time/Loyalty Badges ───────────────────────────────
+                B('d7','📅','Week One','7 days since joining',daysSinceStart>=7,daysSinceStart,7,'bronze'),
+                B('d30','🗓️','One Month Strong','30 days on VYTARA',daysSinceStart>=30,daysSinceStart,30,'silver'),
+                B('d90','📆','Quarter Champion','90 days of commitment',daysSinceStart>=90,daysSinceStart,90,'gold'),
+                B('d365','🏆','Anniversary','One full year on VYTARA',daysSinceStart>=365,daysSinceStart,365,'platinum'),
+            ];
+        },
+
+        get earnedBadges() { return this.computeBadges().filter(b=>b.earned); },
+        get nextBadges() { return this.computeBadges().filter(b=>!b.earned).slice(0,6); },
+
+        getUserRank() {
+            const earned = this.earnedBadges.length;
+            const total  = this.computeBadges().length;
+            if(earned===0)  return {rank:'Rookie',  icon:'🌱', color:'text-slate-400',  pts:0};
+            if(earned<=3)   return {rank:'Starter', icon:'⚡', color:'text-slate-300',  pts:earned};
+            if(earned<=7)   return {rank:'Fighter', icon:'🥊', color:'text-amber-400',  pts:earned};
+            if(earned<=12)  return {rank:'Warrior', icon:'⚔️', color:'text-amber-500',  pts:earned};
+            if(earned<=17)  return {rank:'Champion',icon:'🏅', color:'text-yellow-400', pts:earned};
+            if(earned<=22)  return {rank:'Elite',   icon:'💎', color:'text-brand-400',  pts:earned};
+            return              {rank:'Legend',  icon:'🏆', color:'text-purple-400', pts:earned};
         },
 
         // ==================== CHALLENGES ====================
