@@ -156,6 +156,13 @@
                     Signing in…
                 </span>
             </button>
+            <!-- Forgot password -->
+            <div class="text-center pt-1">
+                <button @click="forgotPasswordMode=true; forgotPasswordSent=false; forgotPasswordEmail=authForm.email||''"
+                        class="text-[11px] text-brand-400/80 hover:text-brand-400 font-semibold transition-colors hover:underline underline-offset-2">
+                    Forgot your password?
+                </button>
+            </div>
         </div>
 
         <!-- REGISTER form -->
@@ -1544,7 +1551,42 @@
 
     <!-- Danger zone -->
         <!-- Google Fit Integration -->
-    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[1.5rem] shadow-sm space-y-4">
+        <!-- Change Password Section -->
+    <div x-show="firebaseUser" class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[1.5rem] shadow-sm space-y-4">
+        <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">🔐 Password & Security</h3>
+        <div x-show="changePasswordMsg" x-text="changePasswordMsg"
+             class="text-xs font-bold py-2.5 px-3 rounded-xl border"
+             :class="changePasswordMsg.startsWith('✅') ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Current Password</label>
+                <input type="password" x-model="changePasswordForm.current" placeholder="Current password">
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">New Password</label>
+                <input type="password" x-model="changePasswordForm.newPwd" placeholder="Min 6 characters">
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Confirm New</label>
+                <input type="password" x-model="changePasswordForm.confirm" placeholder="Repeat new password">
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <button @click="changePassword()" :disabled="!changePasswordForm.newPwd||!changePasswordForm.confirm"
+                    class="bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-black py-2.5 px-5 rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-40">
+                Update Password
+            </button>
+            <button @click="sendPasswordReset(firebaseUser?.email)"
+                    class="border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-brand-400 hover:border-brand-500/30 font-black py-2.5 px-5 rounded-xl text-xs uppercase tracking-wider transition-all">
+                📧 Send Reset Email
+            </button>
+        </div>
+        <p class="text-[10px] text-slate-500 font-medium">
+            Forgot your password? Click "Send Reset Email" — a link will be sent to <span x-text="firebaseUser?.email||''"></span> to set a new password.
+        </p>
+    </div>
+
+<div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[1.5rem] shadow-sm space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">🏃 Google Fit</h3>
@@ -1818,6 +1860,53 @@
 
 </div><!-- end right column -->
 </div><!-- end app shell -->
+
+<!-- FORGOT PASSWORD MODAL -->
+<div x-show="forgotPasswordMode"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-end="opacity-0"
+     class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+     @click.self="forgotPasswordMode=false">
+    <div class="bg-white dark:bg-panelDark rounded-[2rem] shadow-2xl w-full max-w-sm p-8 space-y-5"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-xl font-black">Reset Password</h2>
+                <p class="text-xs text-slate-400 font-medium mt-0.5">We'll send a reset link to your email</p>
+            </div>
+            <button @click="forgotPasswordMode=false" class="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 text-lg">✕</button>
+        </div>
+
+        <div x-show="forgotPasswordSent" class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-center space-y-2">
+            <p class="text-2xl">📧</p>
+            <p class="font-black text-emerald-400 text-sm">Reset email sent!</p>
+            <p class="text-xs text-slate-400 font-medium">Check your inbox and follow the link to set a new password. Then come back and sign in.</p>
+            <button @click="forgotPasswordMode=false" class="mt-2 text-xs font-black text-brand-400 hover:text-brand-300">← Back to Sign In</button>
+        </div>
+
+        <div x-show="!forgotPasswordSent" class="space-y-4">
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1.5">Email Address</label>
+                <input type="email" x-model="forgotPasswordEmail" placeholder="your@email.com"
+                       @keydown.enter="sendPasswordReset()"
+                       class="w-full">
+            </div>
+            <button @click="sendPasswordReset()"
+                    :disabled="!forgotPasswordEmail.trim()"
+                    class="w-full bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-black py-3 rounded-xl text-sm tracking-wider uppercase transition-all shadow-md disabled:opacity-40">
+                Send Reset Email
+            </button>
+            <button @click="forgotPasswordMode=false" class="w-full text-xs text-slate-400 hover:text-slate-300 font-bold py-1">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- WATER MODAL -->
 <div x-show="openModals.modalWater" x-cloak @click.self="closeModal('modalWater')" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[80] flex items-end sm:items-center justify-center p-2 sm:p-4">
@@ -3490,6 +3579,11 @@ function vytaraApp() {
         feedbackForm: { name:'', email:'', message:'', rating:5 },
         feedbackLoading: false,
         feedbackSent: false,
+        forgotPasswordMode: false,
+        forgotPasswordEmail: '',
+        forgotPasswordSent: false,
+        changePasswordForm: { current:'', newPwd:'', confirm:'' },
+        changePasswordMsg: '',
         _challengeUnsubs: [],
         editFoodForm: {name:'',category:'General',unit:'g',per:100,defaultAmount:'',calories:'',protein:'',carbs:'',fat:'',fiber:''},
         mealEntryAmount: '', // quantity field for food-library selected items
@@ -3871,6 +3965,49 @@ function vytaraApp() {
         },
 
         // ==================== AUTH ====================
+        async sendPasswordReset(emailOverride) {
+            const email = (emailOverride || this.forgotPasswordEmail || this.authForm.email || '').trim();
+            if(!email) { alert('Please enter your email address.'); return; }
+            try {
+                await this._initFirebase();
+                const { sendPasswordResetEmail } = await import('https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js');
+                await sendPasswordResetEmail(window._fb.auth, email);
+                this.forgotPasswordSent = true;
+                this.forgotPasswordMode = false;
+            } catch(e) {
+                const msg = e.code === 'auth/user-not-found' ? 'No account found with that email.'
+                    : e.code === 'auth/invalid-email' ? 'Please enter a valid email address.'
+                    : 'Could not send reset email. Please try again.';
+                alert(msg);
+            }
+        },
+
+        async changePassword() {
+            const { newPwd, confirm, current } = this.changePasswordForm;
+            if(!newPwd || newPwd.length < 6) { this.changePasswordMsg = '❌ Password must be at least 6 characters.'; return; }
+            if(newPwd !== confirm) { this.changePasswordMsg = '❌ Passwords do not match.'; return; }
+            if(!this.firebaseUser) { this.changePasswordMsg = '❌ Not signed in.'; return; }
+            try {
+                const { updatePassword, reauthenticateWithCredential, EmailAuthProvider } =
+                    await import('https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js');
+                if(current) {
+                    const cred = EmailAuthProvider.credential(this.firebaseUser.email, current);
+                    await reauthenticateWithCredential(this.firebaseUser, cred);
+                }
+                await updatePassword(this.firebaseUser, newPwd);
+                this.changePasswordMsg = '✅ Password updated successfully!';
+                this.changePasswordForm = { current:'', newPwd:'', confirm:'' };
+            } catch(e) {
+                if(e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+                    this.changePasswordMsg = '❌ Current password is incorrect.';
+                } else if(e.code === 'auth/requires-recent-login') {
+                    this.changePasswordMsg = '❌ For security, please sign out and sign back in before changing your password.';
+                } else {
+                    this.changePasswordMsg = '❌ ' + (e.message || 'Update failed. Try signing out and back in.');
+                }
+            }
+        },
+
         async handleLogin() {
             this.authError = '';
             if(!this.authForm.email || !this.authForm.password) {
@@ -4969,161 +5106,80 @@ function vytaraApp() {
 
         // ==================== AI NUTRITION LOOKUP ====================
         async lookupNutritionAI() {
-            const food = this.mealEntry.name?.trim();
+            const food = (this.mealEntry.name || '').trim();
             const amount = parseFloat(this.mealEntryAmount) || 0;
-            const unit = this.mealEntry._unit || 'g';
+            const unit   = this.mealEntry._unit || 'g';
             if(!food) { alert('Enter a food name first.'); return; }
             if(!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
-                alert('AI nutrition search is not configured for this app.');
-                return;
+                alert('AI nutrition search is not configured.'); return;
             }
             this.aiNutritionLoading = true;
-            const qty = amount > 0 ? `${amount} ${unit}` : '100g';
-            const prompt = `Nutritional values for ${qty} of "${food}". JSON only: {"calories":number,"protein":number,"carbs":number,"fat":number,"fibre":number}`;
-            // Google changed key format: AQ.Ab... = new Auth keys (Bearer token)
-            //                            AIza...  = old Standard keys (URL param)
-            const isNewAuthKey = GEMINI_API_KEY.startsWith('AQ.');
-            // Try all endpoints systematically
-            const models = ['gemini-2.0-flash-lite','gemini-2.0-flash','gemini-1.5-flash','gemini-1.5-flash-8b','gemini-pro'];
-            const body = JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:180}});
-            let lastErr = null;
-            for(const model of models) {
-                // Build all auth variants for this model
+            const qty    = amount > 0 ? `${amount} ${unit}` : '100g';
+            const prompt = `Return ONLY a raw JSON object (no markdown) for: ${qty} of "${food}". Format: {"calories":0,"protein":0,"carbs":0,"fat":0,"fibre":0}`;
+            const bodyStr = JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { temperature: 0.1, maxOutputTokens: 150 }
+            });
+            // Model list — user-specified first, then fallbacks
+            const MODELS = [
+                'gemini-3.1-flash-lite',
+                'gemini-3.0-flash-lite',
+                'gemini-2.5-flash-lite',
+                'gemini-2.0-flash-lite',
+                'gemini-2.0-flash',
+                'gemini-1.5-flash',
+                'gemini-1.5-flash-8b',
+                'gemini-pro',
+            ];
+            // AQ.Ab format = new Google AI Studio key format (still uses ?key= param)
+            // but we try both param and header for maximum compatibility
+            const makeVariants = (model) => {
                 const base = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-                const v1   = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent`;
-                const tries = isNewAuthKey
-                    // New AQ.Ab keys: Bearer token in Authorization header (Google's new auth format)
-                    ? [
-                        { url: base, headers: {'Content-Type':'application/json','Authorization':`Bearer ${GEMINI_API_KEY}`} },
-                        { url: v1,   headers: {'Content-Type':'application/json','Authorization':`Bearer ${GEMINI_API_KEY}`} },
-                        { url: base, headers: {'Content-Type':'application/json','x-goog-api-key': GEMINI_API_KEY} },
-                      ]
-                    // Old AIza keys: URL query param
-                    : [
-                        { url: base+'?key='+GEMINI_API_KEY, headers: {'Content-Type':'application/json'} },
-                        { url: v1+'?key='+GEMINI_API_KEY,   headers: {'Content-Type':'application/json'} },
-                      ];
-                for(const t of tries) {
+                return [
+                    { url: `${base}?key=${GEMINI_API_KEY}`,
+                      headers: { 'Content-Type': 'application/json' } },
+                    { url: base,
+                      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY } },
+                    { url: `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+                      headers: { 'Content-Type': 'application/json' } },
+                ];
+            };
+            let lastErr = 'No models tried';
+            for(const model of MODELS) {
+                for(const v of makeVariants(model)) {
                     try {
-                        const res = await fetch(t.url, {method:'POST', headers:t.headers, body});
+                        const res = await fetch(v.url, { method: 'POST', headers: v.headers, body: bodyStr });
                         const data = await res.json();
-                        if(!res.ok||data.error) { lastErr=(data?.error?.message||'HTTP '+res.status); continue; }
-                        const raw = (data.candidates?.[0]?.content?.parts?.[0]?.text)||'';
-                        const m = raw.match(/\{[\s\S]*?\}/);
-                        if(!m) { lastErr='No JSON in response'; continue; }
-                        const n = JSON.parse(m[0]);
-                        if((n.calories||0)+(n.protein||0)+(n.carbs||0)+(n.fat||0)>0) {
-                            this.mealEntry.calories = Math.round(n.calories||0);
-                            this.mealEntry.protein  = Math.round((n.protein||0)*10)/10;
-                            this.mealEntry.carbs    = Math.round((n.carbs||0)*10)/10;
-                            this.mealEntry.fat      = Math.round((n.fat||0)*10)/10;
-                            this.mealEntry.fibre    = Math.round((n.fibre||n.fiber||0)*10)/10;
+                        // 404 = model not found → try next model
+                        if(res.status === 404) { lastErr = `${model}: not found`; break; }
+                        // 400/401/403 = auth / key issue
+                        if(!res.ok) { lastErr = data?.error?.message || `HTTP ${res.status}`; continue; }
+                        if(data.error) { lastErr = data.error.message; continue; }
+                        const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                        // Extract JSON from response (handles ```json blocks)
+                        const match = raw.match(/\{[\s\S]*?\}/);
+                        if(!match) { lastErr = 'No JSON in response'; continue; }
+                        const n = JSON.parse(match[0]);
+                        if((n.calories || n.protein || n.carbs || n.fat) > 0 ||
+                           (n.calories === 0 && n.protein === 0 && n.carbs === 0 && n.fat === 0 && food.toLowerCase().includes('water'))) {
+                            this.mealEntry.calories = Math.round(n.calories  || 0);
+                            this.mealEntry.protein  = Math.round((n.protein  || 0) * 10) / 10;
+                            this.mealEntry.carbs    = Math.round((n.carbs    || 0) * 10) / 10;
+                            this.mealEntry.fat      = Math.round((n.fat      || 0) * 10) / 10;
+                            this.mealEntry.fibre    = Math.round((n.fibre || n.fiber || 0) * 10) / 10;
                             this.mealEntryFoodRef   = null;
                             this.aiNutritionLoading = false;
-                            return; // ✅ Success
+                            return; // ✅
                         }
-                        lastErr='Parsed but all zeros'; continue;
-                    } catch(e) { lastErr=e.message||String(e); continue; }
+                        lastErr = 'Response has zero values'; continue;
+                    } catch(err) { lastErr = err.message || String(err); continue; }
                 }
             }
-            // All models failed
-            console.warn('Gemini nutrition lookup failed:', lastErr);
-            alert('AI lookup failed. Please enter macros manually.');
+            console.warn('AI lookup exhausted all options. Last error:', lastErr);
+            alert('AI lookup failed — all models returned errors. Please enter macros manually.');
             this.aiNutritionLoading = false;
         },
 
-        // ==================== GOOGLE FIT ====================
-        connectGoogleFit() {
-            // GFIT_CLIENT_ID is the developer's registered OAuth client ID.
-            // Users sign in with their own Google accounts — they never need credentials.
-            if(!GFIT_CLIENT_ID || GFIT_CLIENT_ID.includes('YOUR_GOOGLE_CLIENT_ID')) {
-                // Google Fit requires a Google Cloud OAuth client ID registered by the developer.
-                // For a free setup, the developer needs to register at console.cloud.google.com
-                // and enable the Fitness API (no billing required for basic API usage).
-                alert('Google Fit sync is not configured in this version. Track steps manually using the Activity log in your dashboard.');
-                return;
-            }
-            const SCOPE = encodeURIComponent([
-                'https://www.googleapis.com/auth/fitness.activity.read',
-                'https://www.googleapis.com/auth/fitness.body.read'
-            ].join(' '));
-            const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
-            const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
-                + '?client_id=' + GFIT_CLIENT_ID
-                + '&redirect_uri=' + redirectUri
-                + '&response_type=token'
-                + '&scope=' + SCOPE
-                + '&prompt=select_account'
-                + '&access_type=online';
-            const popup = window.open(authUrl, 'googlefit_auth', 'width=520,height=640,menubar=no,toolbar=no,location=yes');
-            if(!popup) { alert('Popups are blocked. Please allow popups for this site and try again.'); return; }
-            const poll = setInterval(() => {
-                try {
-                    if(!popup || popup.closed) { clearInterval(poll); return; }
-                    const hash = popup.location.hash;
-                    if(hash && hash.includes('access_token')) {
-                        clearInterval(poll);
-                        popup.close();
-                        const params = new URLSearchParams(hash.slice(1));
-                        const token = params.get('access_token');
-                        if(token) {
-                            this.googleFitAccessToken = token;
-                            this.googleFitConnected = true;
-                            this.persist();
-                            this.syncGoogleFitData();
-                        }
-                    }
-                } catch(e) { /* Cross-origin polling — expected until redirect back */ }
-            }, 700);
-        },
-
-        disconnectGoogleFit() {
-            this.googleFitAccessToken = null;
-            this.googleFitConnected = false;
-            this.googleFitData = {stepsToday:0, calsBurned:0, activeMins:0};
-            this.persist();
-        },
-
-        async syncGoogleFitData() {
-            if(!this.googleFitAccessToken) return;
-            this.googleFitSyncing = true;
-            try {
-                const now = Date.now();
-                const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
-                const body = {
-                    aggregateBy: [
-                        {dataTypeName:'com.google.step_count.delta'},
-                        {dataTypeName:'com.google.calories.expended'},
-                        {dataTypeName:'com.google.active_minutes'}
-                    ],
-                    bucketByTime: {durationMillis: 86400000},
-                    startTimeMillis: startOfDay.getTime(),
-                    endTimeMillis: now
-                };
-                const res = await fetch('https://fitness.googleapis.com/fitness/v1/users/me/dataset:aggregate', {
-                    method: 'POST',
-                    headers: {'Authorization': 'Bearer '+this.googleFitAccessToken, 'Content-Type':'application/json'},
-                    body: JSON.stringify(body)
-                });
-                if(res.status===401) { this.disconnectGoogleFit(); return; }
-                const data = await res.json();
-                let steps=0, cals=0, mins=0;
-                (data.bucket||[]).forEach(b => {
-                    (b.dataset||[]).forEach(ds => {
-                        const type = ds.dataSourceId||'';
-                        (ds.point||[]).forEach(p => {
-                            const v=p.value?.[0];
-                            if(type.includes('step_count')) steps+=parseInt(v?.intVal||0);
-                            else if(type.includes('calories')) cals+=Math.round(parseFloat(v?.fpVal||0));
-                            else if(type.includes('active_minutes')) mins+=parseInt(v?.intVal||0);
-                        });
-                    });
-                });
-                this.googleFitData = {stepsToday:steps, calsBurned:cals, activeMins:mins};
-                this.persist();
-            } catch(e) { console.warn('Google Fit sync error:', e); }
-            this.googleFitSyncing = false;
-        },
 
         // ==================== BADGE & RANKING SYSTEM ====================
         computeBadges() {
