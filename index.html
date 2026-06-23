@@ -108,7 +108,7 @@
     <!-- Alpine -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-slate-50 dark:bg-slateDark text-slate-900 dark:text-slate-50 h-screen antialiased flex flex-col lg:flex-row overflow-hidden touch-manipulation" x-data="vytaraApp()" x-init="_onMount()" x-init="initPlatform()" @keydown.escape.window="closeAllModals();mobileMenuOpen=false;">
+<body class="bg-slate-50 dark:bg-slateDark text-slate-900 dark:text-slate-50 h-screen antialiased flex flex-col lg:flex-row overflow-hidden touch-manipulation" x-data="vytaraApp()" x-init="initPlatform()" @keydown.escape.window="closeAllModals();mobileMenuOpen=false;">
 
 <!-- Theme toggle (non-app views) -->
 <div class="no-print fixed top-6 right-6 z-[100]" x-show="currentView!=='app'">
@@ -3977,13 +3977,13 @@ function vytaraApp() {
         },
 
         async initPlatform() {
-            // 1. Apply theme first (before anything renders)
+            // 1. Apply theme
             const savedTheme = localStorage.getItem('vytara_theme')||'dark';
             this.theme = savedTheme;
             document.documentElement.classList.toggle('dark', savedTheme==='dark');
             document.documentElement.classList.toggle('light', savedTheme==='light');
 
-            // 2. Try to load local data
+            // 2. Load local vault
             let data = null;
             const saved = localStorage.getItem(VAULT_KEY);
             if(saved) { try{ data=JSON.parse(saved); }catch(e){} }
@@ -3998,25 +3998,28 @@ function vytaraApp() {
             // 3. Set default dates
             this.setDefaultDates();
 
-            // 4. Routing — simple and reliable
+            // 4. Routing
             if(data && this.profile.name) {
-                // Returning user with saved profile → straight to app
                 this.currentView = 'app';
             } else if(data && !this.profile.name) {
-                // Has partial data (no name yet) → finish onboarding
+                // Has data but incomplete profile → finish onboarding
                 this.currentView = 'onboarding';
             } else {
-                // New user OR no local data → show auth (Sign In / Register)
+                // No local data → must sign in or register first
                 this.currentView = 'auth';
             }
 
-            // 5. Firebase auth listener is registered inside _initFirebase()
-            //    Try to restore a previous session in the background
-            if(this.profile.name) {
-                this._initFirebase().catch(() => {});
-            }
+            // 5. Init Firebase ALWAYS (not just when profile exists)
+            //    This ensures auth session is checked and API config is loaded
+            this._initFirebase().catch(() => {});
 
-            // 7. Render
+            // 6. Load API keys from Firebase (Gemini + Google Fit)
+            this.loadAppConfig().catch(() => {});
+
+            // 7. Refresh config periodically
+            setInterval(() => this.loadAppConfig().catch(()=>{}), 60000);
+
+            // 8. Render charts
             this.$nextTick(()=>{ this.generateHeatmapData(); this.$nextTick(()=>this.renderDataCharts()); });
             this._setupBackGuard();
         },
@@ -4211,13 +4214,10 @@ function vytaraApp() {
                     this.firebaseUser = user || null;
                     document.dispatchEvent(new CustomEvent('fb-auth-change', { detail: user }));
                     if(user) {
-                        // Auto-navigate to app if Firebase session is valid on refresh
-                        if(this.currentView === 'auth') {
-                            if(this.profile && this.profile.name) {
-                                this.currentView = 'app';
-                            } else {
-                                this.currentView = 'onboarding';
-                            }
+                        // Restore session: if app shows auth screen but Firebase has valid session
+                        if(this.currentView === 'auth' && this.profile && this.profile.name) {
+                            // Known user with saved profile — skip auth screen
+                            this.currentView = 'app';
                         }
                         this._syncFromCloud();
                         setTimeout(() => this.loadFirestoreChallenges(), 1000);
