@@ -439,6 +439,46 @@
     </div>
 
     <!-- Water + Nutrition Progress Row -->
+    <!-- Google Fit Live Data (shown when connected) -->
+    <div x-show="googleFitConnected" class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-5 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+            <p class="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
+                Google Fit — Today
+            </p>
+            <button @click="syncGoogleFitData()" :disabled="googleFitSyncing"
+                    class="text-[9px] font-black text-slate-400 hover:text-emerald-400 transition-colors">
+                <span x-show="!googleFitSyncing">🔄 Sync</span>
+                <span x-show="googleFitSyncing">Syncing…</span>
+            </button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <div class="bg-emerald-500/8 border border-emerald-500/15 rounded-xl p-3 text-center">
+                <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Steps</p>
+                <p class="text-base font-black text-emerald-400" x-text="(googleFitData.stepsToday||0).toLocaleString()"></p>
+                <div class="w-full bg-slate-200 dark:bg-slate-800 h-1 rounded-full mt-1 overflow-hidden">
+                    <div class="bg-emerald-400 h-full rounded-full" :style="'width:'+Math.min(100,Math.round((googleFitData.stepsToday||0)/10000*100))+'%'"></div>
+                </div>
+            </div>
+            <div class="bg-orange-500/8 border border-orange-500/15 rounded-xl p-3 text-center">
+                <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Cals Burned</p>
+                <p class="text-base font-black text-orange-400" x-text="(googleFitData.calsBurned||0)+'kcal'"></p>
+            </div>
+            <div class="bg-brand-500/8 border border-brand-500/15 rounded-xl p-3 text-center">
+                <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Active Mins</p>
+                <p class="text-base font-black text-brand-400" x-text="(googleFitData.activeMins||0)+'min'"></p>
+            </div>
+            <div class="bg-red-500/8 border border-red-500/15 rounded-xl p-3 text-center">
+                <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Avg HR</p>
+                <p class="text-base font-black text-red-400" x-text="(googleFitData.heartRateAvg||0)>0?(googleFitData.heartRateAvg)+'bpm':'—'"></p>
+            </div>
+            <div class="bg-purple-500/8 border border-purple-500/15 rounded-xl p-3 text-center">
+                <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Sleep</p>
+                <p class="text-base font-black text-purple-400" x-text="(googleFitData.sleepHours||0)>0?(googleFitData.sleepHours)+'h':'—'"></p>
+            </div>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
         <!-- Water Progress Card -->
         <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm">
@@ -1617,15 +1657,7 @@
                     <span x-show="!googleFitConnected">Sign in with Google to sync your steps, calories and active minutes</span>
                     <span x-show="googleFitConnected">✓ Connected — syncing your activity data</span>
                 </p>
-                <!-- Redirect URI setup helper -->
-                <div x-show="!googleFitConnected" class="mt-2 p-3 rounded-xl bg-slate-800/80 border border-slate-700/50 space-y-1.5">
-                    <p class="text-[10px] font-bold text-amber-400">⚙️ If sign-in fails: add this exact URL to Google Cloud Console → Authorized Redirect URIs:</p>
-                    <div class="flex items-center gap-2">
-                        <code class="text-[10px] font-mono text-emerald-300 flex-1 break-all select-all bg-slate-900/60 px-2 py-1.5 rounded-lg" x-text="window.location.href.split('#')[0]"></code>
-                        <button @click="navigator.clipboard&&navigator.clipboard.writeText(window.location.href.split('#')[0]).then(function(){alert('URL copied to clipboard!')})"
-                                class="shrink-0 text-[9px] font-black text-brand-400 border border-brand-400/30 px-2 py-1 rounded-lg hover:bg-brand-400/10 whitespace-nowrap">Copy URL</button>
-                    </div>
-                </div>
+
             </div>
             <div class="flex items-center gap-2">
                 <button x-show="!googleFitConnected" @click="connectGoogleFit()"
@@ -1648,24 +1680,34 @@
             </div>
         </div>
         <div x-show="googleFitConnected" class="space-y-3">
-            <div class="grid grid-cols-3 gap-3">
-                <div class="rounded-2xl p-4 text-center space-y-1 bg-emerald-500/8 border border-emerald-500/15">
-                    <p class="text-2xl">🚶</p>
-                    <p class="text-2xl font-black text-emerald-400" x-text="(googleFitData.stepsToday||0).toLocaleString()"></p>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                <div class="rounded-2xl p-3 text-center space-y-1 bg-emerald-500/8 border border-emerald-500/15">
+                    <p class="text-xl">🚶</p>
+                    <p class="text-lg font-black text-emerald-400" x-text="(googleFitData.stepsToday||0).toLocaleString()"></p>
                     <p class="text-[9px] font-black text-slate-400 uppercase">Steps</p>
-                    <div class="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
+                    <div class="w-full bg-slate-200 dark:bg-slate-800 h-1 rounded-full mt-1 overflow-hidden">
                         <div class="bg-emerald-400 h-full rounded-full" :style="'width:'+Math.min(100,Math.round((googleFitData.stepsToday||0)/10000*100))+'%'"></div>
                     </div>
                 </div>
-                <div class="rounded-2xl p-4 text-center space-y-1 bg-orange-500/8 border border-orange-500/15">
-                    <p class="text-2xl">🔥</p>
-                    <p class="text-2xl font-black text-orange-400" x-text="(googleFitData.calsBurned||0)+'kcal'"></p>
-                    <p class="text-[9px] font-black text-slate-400 uppercase">Burned</p>
+                <div class="rounded-2xl p-3 text-center space-y-1 bg-orange-500/8 border border-orange-500/15">
+                    <p class="text-xl">🔥</p>
+                    <p class="text-lg font-black text-orange-400" x-text="(googleFitData.calsBurned||0)"></p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Kcal Burned</p>
                 </div>
-                <div class="rounded-2xl p-4 text-center space-y-1 bg-brand-500/8 border border-brand-500/15">
-                    <p class="text-2xl">⚡</p>
-                    <p class="text-2xl font-black text-brand-400" x-text="(googleFitData.activeMins||0)+'min'"></p>
-                    <p class="text-[9px] font-black text-slate-400 uppercase">Active</p>
+                <div class="rounded-2xl p-3 text-center space-y-1 bg-brand-500/8 border border-brand-500/15">
+                    <p class="text-xl">⚡</p>
+                    <p class="text-lg font-black text-brand-400" x-text="(googleFitData.activeMins||0)+'m'"></p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Active Mins</p>
+                </div>
+                <div class="rounded-2xl p-3 text-center space-y-1 bg-red-500/8 border border-red-500/15">
+                    <p class="text-xl">❤️</p>
+                    <p class="text-lg font-black text-red-400" x-text="(googleFitData.heartRateAvg||0)>0?(googleFitData.heartRateAvg)+'bpm':'—'"></p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Avg HR</p>
+                </div>
+                <div class="rounded-2xl p-3 text-center space-y-1 bg-purple-500/8 border border-purple-500/15">
+                    <p class="text-xl">😴</p>
+                    <p class="text-lg font-black text-purple-400" x-text="(googleFitData.sleepHours||0)>0?(googleFitData.sleepHours)+'h':'—'"></p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Sleep</p>
                 </div>
             </div>
             <button @click="syncGoogleFitData()" :disabled="googleFitSyncing"
@@ -1826,73 +1868,123 @@
 </div>
 
 <!-- ═══ FEEDBACK TAB ═══ -->
-<div x-show="activeTab==='feedback'" class="space-y-6 p-4 md:p-8 lg:p-10">
-    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">💬 Feedback</h2>
-
-    <!-- Hello from Developer card -->
-    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-6 shadow-sm space-y-3">
-        <div class="flex items-center gap-3">
-            <span class="text-3xl">👋</span>
-            <h3 class="text-lg font-black text-brand-400">Hello from the Developer</h3>
-        </div>
-        <p class="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
-            VYTARA was built with passion to help you achieve your fitness goals. Your feedback directly shapes future updates — every message is read personally.
-        </p>
-        <p class="text-sm font-black text-slate-500 dark:text-slate-400">— Revanth Reddy Abbati</p>
+<div x-show="activeTab==='feedback'" class="p-4 md:p-8 lg:p-10">
+    <!-- Header -->
+    <div class="mb-7">
+        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Feedback</h2>
+        <p class="text-sm text-slate-400 font-medium mt-1.5">Help us improve VYTARA — your feedback goes directly to the developer.</p>
     </div>
 
-    <!-- Ways to reach us -->
-    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-6 shadow-sm space-y-4">
-        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ways to Reach Us</p>
-        <div class="space-y-3">
-            <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
-                <span class="text-xl">📧</span>
-                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">revanth.abbati@gmail.com</span>
-            </div>
-            <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
-                <span class="text-xl">💡</span>
-                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Feature requests &amp; bug reports welcome</span>
-            </div>
-            <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
-                <span class="text-xl">⭐</span>
-                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Rate your experience using the form below</span>
-            </div>
-        </div>
-    </div>
+    <!-- Two-column grid matching Image 3 -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-    <!-- Feedback Form -->
-    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[1.5rem] shadow-sm space-y-5 max-w-xl">
-        <div x-show="feedbackSent" class="p-5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-center space-y-2">
-            <p class="text-2xl">✅</p>
-            <p class="font-black text-emerald-400">Feedback sent! Thank you.</p>
-            <button @click="feedbackSent=false;feedbackForm={name:'',email:'',message:'',rating:5}" class="text-xs text-slate-400 underline mt-1">Send another</button>
+        <!-- LEFT: Form card -->
+        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-7 shadow-sm space-y-5">
+            <!-- Success state -->
+            <div x-show="feedbackSent" class="py-8 text-center space-y-3">
+                <p class="text-4xl">✅</p>
+                <p class="font-black text-emerald-400 text-base">Feedback sent — thank you!</p>
+                <p class="text-xs text-slate-400">We'll read your message and use it to improve VYTARA.</p>
+                <button @click="feedbackSent=false;feedbackForm={name:'',email:'',message:'',rating:5}"
+                        class="mt-2 text-xs font-bold text-brand-400 hover:underline">Send another message</button>
+            </div>
+
+            <!-- Form state -->
+            <div x-show="!feedbackSent" class="space-y-5">
+                <p class="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Send Your Feedback</p>
+
+                <!-- Star rating -->
+                <div class="space-y-2">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-wider">How would you rate VYTARA?</p>
+                    <div class="flex items-center gap-1.5">
+                        <template x-for="star in [1,2,3,4,5]" :key="star">
+                            <button @click="feedbackForm.rating=star"
+                                    class="text-3xl leading-none hover:scale-125 transition-transform focus:outline-none"
+                                    :class="star<=feedbackForm.rating ? 'text-amber-400' : 'text-slate-300 dark:text-slate-600'">★</button>
+                        </template>
+                        <span class="ml-2 text-sm font-black text-amber-400"
+                              x-text="['','Poor','Fair','Good','Great','Excellent!'][feedbackForm.rating]"></span>
+                    </div>
+                </div>
+
+                <!-- Name -->
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Your Name *</label>
+                    <input type="text" x-model="feedbackForm.name" placeholder="Enter your name"
+                           style="display:block;width:100%;border-radius:10px;border:1.5px solid #334155;background:#1e293b;color:#f1f5f9;padding:12px 14px;font-size:13px;outline:none;transition:border-color .15s;"
+                           onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#334155'">
+                </div>
+
+                <!-- Email -->
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Your Email *</label>
+                    <input type="email" x-model="feedbackForm.email" placeholder="your@email.com"
+                           style="display:block;width:100%;border-radius:10px;border:1.5px solid #334155;background:#1e293b;color:#f1f5f9;padding:12px 14px;font-size:13px;outline:none;transition:border-color .15s;"
+                           onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#334155'">
+                </div>
+
+                <!-- Message -->
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Message *</label>
+                    <textarea x-model="feedbackForm.message" rows="5"
+                              placeholder="Share your experience, report bugs, suggest features, or anything else..."
+                              style="display:block;width:100%;border-radius:10px;border:1.5px solid #334155;background:#1e293b;color:#f1f5f9;padding:12px 14px;font-size:13px;outline:none;resize:none;transition:border-color .15s;"
+                              onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#334155'"></textarea>
+                </div>
+
+                <!-- Submit -->
+                <button @click="sendFeedback()"
+                        :disabled="!feedbackForm.message.trim()||!feedbackForm.name.trim()"
+                        class="w-full bg-brand-500 hover:bg-brand-600 active:scale-[.98] text-white font-black py-4 rounded-xl text-sm uppercase tracking-widest transition-all shadow-lg shadow-brand-500/25 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                    Send Feedback →
+                </button>
+            </div>
         </div>
-        <div x-show="!feedbackSent" class="space-y-4">
-            <div>
-                <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-2">Rating</label>
-                <div class="flex gap-2">
-                    <template x-for="star in [1,2,3,4,5]" :key="star">
-                        <button @click="feedbackForm.rating=star" class="text-2xl transition-transform hover:scale-125" :class="star<=feedbackForm.rating?'text-amber-400':'text-slate-300 dark:text-slate-600'">★</button>
-                    </template>
+
+        <!-- RIGHT: Developer info cards -->
+        <div class="space-y-4">
+
+            <!-- Hello from Developer -->
+            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-6 shadow-sm">
+                <div class="flex gap-4">
+                    <div class="shrink-0 w-10 h-10 rounded-xl bg-brand-500/15 flex items-center justify-center text-2xl">👋</div>
+                    <div class="space-y-2">
+                        <h3 class="text-base font-black text-brand-400">Hello from the Developer</h3>
+                        <p class="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+                            VYTARA was built with passion to help you achieve your fitness goals. Your feedback directly shapes future updates — every message is read personally.
+                        </p>
+                        <p class="text-sm font-black text-brand-400">— Revanth Reddy Abbati</p>
+                    </div>
                 </div>
             </div>
-            <div><label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Your Name</label><input type="text" x-model="feedbackForm.name" placeholder="Your name"></div>
-            <div><label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Email (optional)</label><input type="email" x-model="feedbackForm.email" placeholder="you@example.com"></div>
-            <div><label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Message</label><textarea x-model="feedbackForm.message" rows="4" placeholder="Share what you love, what bugs you, or what you'd like to see added…"></textarea></div>
-            <button @click="sendFeedback()" :disabled="!feedbackForm.message.trim()" class="w-full bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-black py-3 rounded-xl text-xs uppercase tracking-widest transition-all shadow-md disabled:opacity-40">Send Feedback</button>
+
+            <!-- Ways to Reach Us -->
+            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-6 shadow-sm space-y-4">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ways to Reach Us</p>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-lg shrink-0">📧</span>
+                        <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">revanth.abbati@gmail.com</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-lg shrink-0">💡</span>
+                        <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Feature requests &amp; bug reports welcome</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-lg shrink-0">⭐</span>
+                        <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Rate your experience using the form</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Built with love -->
+            <div class="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-slate-700/60 rounded-[1.5rem] px-6 py-5 text-center space-y-1.5">
+                <p class="text-sm font-black text-slate-100">VYTARA is continuously evolving.</p>
+                <p class="text-sm text-slate-400 font-medium">Built with <span class="text-red-400">❤️</span> by <span class="font-black text-slate-200">Revanth Reddy Abbati</span></p>
+            </div>
         </div>
     </div>
-
-    <!-- Built with love footer -->
-    <div class="bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-700 rounded-[1.5rem] p-5 text-center space-y-1">
-        <p class="text-sm font-black text-slate-200">VYTARA is continuously evolving.</p>
-        <p class="text-sm text-slate-400 font-medium">Built with <span class="text-red-400">❤️</span> by <span class="font-black text-slate-200">Revanth Reddy Abbati</span> · © 2026 VYTARA</p>
-    </div>
 </div>
-
-
-
-</div><!-- end right column -->
 </div><!-- end app shell -->
 
 <!-- FORGOT PASSWORD MODAL -->
@@ -3607,7 +3699,7 @@ function vytaraApp() {
         challengesLoading: false,
         aiNutritionLoading: false,
         googleFitConnected: false,
-        googleFitData: { stepsToday:0, calsBurned:0, activeMins:0 },
+        googleFitData: { stepsToday:0, calsBurned:0, activeMins:0, heartRateAvg:0, sleepHours:0 },
         googleFitSyncing: false,
         googleFitAccessToken: null,
         feedbackForm: { name:'', email:'', message:'', rating:5 },
@@ -5168,63 +5260,66 @@ function vytaraApp() {
             }
             this.aiNutritionLoading = true;
             const qty    = amount > 0 ? (amount + ' ' + unit) : '100g';
-            const prompt = 'Return ONLY a JSON object (no markdown, no text, no explanation) with the nutritional values for ' + qty + ' of "' + food + '". Use this exact format: {"calories":0,"protein":0,"carbs":0,"fat":0,"fibre":0}';
-
-            // EXACT same pattern as working reference app:
-            // ?key= URL param, v1beta endpoint, no Bearer token
+            const prompt = 'You are a nutrition database. Return ONLY a JSON object with no markdown, no explanation, no extra text. Nutritional values for ' + qty + ' of "' + food + '": {"calories":0,"protein":0,"carbs":0,"fat":0,"fibre":0}';
+            const body = JSON.stringify({
+                contents: [{parts:[{text:prompt}]}],
+                generationConfig:{temperature:0,maxOutputTokens:120}
+            });
+            // Models confirmed working with AQ.Ab key format (from Google AI Studio Image)
             const MODELS = [
-                'gemini-2.5-flash-lite-preview-06-17',
+                'gemini-3.1-flash-lite',          // User confirmed this works (Image 1)
+                'gemini-3.5-flash',               // Image 1: 3.5 Flash
+                'gemini-3.1-flash-8b',            // Possible lite variant
+                'gemini-2.5-flash-lite-preview-06-17', // Working reference app model
                 'gemini-2.5-flash',
                 'gemini-2.0-flash',
                 'gemini-1.5-flash',
             ];
-            const BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
-            const body = JSON.stringify({
-                contents: [{parts: [{text: prompt}]}],
-                generationConfig: {temperature: 0.1, maxOutputTokens: 200}
-            });
-
+            const BASES = [
+                'https://generativelanguage.googleapis.com/v1beta/models/',
+                'https://generativelanguage.googleapis.com/v1/models/',
+            ];
+            let succeeded = false;
             for(const model of MODELS) {
-                try {
-                    const url  = BASE + model + ':generateContent?key=' + GEMINI_API_KEY;
-                    const resp = await fetch(url, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: body
-                    });
-                    if(!resp.ok) {
-                        var errData = await resp.json().catch(function(){ return {}; });
-                        if(resp.status === 404) continue; // model not found, try next
+                if(succeeded) break;
+                for(const base of BASES) {
+                    try {
+                        const url  = base + model + ':generateContent?key=' + GEMINI_API_KEY;
+                        const resp = await fetch(url, {
+                            method:'POST',
+                            headers:{'Content-Type':'application/json'},
+                            body:body
+                        });
+                        if(resp.status === 404) break; // model not in this endpoint, try next model
                         if(resp.status === 401 || resp.status === 403) {
                             this.aiNutritionLoading = false;
-                            alert('API key rejected (HTTP ' + resp.status + '). Please verify your GEMINI_API_KEY is correct and has access to the Generative Language API.');
+                            alert('AI key error (' + resp.status + '). Your API key does not have access.\nGet a key from https://aistudio.google.com'); return;
+                        }
+                        if(!resp.ok) continue;
+                        const data = await resp.json();
+                        if(data.error) continue;
+                        var txt = '';
+                        try { txt = data.candidates[0].content.parts[0].text || ''; } catch(e) { continue; }
+                        txt = txt.trim().replace(/```json[\s\S]*?```|```[\s\S]*?```/g,'').trim();
+                        var m = txt.match(/\{[^\{\}]+\}/);
+                        if(!m) continue;
+                        var n = JSON.parse(m[0]);
+                        if((n.calories||n.protein||n.carbs||n.fat) > 0) {
+                            this.mealEntry.calories = Math.round(n.calories  || 0);
+                            this.mealEntry.protein  = Math.round((n.protein  || 0) * 10) / 10;
+                            this.mealEntry.carbs    = Math.round((n.carbs    || 0) * 10) / 10;
+                            this.mealEntry.fat      = Math.round((n.fat      || 0) * 10) / 10;
+                            this.mealEntry.fibre    = Math.round((n.fibre || n.fiber || 0) * 10) / 10;
+                            this.mealEntryFoodRef   = null;
+                            this.aiNutritionLoading = false;
+                            succeeded = true;
                             return;
                         }
-                        continue;
-                    }
-                    const data = await resp.json();
-                    var txt = '';
-                    try { txt = data.candidates[0].content.parts[0].text || ''; } catch(pe) { continue; }
-                    txt = txt.trim().replace(/```json|```/gi, '').trim();
-                    var match = txt.match(/\{[^}]*\}/);
-                    if(!match) continue;
-                    var n = JSON.parse(match[0]);
-                    if((n.calories || n.protein || n.carbs || n.fat) > 0) {
-                        this.mealEntry.calories = Math.round(n.calories  || 0);
-                        this.mealEntry.protein  = Math.round((n.protein  || 0) * 10) / 10;
-                        this.mealEntry.carbs    = Math.round((n.carbs    || 0) * 10) / 10;
-                        this.mealEntry.fat      = Math.round((n.fat      || 0) * 10) / 10;
-                        this.mealEntry.fibre    = Math.round((n.fibre || n.fiber || 0) * 10) / 10;
-                        this.mealEntryFoodRef   = null;
-                        this.aiNutritionLoading = false;
-                        return; // success
-                    }
-                } catch(e) {
-                    continue;
+                    } catch(e) { continue; }
                 }
             }
             this.aiNutritionLoading = false;
-            alert('AI lookup failed. Please enter macros manually.');
+            if(!succeeded) alert('AI lookup failed. Please enter macros manually.');
         },
 
 
@@ -5327,14 +5422,11 @@ function vytaraApp() {
             }
             const SCOPE = encodeURIComponent([
                 'https://www.googleapis.com/auth/fitness.activity.read',
-                'https://www.googleapis.com/auth/fitness.body.read'
+                'https://www.googleapis.com/auth/fitness.body.read',
+                'https://www.googleapis.com/auth/fitness.sleep.read',
+                'https://www.googleapis.com/auth/fitness.heart_rate.read',
             ].join(' '));
-            // Use exact origin for redirect — add THIS URL to Google Cloud Console
-            // Authorized JavaScript Origins AND Authorized Redirect URIs
-            // Use the exact current page URL as redirect URI
-            // Make sure this exact URL is added to Google Cloud Console → Authorized Redirect URIs
             const redirectUri = window.location.href.split('#')[0];
-            console.log('[VYTARA] Google Fit redirect URI:', redirectUri, '— add this to Google Cloud Console');
             const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
                 + '?client_id=' + GFIT_CLIENT_ID
                 + '&redirect_uri=' + encodeURIComponent(redirectUri)
@@ -5380,7 +5472,9 @@ function vytaraApp() {
                     aggregateBy: [
                         {dataTypeName:'com.google.step_count.delta'},
                         {dataTypeName:'com.google.calories.expended'},
-                        {dataTypeName:'com.google.active_minutes'}
+                        {dataTypeName:'com.google.active_minutes'},
+                        {dataTypeName:'com.google.heart_rate.bpm'},
+                        {dataTypeName:'com.google.sleep.segment'},
                     ],
                     bucketByTime: {durationMillis:86400000},
                     startTimeMillis: start.getTime(),
@@ -5393,19 +5487,32 @@ function vytaraApp() {
                 });
                 if(res.status===401) { this.disconnectGoogleFit(); return; }
                 const data = await res.json();
-                let steps=0, cals=0, mins=0;
+                let steps=0, cals=0, mins=0, hrSum=0, hrCount=0, sleepMins=0;
                 (data.bucket||[]).forEach(b => {
                     (b.dataset||[]).forEach(ds => {
                         const t = ds.dataSourceId||'';
                         (ds.point||[]).forEach(p => {
-                            const v = p.value?.[0];
-                            if(t.includes('step_count'))  steps += parseInt(v?.intVal||0);
-                            else if(t.includes('calories')) cals  += Math.round(parseFloat(v?.fpVal||0));
-                            else if(t.includes('active_minutes')) mins += parseInt(v?.intVal||0);
+                            const v = p.value&&p.value[0];
+                            if(!v) return;
+                            if(t.includes('step_count'))     steps    += parseInt(v.intVal||0);
+                            else if(t.includes('calories'))  cals     += Math.round(parseFloat(v.fpVal||0));
+                            else if(t.includes('active_min'))mins     += parseInt(v.intVal||0);
+                            else if(t.includes('heart_rate')){ hrSum  += parseFloat(v.fpVal||0); hrCount++; }
+                            else if(t.includes('sleep')) {
+                                // sleep segment duration in ms → minutes
+                                const dur = (parseInt((p.endTimeNanos||0)/1e6) - parseInt((p.startTimeNanos||0)/1e6));
+                                sleepMins += Math.round(dur/60000);
+                            }
                         });
                     });
                 });
-                this.googleFitData = {stepsToday:steps, calsBurned:cals, activeMins:mins};
+                this.googleFitData = {
+                    stepsToday: steps,
+                    calsBurned: cals,
+                    activeMins: mins,
+                    heartRateAvg: hrCount>0 ? Math.round(hrSum/hrCount) : 0,
+                    sleepHours:  sleepMins>0 ? Math.round(sleepMins/60*10)/10 : 0,
+                };
                 this.persist();
             } catch(e) { console.warn('Google Fit sync error:', e); }
             this.googleFitSyncing = false;
