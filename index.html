@@ -5924,4 +5924,28 @@ function vytaraApp() {
                 html += `</tbody></table>`;
             }
 
-            html += `<div class="footer">VYTARA Premium Fitness OS · Report generated ${new Date().toLocaleString()}</div></body></html>
+
+            html += `<div class="footer">VYTARA Premium Fitness OS &middot; Report generated ${new Date().toLocaleString()}</div></body></html>`;
+
+            // Open in new window for printing/saving
+            try {
+                const win = window.open('', '_blank', 'width=900,height=700');
+                if(!win) { alert('Please allow popups to export PDF.'); return; }
+                win.document.open();
+                win.document.write(html);
+                win.document.close();
+                setTimeout(() => { try { win.print(); } catch(e) {} }, 600);
+            } catch(e) {
+                // Fallback: download as HTML
+                const blob = new Blob([html], {type:'text/html'});
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'VYTARA_Report.html';
+                a.click();
+            }
+        },
+    }; // end return
+} // end vytaraApp
+</script>
+</body>
+</html>
