@@ -4038,8 +4038,14 @@ function vytaraApp() {
             this.customGoals = s.customGoals||[];
             this.customExercises = s.customExercises||[];
             this.challenges = s.challenges||[];
-            this.mealHistory = s.mealHistory||[];
-            this.foodDatabase = s.foodDatabase||[];
+            this.mealHistory       = s.mealHistory||[];
+            this.foodDatabase      = s.foodDatabase||[];
+            // Restore Google Fit session
+            if(s.googleFitConnected && s.googleFitAccessToken) {
+                this.googleFitConnected   = true;
+                this.googleFitAccessToken = s.googleFitAccessToken;
+                this.googleFitData        = s.googleFitData || {stepsToday:0,calsBurned:0,activeMins:0,heartRateAvg:0,sleepHours:0};
+            }
         },
 
         setDefaultDates() {
@@ -4205,8 +4211,15 @@ function vytaraApp() {
                     this.firebaseUser = user || null;
                     document.dispatchEvent(new CustomEvent('fb-auth-change', { detail: user }));
                     if(user) {
+                        // Auto-navigate to app if Firebase session is valid on refresh
+                        if(this.currentView === 'auth') {
+                            if(this.profile && this.profile.name) {
+                                this.currentView = 'app';
+                            } else {
+                                this.currentView = 'onboarding';
+                            }
+                        }
                         this._syncFromCloud();
-                        // Load challenges for this user from Firestore
                         setTimeout(() => this.loadFirestoreChallenges(), 1000);
                     }
                 });
@@ -4404,7 +4417,7 @@ function vytaraApp() {
         },
 
         persist() {
-            const data = { profile:this.profile, workouts:this.workouts, dietLogs:this.dietLogs, metricsLogs:this.metricsLogs, waterLogs:this.waterLogs, photos:this.photos.map(p=>({...p,url:p.storagePath?undefined:p.url,data:p.storagePath?undefined:p.url})), customGoals:this.customGoals, customExercises:this.customExercises, challenges:this.challenges, mealHistory:this.mealHistory, foodDatabase:this.foodDatabase };
+            const data = { profile:this.profile, workouts:this.workouts, dietLogs:this.dietLogs, metricsLogs:this.metricsLogs, waterLogs:this.waterLogs, photos:this.photos.map(p=>({...p,url:p.storagePath?undefined:p.url,data:p.storagePath?undefined:p.url})), customGoals:this.customGoals, customExercises:this.customExercises, challenges:this.challenges, mealHistory:this.mealHistory, foodDatabase:this.foodDatabase, googleFitConnected:this.googleFitConnected, googleFitAccessToken:this.googleFitAccessToken, googleFitData:this.googleFitData };
             localStorage.setItem(VAULT_KEY, JSON.stringify(data));
             if(this.firebaseUser&&window._fb) this.persistCloud(data);
             this.generateHeatmapData();
@@ -5094,6 +5107,7 @@ function vytaraApp() {
             this.mealEntry.protein  = Math.round((parseFloat(food.protein)||0)  * ratio * 10) / 10;
             this.mealEntry.carbs    = Math.round((parseFloat(food.carbs)||0)    * ratio * 10) / 10;
             this.mealEntry.fat      = Math.round((parseFloat(food.fat)||0)      * ratio * 10) / 10;
+            this.mealEntry.fibre    = Math.round((parseFloat(food.fibre||food.fiber||0)) * ratio * 10) / 10;
         },
         // ==================== FOOD LIBRARY ====================
         addToFoodLibrary() {
@@ -5108,7 +5122,8 @@ function vytaraApp() {
                 protein: parseFloat(this.mealEntry.protein)||0,
                 carbs: parseFloat(this.mealEntry.carbs)||0,
                 fat: parseFloat(this.mealEntry.fat)||0,
-                fiber: 0
+                fiber: parseFloat(this.mealEntry.fibre)||0,
+                fibre: parseFloat(this.mealEntry.fibre)||0
             });
             this.persist();
             alert('Saved to food library!');
@@ -5635,7 +5650,7 @@ function vytaraApp() {
         disconnectGoogleFit() {
             this.googleFitAccessToken = null;
             this.googleFitConnected   = false;
-            this.googleFitData        = { stepsToday:0, calsBurned:0, activeMins:0 };
+            this.googleFitData        = { stepsToday:0, calsBurned:0, activeMins:0, heartRateAvg:0, sleepHours:0 };
             this.persist();
         },
 
