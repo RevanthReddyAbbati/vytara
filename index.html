@@ -2011,6 +2011,112 @@
 </div><!-- end app shell -->
 
 
+<!-- DIET LOG VIEW MODAL -->
+<div x-show="openModals.modalDietView && viewingDietLog"
+     x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-end="opacity-0"
+     class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+     @click.self="openModals.modalDietView=false">
+    <div class="bg-white dark:bg-panelDark rounded-[2rem] shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col"
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100">
+        <!-- Header -->
+        <div class="px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between shrink-0">
+            <div>
+                <h2 class="text-lg font-black">Nutrition Log</h2>
+                <p class="text-xs text-slate-400 mt-0.5" x-text="viewingDietLog ? viewingDietLog.date : ''"></p>
+            </div>
+            <button @click="openModals.modalDietView=false" class="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 text-lg">✕</button>
+        </div>
+        <!-- Content -->
+        <div class="overflow-y-auto p-6 space-y-4 flex-1" x-show="viewingDietLog">
+            <!-- Day totals -->
+            <div class="grid grid-cols-5 gap-2 p-4 rounded-2xl bg-gradient-to-r from-brand-500/8 to-purple-500/5 border border-brand-500/15">
+                <div class="text-center">
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Calories</p>
+                    <p class="text-base font-black text-purple-400" x-text="viewingDietLog && (viewingDietLog.calories||viewingDietLog.totalCalories||0)"></p>
+                    <p class="text-[8px] text-slate-500">kcal</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Protein</p>
+                    <p class="text-base font-black text-brand-400" x-text="viewingDietLog && (viewingDietLog.protein||viewingDietLog.totalProtein||0)+'g'"></p>
+                </div>
+                <div class="text-center">
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Carbs</p>
+                    <p class="text-base font-black text-emerald-400" x-text="viewingDietLog && (viewingDietLog.carbs||viewingDietLog.totalCarbs||0)+'g'"></p>
+                </div>
+                <div class="text-center">
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Fat</p>
+                    <p class="text-base font-black text-orange-400" x-text="viewingDietLog && (viewingDietLog.fat||viewingDietLog.totalFat||0)+'g'"></p>
+                </div>
+                <div class="text-center">
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Fibre</p>
+                    <p class="text-base font-black text-lime-400" x-text="viewingDietLog && (viewingDietLog.fibre||viewingDietLog.totalFibre||viewingDietLog.fiber||0)+'g'"></p>
+                </div>
+            </div>
+            <!-- Meal groups -->
+            <template x-if="viewingDietLog && viewingDietLog.mealGroups && viewingDietLog.mealGroups.length">
+                <div class="space-y-3">
+                    <template x-for="meal in viewingDietLog.mealGroups" :key="meal.id">
+                        <div class="border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden">
+                            <div class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
+                                <p class="text-xs font-black text-slate-700 dark:text-slate-200" x-text="meal.name||'Meal'"></p>
+                                <p class="text-[10px] font-bold text-slate-400" x-text="(meal.items||[]).reduce((s,i)=>s+(parseFloat(i.calories)||0),0)+' kcal'"></p>
+                            </div>
+                            <div class="divide-y divide-slate-50 dark:divide-slate-800/50">
+                                <template x-for="item in (meal.items||[])" :key="item.id||item.name">
+                                    <div class="px-4 py-2 flex items-center justify-between gap-3">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate" x-text="item.name"></p>
+                                            <p class="text-[10px] text-slate-400" x-text="(item.amount||'')+' '+(item.unit||'g')"></p>
+                                        </div>
+                                        <div class="flex gap-3 text-right shrink-0">
+                                            <div class="text-center"><p class="text-[9px] text-slate-400">Cal</p><p class="text-xs font-black text-purple-400" x-text="item.calories||0"></p></div>
+                                            <div class="text-center"><p class="text-[9px] text-slate-400">P</p><p class="text-xs font-black text-brand-400" x-text="(item.protein||0)+'g'"></p></div>
+                                            <div class="text-center"><p class="text-[9px] text-slate-400">C</p><p class="text-xs font-black text-emerald-400" x-text="(item.carbs||0)+'g'"></p></div>
+                                            <div class="text-center"><p class="text-[9px] text-slate-400">F</p><p class="text-xs font-black text-orange-400" x-text="(item.fat||0)+'g'"></p></div>
+                                            <div class="text-center"><p class="text-[9px] text-slate-400">Fi</p><p class="text-xs font-black text-lime-400" x-text="(item.fibre||item.fiber||0)+'g'"></p></div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+            <!-- Fallback flat meals list -->
+            <template x-if="viewingDietLog && (!viewingDietLog.mealGroups||!viewingDietLog.mealGroups.length) && viewingDietLog.meals && viewingDietLog.meals.length">
+                <div class="space-y-2">
+                    <template x-for="item in viewingDietLog.meals" :key="item.id||item.name">
+                        <div class="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <p class="text-xs font-semibold text-slate-700 dark:text-slate-200 flex-1 truncate" x-text="item.name"></p>
+                            <div class="flex gap-3 text-right shrink-0">
+                                <div class="text-center"><p class="text-[9px] text-slate-400">Cal</p><p class="text-xs font-black text-purple-400" x-text="item.calories||0"></p></div>
+                                <div class="text-center"><p class="text-[9px] text-slate-400">P</p><p class="text-xs font-black text-brand-400" x-text="(item.protein||0)+'g'"></p></div>
+                                <div class="text-center"><p class="text-[9px] text-slate-400">C</p><p class="text-xs font-black text-emerald-400" x-text="(item.carbs||0)+'g'"></p></div>
+                                <div class="text-center"><p class="text-[9px] text-slate-400">F</p><p class="text-xs font-black text-orange-400" x-text="(item.fat||0)+'g'"></p></div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+            <!-- Notes -->
+            <div x-show="viewingDietLog && viewingDietLog.notes" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Notes</p>
+                <p class="text-xs text-slate-600 dark:text-slate-300" x-text="viewingDietLog && viewingDietLog.notes"></p>
+            </div>
+        </div>
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 shrink-0">
+            <button @click="openModals.modalDietView=false"
+                    class="w-full border border-slate-200 dark:border-slate-700 text-slate-500 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- FOOD EDIT MODAL -->
 <div x-show="openModals.foodEditModal"
      x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
@@ -5677,7 +5783,14 @@ function vytaraApp() {
                     headers:{'Authorization':'Bearer '+this.googleFitAccessToken,'Content-Type':'application/json'},
                     body
                 });
-                if(res.status===401) { this.disconnectGoogleFit(); return; }
+                if(res.status===401) {
+                    // Token expired — disconnect and prompt reconnect
+                    this.googleFitConnected = false;
+                    this.googleFitAccessToken = null;
+                    this.persist();
+                    console.warn('[VYTARA] Google Fit token expired — please reconnect in Settings');
+                    return;
+                }
                 const data = await res.json();
                 let steps=0, cals=0, mins=0, hrSum=0, hrCount=0, sleepMins=0;
                 (data.bucket||[]).forEach(b => {
@@ -5978,8 +6091,9 @@ function vytaraApp() {
             if(this.dietLogs.length>0) {
                 const recent=this.dietLogs.slice(-7);
                 let tp=0,tc=0,tf=0;
-                recent.forEach(d=>{ tp+=parseInt(d.protein||d.totalProtein)||0; tc+=parseInt(d.carbs||d.totalCarbs)||0; tf+=parseInt(d.fat||d.totalFat)||0; });
-                if(tp+tc+tf>0) makeChart('canvas-diet-macros',{type:'doughnut',data:{labels:['Protein','Carbs','Fat'],datasets:[{data:[tp,tc,tf],backgroundColor:['rgba(59,130,246,0.7)','rgba(34,197,94,0.7)','rgba(249,115,22,0.7)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:labelColor,font:{size:10,weight:'bold'},boxWidth:10}},tooltip:{...defaults.plugins.tooltip}}}});
+                let tfi=0;
+                recent.forEach(d=>{ tp+=parseInt(d.protein||d.totalProtein)||0; tc+=parseInt(d.carbs||d.totalCarbs)||0; tf+=parseInt(d.fat||d.totalFat)||0; tfi+=parseInt(d.fibre||d.totalFibre||d.fiber||0); });
+                if(tp+tc+tf>0) makeChart('canvas-diet-macros',{type:'doughnut',data:{labels:['Protein','Carbs','Fat','Fibre'],datasets:[{data:[tp,tc,tf,tfi],backgroundColor:['rgba(59,130,246,0.7)','rgba(34,197,94,0.7)','rgba(249,115,22,0.7)','rgba(132,204,22,0.7)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:labelColor,font:{size:10,weight:'bold'},boxWidth:10}},tooltip:{...defaults.plugins.tooltip}}}});
             }
         },
 
@@ -6006,6 +6120,7 @@ function vytaraApp() {
             const totalVol  = wFiltered.reduce((a, w) => a + this.calculateVolume(w), 0);
             const avgCal    = dFiltered.length > 0 ? Math.round(dFiltered.reduce((a, d) => a + (parseInt(d.calories || d.totalCalories) || 0), 0) / dFiltered.length) : 0;
             const avgProt   = dFiltered.length > 0 ? Math.round(dFiltered.reduce((a, d) => a + (parseInt(d.protein  || d.totalProtein)  || 0), 0) / dFiltered.length) : 0;
+            const gFit      = this.googleFitConnected ? this.googleFitData : null;
 
             const CSS = `
                 *{margin:0;padding:0;box-sizing:border-box}
@@ -6069,6 +6184,18 @@ function vytaraApp() {
                 <div class="scard"><div class="val">${totalVol.toLocaleString()}</div><div class="lbl">Total Volume kg</div></div>
                 <div class="scard"><div class="val">${avgCal}</div><div class="lbl">Avg Calories/Day</div></div>
             </div>`;
+
+            // Google Fit Data
+            if(gFit && (gFit.stepsToday||gFit.calsBurned||gFit.activeMins)) {
+                html += `<h2>Google Fit — Today's Activity</h2>
+                <div class="summary">
+                    <div class="scard"><div class="val">${(gFit.stepsToday||0).toLocaleString()}</div><div class="lbl">Steps</div></div>
+                    <div class="scard"><div class="val">${gFit.calsBurned||0}</div><div class="lbl">Cals Burned</div></div>
+                    <div class="scard"><div class="val">${gFit.activeMins||0}m</div><div class="lbl">Active Mins</div></div>
+                    <div class="scard"><div class="val">${gFit.heartRateAvg||'—'}</div><div class="lbl">Avg HR bpm</div></div>
+                    <div class="scard"><div class="val">${gFit.sleepHours||'—'}h</div><div class="lbl">Sleep</div></div>
+                </div>`;
+            }
 
             // Personal Stats
             if(inc.personalStats && this.profile.name) {
