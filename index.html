@@ -754,6 +754,17 @@
 
 <!-- WORKOUTS TAB -->
 <div x-show="activeTab==='workouts'" class="space-y-6 p-4 md:p-8 lg:p-10">
+    <!-- Personal Record celebration (auto-dismisses) -->
+    <div x-show="prCelebration" x-cloak class="bg-amber-500/10 border border-amber-500/30 rounded-[1.25rem] p-4 flex items-start gap-3">
+        <span class="text-xl shrink-0">🏆</span>
+        <div class="flex-1">
+            <p class="text-xs font-black text-amber-400 uppercase tracking-widest mb-1">New Personal Record!</p>
+            <template x-for="(r,ri) in (prCelebration||[])" :key="ri">
+                <p class="text-sm text-slate-600 dark:text-slate-300 font-medium" x-text="r.exercise+' — '+r.type+': '+r.detail"></p>
+            </template>
+        </div>
+        <button @click="prCelebration=null" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-black text-sm shrink-0">✕</button>
+    </div>
     <div class="flex flex-wrap justify-between items-center gap-4">
         <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Workouts</h2>
         <div class="flex gap-2" x-show="!workoutBuilder.active">
@@ -828,6 +839,23 @@
                             <option value="Intermediate">Intermediate</option>
                             <option value="Advanced">Advanced</option>
                         </select>
+                        <select x-model="workoutBuilder.categoryFilter" class="!w-auto">
+                            <option value="">All Types</option>
+                            <option value="Compound">Compound</option>
+                            <option value="Isolation">Isolation</option>
+                            <option value="Isometric">Isometric</option>
+                        </select>
+                        <select x-model="workoutBuilder.patternFilter" class="!w-auto">
+                            <option value="">All Patterns</option>
+                            <template x-for="p in ['Push','Pull','Squat','Hinge','Carry','Core / Stability','Isolation']" :key="p">
+                                <option :value="p" x-text="p"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="flex gap-2 flex-wrap">
+                        <button @click="workoutBuilder.favoritesOnly=!workoutBuilder.favoritesOnly" :class="workoutBuilder.favoritesOnly?'bg-brand-500 text-white border-brand-500':'border-slate-200 dark:border-slate-700 text-slate-400'" class="px-3 py-1.5 rounded-xl border font-black text-[10px] uppercase tracking-wider transition-all">⭐ Favorites</button>
+                        <button @click="workoutBuilder.recentOnly=!workoutBuilder.recentOnly" :class="workoutBuilder.recentOnly?'bg-brand-500 text-white border-brand-500':'border-slate-200 dark:border-slate-700 text-slate-400'" class="px-3 py-1.5 rounded-xl border font-black text-[10px] uppercase tracking-wider transition-all">Recent</button>
+                        <button @click="workoutBuilder.prOnly=!workoutBuilder.prOnly" :class="workoutBuilder.prOnly?'bg-brand-500 text-white border-brand-500':'border-slate-200 dark:border-slate-700 text-slate-400'" class="px-3 py-1.5 rounded-xl border font-black text-[10px] uppercase tracking-wider transition-all">Has PR</button>
                     </div>
                     <div x-show="builderExercisePool.length===0" class="p-8 text-center text-slate-400 text-sm font-medium border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">No exercises match your filters.</div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -871,6 +899,7 @@
                                         x-text="activeExerciseMeta.difficulty"></span>
                                     <span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-brand-500/10 text-brand-400 uppercase tracking-wider" x-text="activeExerciseMeta.equipment"></span>
                                     <span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 uppercase tracking-wider" x-text="activeExerciseMeta.category"></span>
+                                    <span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 uppercase tracking-wider" x-text="activeExerciseMeta.movementPattern"></span>
                                     <template x-for="m in activeExerciseMeta.primary" :key="m"><span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 uppercase tracking-wider" x-text="m"></span></template>
                                 </div>
                             </div>
@@ -878,7 +907,31 @@
                         </div>
                     </div>
 
-                    <!-- Media placeholder / illustration -->
+                    <!-- Workout Intelligence: real history stats (empty state if none) -->
+                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-5 sm:p-7">
+                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-4">Your History</p>
+                        <div x-show="!activeExerciseStats" class="text-sm text-slate-400 italic">No logged history yet for this exercise.</div>
+                        <div x-show="activeExerciseStats" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div><p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Last Session</p><p class="text-sm font-extrabold text-slate-700 dark:text-slate-200" x-text="activeExerciseStats?activeExerciseStats.lastWorkoutDate:'--'"></p></div>
+                            <div><p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Best Weight</p><p class="text-sm font-extrabold text-brand-400" x-text="activeExerciseStats?activeExerciseStats.bestWeight+' kg':'--'"></p></div>
+                            <div><p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Est. 1RM</p><p class="text-sm font-extrabold text-brand-400" x-text="activeExerciseStats?activeExerciseStats.estimated1RM+' kg':'--'"></p></div>
+                            <div><p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Sessions</p><p class="text-sm font-extrabold text-slate-700 dark:text-slate-200" x-text="activeExerciseStats?activeExerciseStats.totalSessions:'--'"></p></div>
+                            <div><p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Avg Weight</p><p class="text-sm font-extrabold text-slate-700 dark:text-slate-200" x-text="activeExerciseStats?activeExerciseStats.avgWeight+' kg':'--'"></p></div>
+                            <div><p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Avg Reps</p><p class="text-sm font-extrabold text-slate-700 dark:text-slate-200" x-text="activeExerciseStats?activeExerciseStats.avgReps:'--'"></p></div>
+                            <div><p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Max Volume</p><p class="text-sm font-extrabold text-slate-700 dark:text-slate-200" x-text="activeExerciseStats?activeExerciseStats.maxVolume+' kg':'--'"></p></div>
+                            <div><p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Volume</p><p class="text-sm font-extrabold text-slate-700 dark:text-slate-200" x-text="activeExerciseStats?activeExerciseStats.totalVolume+' kg':'--'"></p></div>
+                        </div>
+                        <!-- Progressive overload recommendation — derived only from real history above -->
+                        <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex gap-2.5 items-start">
+                            <span class="text-base shrink-0">📈</span>
+                            <div>
+                                <p class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1" x-show="activeExerciseProgression.status==='ok'" x-text="activeExerciseProgression.action"></p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-snug" x-text="activeExerciseProgression.status==='ok'?activeExerciseProgression.reason:activeExerciseProgression.message"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Media placeholder / illustration (swap for video/animation later without layout changes) -->
                     <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-6 sm:p-10 flex items-center justify-center" style="min-height:220px;">
                         <div x-html="getExerciseSVG(workoutBuilder.activeExercise)"></div>
                     </div>
@@ -887,10 +940,14 @@
                     <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-5 sm:p-7">
                         <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-4">Muscles Worked</p>
                         <div class="flex justify-center overflow-x-auto" x-html="generateMuscleSVG(activeExerciseMeta.primary,activeExerciseMeta.secondary,theme==='dark',2.1)"></div>
+                        <div x-show="activeExerciseMeta.stabilizers.length>0" class="flex flex-wrap gap-1.5 justify-center mt-3">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest self-center mr-1">Stabilizers:</span>
+                            <template x-for="m in activeExerciseMeta.stabilizers" :key="m"><span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 uppercase tracking-wider" x-text="m"></span></template>
+                        </div>
                     </div>
 
                     <!-- Info cards -->
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Sets</p>
                             <p class="text-lg font-extrabold text-brand-400" x-text="activeExerciseDefaults.sets"></p>
@@ -906,6 +963,14 @@
                         <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tempo</p>
                             <p class="text-xs font-extrabold text-brand-400 leading-tight" x-text="activeExerciseDefaults.tempo"></p>
+                        </div>
+                        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Grip</p>
+                            <p class="text-xs font-extrabold text-brand-400 leading-tight" x-text="activeExerciseMeta.grip"></p>
+                        </div>
+                        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Range of Motion</p>
+                            <p class="text-xs font-extrabold text-brand-400 leading-tight" x-text="activeExerciseMeta.rangeOfMotion"></p>
                         </div>
                     </div>
 
@@ -956,6 +1021,18 @@
                         </ul>
                     </div>
 
+                    <!-- Safety -->
+                    <div class="bg-slate-500/5 border border-slate-500/20 rounded-[1.5rem] p-5 sm:p-7">
+                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Safety</p>
+                        <ul class="space-y-2">
+                            <template x-for="(sn,si) in activeExerciseMeta.safetyNotes" :key="si">
+                                <li class="flex gap-2.5 items-start text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug">
+                                    <span class="text-slate-400 shrink-0">🛡️</span><span x-text="sn"></span>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+
                     <!-- Variations -->
                     <div x-show="activeExerciseRelated.length>0">
                         <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Exercise Variations</p>
@@ -996,32 +1073,30 @@
                                         <button x-show="workoutBuilder.variations.length>1" @click="builderRemoveVariation(vi)" class="text-red-400 hover:text-red-500 font-black text-sm px-1">✕</button>
                                     </div>
                                 </div>
-                                <div class="p-4 sm:p-5 space-y-2">
-                                    <div class="grid text-[9px] font-black text-slate-400 uppercase tracking-widest" style="grid-template-columns:1.5rem 1fr 1fr .8fr .8fr auto;gap:.4rem;">
-                                        <span class="text-center">#</span>
-                                        <span x-text="isTimedExercise(v.exercise)?'Seconds':'Reps'"></span>
-                                        <span>Weight (kg)</span>
-                                        <span>RPE</span>
-                                        <span>Rest</span>
-                                        <span></span>
-                                    </div>
+                                <div class="p-4 sm:p-5 space-y-3">
                                     <template x-for="(s,si) in v.sets" :key="si">
-                                        <div class="set-row" style="grid-template-columns:1.5rem 1fr 1fr .8fr .8fr auto;">
-                                            <div class="flex items-center justify-center">
+                                        <div class="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2.5 space-y-1.5">
+                                            <div class="grid gap-1.5 items-center" style="grid-template-columns:1.5rem 5.5rem 1fr 1fr auto;">
                                                 <span class="w-5 h-5 rounded-full bg-brand-500/15 text-brand-400 text-[9px] font-black flex items-center justify-center shrink-0" x-text="si+1"></span>
+                                                <select x-model="s.setType" class="!text-[10px] !py-1.5 !px-1.5" title="Set type">
+                                                    <template x-for="t in SET_TYPES" :key="t"><option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option></template>
+                                                </select>
+                                                <input type="number" x-model="s.reps" :placeholder="isTimedExercise(v.exercise)?'Secs':'Reps'" min="0">
+                                                <input type="number" step="any" x-model="s.weight" placeholder="kg" min="0">
+                                                <button @click="builderRemoveSet(vi,si)" x-show="v.sets.length>1" class="shrink-0 text-red-400 text-xs font-black hover:text-red-500 px-1">✕</button>
                                             </div>
-                                            <input type="number" x-model="s.reps" :placeholder="isTimedExercise(v.exercise)?'Secs':'Reps'" min="0">
-                                            <input type="number" step="any" x-model="s.weight" placeholder="kg" min="0">
-                                            <input type="number" step="0.5" x-model="s.rpe" placeholder="RPE" min="0" max="10" title="Rate of Perceived Exertion (0-10)">
-                                            <input type="text" x-model="s.rest" placeholder="90s">
-                                            <button @click="builderRemoveSet(vi,si)" x-show="v.sets.length>1" class="shrink-0 text-red-400 text-xs font-black hover:text-red-500 px-1">✕</button>
-                                            <div x-show="v.sets.length===1" class="w-5"></div>
+                                            <div class="grid gap-1.5" style="grid-template-columns:1fr 1fr 1fr;">
+                                                <input type="number" step="0.5" x-model="s.rpe" placeholder="RPE" min="0" max="10" title="Rate of Perceived Exertion (0-10)">
+                                                <input type="text" x-model="s.rest" placeholder="Rest e.g. 90s">
+                                                <input type="text" x-model="s.tempo" placeholder="Tempo e.g. 2-1-2">
+                                            </div>
                                         </div>
                                     </template>
                                     <div class="flex items-center justify-between pt-1">
                                         <button @click="builderAddSet(vi)" class="text-[10px] font-black text-brand-400 border border-brand-500/20 px-3 py-1.5 rounded-lg hover:bg-brand-500/10 transition-all">+ Add Set</button>
                                         <span class="text-[10px] font-black text-slate-400" x-show="v.sets.filter(s=>s.reps>0).length>0">Sets: <span class="text-brand-500" x-text="v.sets.filter(s=>s.reps>0).length"></span></span>
                                     </div>
+                                    <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Exercise Notes</label><input type="text" x-model="v.exerciseNotes" placeholder="Notes for this exercise (optional)"></div>
                                 </div>
                             </div>
                         </template>
@@ -3324,17 +3399,108 @@ function getExerciseCategory(name) {
     return (info.secondary && info.secondary.length >= 2) ? 'Compound' : 'Isolation';
 }
 
-// Full metadata for an exercise card / guide header. Falls back to honest placeholders
-// (never fabricated specifics) when an exercise has no curated entry (e.g. custom exercises).
+function slugifyExerciseName(name) { return (name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
+
+// Shared set/variation factories — used by both the classic modal and the workout builder
+// so advanced logging fields (RPE, rest, set type, tempo) stay consistent everywhere.
+const SET_TYPES = ['working','warmup','dropset','failure','assisted'];
+function blankSet() { return {reps:'',weight:'',rpe:'',rest:'',setType:'working',tempo:'',notes:''}; }
+function blankVariation(name) { return {exercise:name||'',exerciseNotes:'',sets:[blankSet()],_showSugg:false,_suggestions:[],_showInfo:false}; }
+
+// Movement pattern — derived from primary muscle + category + name keywords (real classification, not fabricated).
+function getMovementPattern(name) {
+    const n=(name||'').toLowerCase();
+    const primary=(EXERCISE_INFO[name]?.primary||[])[0]||'';
+    const cat=getExerciseCategory(name);
+    if(cat==='Isometric') return 'Core / Stability';
+    if(n.includes('walk')) return 'Carry';
+    if(n.includes('deadlift')||n.includes('good morning')) return 'Hinge';
+    if(n.includes('squat')||n.includes('lunge')||n.includes('step-up')||n.includes('leg press')) return 'Squat';
+    if(primary==='Core') return 'Core / Stability';
+    if(cat!=='Compound') return 'Isolation';
+    if(['Chest','Shoulders','Triceps'].includes(primary)) return 'Push';
+    if(['Back','Biceps'].includes(primary)) return 'Pull';
+    if(['Legs','Glutes'].includes(primary)) return 'Squat';
+    return 'Isolation';
+}
+
+// Stabilizer muscles — general biomechanics knowledge (which muscles brace a lift), not per-exercise fabrication.
+function getStabilizerMuscles(name) {
+    const meta=EXERCISE_META[name]||{};
+    const cat=getExerciseCategory(name);
+    const primary=(EXERCISE_INFO[name]?.primary||[])[0]||'';
+    if(cat==='Isometric') return [];
+    const st=new Set();
+    if(cat==='Compound' && primary!=='Core') st.add('Core');
+    if((meta.equipment==='Barbell'||meta.equipment==='Dumbbell') && ['Chest','Back','Shoulders'].includes(primary)) st.add('Forearms');
+    if(['Legs','Glutes'].includes(primary) && cat==='Compound') st.add('Lower Back');
+    return [...st];
+}
+
+// Grip — derived from equipment + name conventions (real lifting terminology, generic not per-exercise unique).
+function getExerciseGrip(name) {
+    const n=(name||'').toLowerCase();
+    const meta=EXERCISE_META[name]||{};
+    if(meta.equipment==='Bodyweight'||meta.equipment==='Not specified') return 'N/A';
+    if(n.includes('hammer')) return 'Neutral (palms facing)';
+    if(n.includes('reverse')) return 'Overhand (pronated)';
+    if(n.includes('curl')||n.includes('row')||n.includes('pulldown')||n.includes('pull-up')) return n.includes('curl')?'Underhand (supinated)':'Overhand (pronated)';
+    if(n.includes('press')||n.includes('push')) return 'Overhand, shoulder-width';
+    return 'Standard grip';
+}
+
+// Body position — derived from exercise name keywords (Lying/Seated/Standing/Hanging).
+function getExerciseBodyPosition(name) {
+    const n=(name||'').toLowerCase();
+    if(n.includes('bench')||n.includes('lying')||n.includes('crunch')||n.includes('leg raise')||n.includes('flye')) return 'Lying';
+    if(n.includes('seated')||n.includes('preacher')) return 'Seated';
+    if(n.includes('pull-up')||n.includes('hang')||n.includes('dip')) return 'Hanging / Supported';
+    if(n.includes('plank')||n.includes('rollout')||n.includes('push-up')) return 'Prone / Plank';
+    return 'Standing';
+}
+
+// Range of motion — defaults to full ROM; flags exercises trained for an extended stretch.
+function getExerciseROM(name) {
+    const n=(name||'').toLowerCase();
+    if(n.includes('flye')||n.includes('pullover')||n.includes('stretch')) return 'Extended (stretch-focused)';
+    return 'Full range of motion';
+}
+
+// Safety notes — generic, category/equipment-based cautions (standard training guidance, not fabricated claims).
+function getExerciseSafetyNotes(name) {
+    const cat=getExerciseCategory(name);
+    const meta=EXERCISE_META[name]||{};
+    const notes=[];
+    if(cat==='Compound') notes.push('Use a spotter or safety pins when training close to failure on heavy compound lifts.');
+    if(cat==='Isometric') notes.push('Never hold your breath during an isometric hold — this can spike blood pressure.');
+    if(meta.equipment==='Barbell') notes.push('Ensure collars are locked and plates are secured before lifting.');
+    if(meta.equipment==='Cable'||meta.equipment==='Machine') notes.push('Check that pins and attachments are fully seated before starting.');
+    notes.push('Stop the set if you feel joint pain — mild muscle fatigue is normal, joint pain is not.');
+    return notes;
+}
+
+// Full structured exercise model. Falls back to honest placeholders (never fabricated
+// specifics) when an exercise has no curated entry (e.g. custom exercises). Expanding to
+// hundreds of exercises only requires adding entries to EXERCISE_INFO/EXERCISE_META —
+// every other field here derives automatically.
 function getExerciseMeta(name) {
     const info = EXERCISE_INFO[name] || {};
     const meta = EXERCISE_META[name] || {};
     return {
+        id: slugifyExerciseName(name),
+        name: name||'',
         equipment: meta.equipment || 'Not specified',
         difficulty: meta.difficulty || 'Intermediate',
         category: getExerciseCategory(name),
+        movementType: getExerciseCategory(name),
+        movementPattern: getMovementPattern(name),
         primary: info.primary || [],
         secondary: info.secondary || [],
+        stabilizers: getStabilizerMuscles(name),
+        grip: getExerciseGrip(name),
+        bodyPosition: getExerciseBodyPosition(name),
+        rangeOfMotion: getExerciseROM(name),
+        safetyNotes: getExerciseSafetyNotes(name),
     };
 }
 
@@ -4343,7 +4509,8 @@ function vytaraApp() {
         metricsForm: { date:'', weight:'', bodyFat:'', muscleMass:'', waist:'', chest:'', arms:'', hips:'', sleep:'', notes:'' },
         workoutForm: { date:'', type:'strength', duration:'', muscles:[], variations:[], notes:'', distance:'', pace:'', speed:'', caloriesBurned:'' },
         // Inline (non-modal) premium workout builder: Muscles -> Exercises -> Guide -> Log
-        workoutBuilder: { active:false, step:'muscles', date:'', duration:'', selectedMuscles:[], exerciseSearch:'', equipmentFilter:'', difficultyFilter:'', activeExercise:'', variations:[], notes:'' },
+        workoutBuilder: { active:false, step:'muscles', date:'', duration:'', selectedMuscles:[], exerciseSearch:'', equipmentFilter:'', difficultyFilter:'', categoryFilter:'', patternFilter:'', favoritesOnly:false, recentOnly:false, prOnly:false, activeExercise:'', variations:[], notes:'' },
+        prCelebration: null,
         photoForm: { date:'', category:'Front', notes:'', fileObj:null },
         newGoalText: '',
         newExerciseName: '',
@@ -4399,6 +4566,11 @@ function vytaraApp() {
             if(q) pool=pool.filter(ex=>ex.toLowerCase().includes(q));
             if(b.equipmentFilter) pool=pool.filter(ex=>getExerciseMeta(ex).equipment===b.equipmentFilter);
             if(b.difficultyFilter) pool=pool.filter(ex=>getExerciseMeta(ex).difficulty===b.difficultyFilter);
+            if(b.categoryFilter) pool=pool.filter(ex=>getExerciseMeta(ex).category===b.categoryFilter);
+            if(b.patternFilter) pool=pool.filter(ex=>getExerciseMeta(ex).movementPattern===b.patternFilter);
+            if(b.favoritesOnly) pool=pool.filter(ex=>this.isFavoriteExercise(ex));
+            if(b.recentOnly) pool=pool.filter(ex=>this.isRecentlyUsedExercise(ex));
+            if(b.prOnly) pool=pool.filter(ex=>this.getExercisePR(ex)>0);
             return pool.sort();
         },
         get activeExerciseMeta() { return getExerciseMeta(this.workoutBuilder.activeExercise); },
@@ -4406,6 +4578,8 @@ function vytaraApp() {
         get activeExerciseDefaults() { return getExerciseGuideDefaults(this.workoutBuilder.activeExercise); },
         get activeExerciseTips() { return getExerciseProTips(this.workoutBuilder.activeExercise); },
         get activeExerciseRelated() { return getRelatedExercises(this.workoutBuilder.activeExercise); },
+        get activeExerciseStats() { return this.getExerciseStats(this.workoutBuilder.activeExercise); },
+        get activeExerciseProgression() { return this.getProgressionRecommendation(this.workoutBuilder.activeExercise); },
         get filteredDietLogs() {
             let list=[...this.dietLogs].sort((a,b)=>b.date.localeCompare(a.date));
             if(this.filters.dietFrom) list=list.filter(d=>d.date>=this.filters.dietFrom);
@@ -4699,7 +4873,7 @@ function vytaraApp() {
         openModal(name, presetType) {
             if(name==='modalWorkout') {
                 const today=this.getToday();
-                this.workoutForm={date:today,type:presetType||'strength',duration:'',muscles:[],variations:[{exercise:'',sets:[{reps:'',weight:'',notes:''}],_showSugg:false,_suggestions:[],_showInfo:false}],notes:'',distance:'',pace:'',speed:'',caloriesBurned:''};
+                this.workoutForm={date:today,type:presetType||'strength',duration:'',muscles:[],variations:[blankVariation()],notes:'',distance:'',pace:'',speed:'',caloriesBurned:''};
             }
             if(name==='modalDiet') {
                 const t=this.getToday();
@@ -5491,10 +5665,10 @@ function vytaraApp() {
 
         // ==================== WORKOUT ====================
         addVariation() {
-            this.workoutForm.variations.push({exercise:'',sets:[{reps:'',weight:'',notes:''}],_showSugg:false,_suggestions:[],_showInfo:false});
+            this.workoutForm.variations.push(blankVariation());
         },
         removeVariation(vi) { this.workoutForm.variations.splice(vi,1); },
-        addSet(vi) { this.workoutForm.variations[vi].sets.push({reps:'',weight:'',notes:''}); },
+        addSet(vi) { this.workoutForm.variations[vi].sets.push(blankSet()); },
         removeSet(vi,si) { this.workoutForm.variations[vi].sets.splice(si,1); },
 
         updateSuggestionsForVar(vi) {
@@ -5530,13 +5704,14 @@ function vytaraApp() {
             if(!this.workoutForm.date) { alert('Please select a date.'); return; }
             const isStrength = this.workoutForm.type==='strength'||this.workoutForm.type==='';
             if(isStrength&&this.workoutForm.variations.length===0) { alert('Please add at least one exercise.'); return; }
+            const priorStats = isStrength ? this.workoutForm.variations.map(v=>({exercise:v.exercise, stats:this.getExerciseStats(v.exercise)})) : [];
             const entry = {
                 id: this.workoutForm._editId||Date.now().toString(36)+Math.random().toString(36).slice(2),
                 date: this.workoutForm.date,
                 type: this.workoutForm.type||'strength',
                 duration: parseInt(this.workoutForm.duration)||0,
                 muscles: [...(this.workoutForm.muscles||[])],
-                variations: isStrength ? this.workoutForm.variations.map(v=>({exercise:v.exercise,sets:v.sets.map(s=>({reps:parseInt(s.reps)||0,weight:parseFloat(s.weight)||0,rpe:parseFloat(s.rpe)||0,rest:s.rest||'',notes:s.notes||''})).filter(s=>s.reps>0||s.weight>0)})) : [],
+                variations: isStrength ? this.workoutForm.variations.map(v=>({exercise:v.exercise,exerciseNotes:v.exerciseNotes||'',sets:v.sets.map(s=>({reps:parseInt(s.reps)||0,weight:parseFloat(s.weight)||0,rpe:parseFloat(s.rpe)||0,rest:s.rest||'',setType:s.setType||'working',tempo:s.tempo||'',notes:s.notes||''})).filter(s=>s.reps>0||s.weight>0)})) : [],
                 notes: this.workoutForm.notes||'',
                 distance: parseFloat(this.workoutForm.distance)||0,
                 pace: parseFloat(this.workoutForm.pace)||0,
@@ -5546,16 +5721,41 @@ function vytaraApp() {
                 exercise: this.workoutForm.variations[0]?.exercise||'',
                 sets: this.workoutForm.variations[0]?.sets||[],
             };
+            const newRecords = isStrength ? this.detectNewRecords(entry, priorStats) : [];
+            if(newRecords.length>0) entry.newRecords = newRecords;
             if(this.workoutForm._editId) { const i=this.workouts.findIndex(w=>w.id===this.workoutForm._editId); if(i>-1) this.workouts.splice(i,1,entry); else this.workouts.push(entry); }
             else this.workouts.push(entry);
             this.persist();
+            if(newRecords.length>0) { this.prCelebration=newRecords; setTimeout(()=>{ this.prCelebration=null; },6000); }
             // Sync challenge scores when workout saved
             if(this.firebaseUser && window._fb) setTimeout(()=>this.syncChallengeScores(),500);
             this.closeModal('modalWorkout');
         },
+        // Personal Record Engine — compares this session's real logged sets against real prior history only.
+        detectNewRecords(entry, priorStats) {
+            const records=[];
+            (entry.variations||[]).forEach(v=>{
+                const prior = (priorStats.find(p=>p.exercise===v.exercise)||{}).stats;
+                let sessionVolume=0, sessionMaxWeight=0, sessionMaxReps=0, sessionMax1RM=0;
+                (v.sets||[]).forEach(s=>{
+                    sessionVolume += (s.reps||0)*(s.weight||0);
+                    if(s.weight>sessionMaxWeight) sessionMaxWeight=s.weight;
+                    if(s.reps>sessionMaxReps) sessionMaxReps=s.reps;
+                    const oneRM = s.reps>0 ? s.weight*(1+s.reps/30) : s.weight;
+                    if(oneRM>sessionMax1RM) sessionMax1RM=oneRM;
+                });
+                if(!prior) { if(sessionMaxWeight>0) records.push({exercise:v.exercise, type:'First Record', detail:sessionMaxWeight+' kg'}); return; }
+                if(sessionMaxWeight>prior.bestWeight) records.push({exercise:v.exercise, type:'Highest Weight', detail:sessionMaxWeight+' kg'});
+                if(Math.round(sessionVolume)>prior.maxVolume) records.push({exercise:v.exercise, type:'Highest Volume', detail:Math.round(sessionVolume)+' kg'});
+                if(sessionMaxReps>prior.mostReps) records.push({exercise:v.exercise, type:'Most Reps', detail:sessionMaxReps+' reps'});
+                if(Math.round(sessionMax1RM)>prior.estimated1RM) records.push({exercise:v.exercise, type:'Estimated 1RM', detail:Math.round(sessionMax1RM)+' kg'});
+            });
+            return records;
+        },
 
         editWorkout(w) {
-            const variations=(w.variations&&w.variations.length>0)?w.variations.map(v=>({exercise:v.exercise,sets:(v.sets||[{reps:'',weight:'',rpe:'',rest:'',notes:''}]).map(s=>({reps:s.reps||'',weight:s.weight||'',rpe:s.rpe||'',rest:s.rest||'',notes:s.notes||''})),_showSugg:false,_suggestions:[],_showInfo:false})):[{exercise:w.exercise||'',sets:(w.sets||[{reps:'',weight:'',rpe:'',rest:'',notes:''}]).map(s=>({reps:s.reps||'',weight:s.weight||'',rpe:s.rpe||'',rest:s.rest||'',notes:s.notes||''})),_showSugg:false,_suggestions:[],_showInfo:false}];
+            const mapSet=s=>({reps:s.reps||'',weight:s.weight||'',rpe:s.rpe||'',rest:s.rest||'',setType:s.setType||'working',tempo:s.tempo||'',notes:s.notes||''});
+            const variations=(w.variations&&w.variations.length>0)?w.variations.map(v=>({exercise:v.exercise,exerciseNotes:v.exerciseNotes||'',sets:(v.sets||[blankSet()]).map(mapSet),_showSugg:false,_suggestions:[],_showInfo:false})):[{exercise:w.exercise||'',exerciseNotes:'',sets:(w.sets||[blankSet()]).map(mapSet),_showSugg:false,_suggestions:[],_showInfo:false}];
             this.workoutForm={_editId:w.id,date:w.date,type:w.type||'strength',duration:w.duration||w.minutes||'',muscles:[...(w.muscles||[])],variations,notes:w.notes||'',distance:w.distance||'',pace:w.pace||'',speed:w.speed||'',caloriesBurned:w.caloriesBurned||''};
             this.openModals.modalWorkout=true;
         },
@@ -5620,12 +5820,12 @@ function vytaraApp() {
         builderStartLogging() {
             const name=this.workoutBuilder.activeExercise;
             if(!this.workoutBuilder.variations.some(v=>v.exercise===name)) {
-                this.workoutBuilder.variations.push({ exercise:name, sets:[{reps:'',weight:'',rpe:'',rest:'',notes:''}] });
+                this.workoutBuilder.variations.push({exercise:name, exerciseNotes:'', sets:[blankSet()]});
             }
             this.workoutBuilder.step='log';
         },
         builderAddAnotherExercise() { this.workoutBuilder.step='exercises'; },
-        builderAddSet(vi) { this.workoutBuilder.variations[vi].sets.push({reps:'',weight:'',rpe:'',rest:'',notes:''}); },
+        builderAddSet(vi) { this.workoutBuilder.variations[vi].sets.push(blankSet()); },
         builderRemoveSet(vi,si) { this.workoutBuilder.variations[vi].sets.splice(si,1); },
         builderRemoveVariation(vi) { this.workoutBuilder.variations.splice(vi,1); },
         builderSaveWorkout() {
@@ -5642,13 +5842,69 @@ function vytaraApp() {
             this.saveWorkoutLog();
             this.workoutBuilder.active=false;
         },
-        getExercisePR(name) {
-            let max=0;
+        // Single source of truth for per-exercise history stats — real data only, empty state (null) if none.
+        getExerciseStats(name) {
+            if(!name) return null;
+            const sessions=[];
             this.workouts.forEach(w=>{
-                (w.variations||[]).forEach(v=>{ if(v.exercise===name) (v.sets||[]).forEach(s=>{ if(parseFloat(s.weight)>max) max=parseFloat(s.weight); }); });
-                if((!w.variations||w.variations.length===0)&&w.exercise===name) (w.sets||[]).forEach(s=>{ if(parseFloat(s.weight)>max) max=parseFloat(s.weight); });
+                let sets=null;
+                const v=(w.variations||[]).find(v=>v.exercise===name);
+                if(v) sets=v.sets||[];
+                else if((!w.variations||w.variations.length===0)&&w.exercise===name) sets=w.sets||[];
+                if(sets&&sets.length>0) sessions.push({date:w.date, sets});
             });
-            return max;
+            if(sessions.length===0) return null;
+            sessions.sort((a,b)=>a.date.localeCompare(b.date));
+            let bestWeight=0, best1RM=0, totalVolume=0, maxVolume=0, weightSum=0, repsSum=0, setCount=0, mostReps=0;
+            sessions.forEach(s=>{
+                let vol=0;
+                s.sets.forEach(st=>{
+                    const w=parseFloat(st.weight)||0, r=parseInt(st.reps)||0;
+                    if(w>bestWeight) bestWeight=w;
+                    if(r>mostReps) mostReps=r;
+                    const oneRM = r>0 ? w*(1+r/30) : w;
+                    if(oneRM>best1RM) best1RM=oneRM;
+                    vol += r*w;
+                    if(w>0||r>0){ weightSum+=w; repsSum+=r; setCount++; }
+                });
+                totalVolume+=vol;
+                if(vol>maxVolume) maxVolume=vol;
+            });
+            const last=sessions[sessions.length-1];
+            const prev=sessions.length>1?sessions[sessions.length-2]:null;
+            return {
+                lastWorkoutDate:last.date, lastSets:last.sets,
+                previousWorkoutDate: prev?prev.date:null, previousSets: prev?prev.sets:null,
+                bestWeight: Math.round(bestWeight*10)/10,
+                mostReps,
+                estimated1RM: Math.round(best1RM),
+                avgWeight: setCount>0?Math.round((weightSum/setCount)*10)/10:0,
+                avgReps: setCount>0?Math.round((repsSum/setCount)*10)/10:0,
+                totalSessions: sessions.length,
+                totalVolume: Math.round(totalVolume),
+                maxVolume: Math.round(maxVolume),
+            };
+        },
+        getExercisePR(name) { const s=this.getExerciseStats(name); return s?s.bestWeight:0; },
+        // Progression recommendation from real history only — no AI, no fabricated advice.
+        getProgressionRecommendation(name) {
+            const stats=this.getExerciseStats(name);
+            if(!stats||!stats.lastSets||stats.lastSets.length===0) return { status:'no-data', message:'Log this exercise once to get a personalized recommendation.' };
+            const workingSets=stats.lastSets.filter(s=>(parseFloat(s.weight)>0||parseInt(s.reps)>0));
+            if(workingSets.length===0) return { status:'no-data', message:'Log this exercise once to get a personalized recommendation.' };
+            const targetReps=getExerciseGuideDefaults(name).reps||'';
+            const lower=parseInt((targetReps.match(/(\d+)-\d+/)||[])[1]) || parseInt(targetReps) || 6;
+            const upper=parseInt((targetReps.match(/-(\d+)/)||[])[1]) || lower;
+            const avgReps=workingSets.reduce((a,s)=>a+(parseInt(s.reps)||0),0)/workingSets.length;
+            const rpes=workingSets.map(s=>parseFloat(s.rpe)||0).filter(r=>r>0);
+            const avgRPE=rpes.length>0?(rpes.reduce((a,b)=>a+b,0)/rpes.length):null;
+            let action, reason;
+            if(avgRPE!==null && avgRPE>=9.5) { action='Reduce Weight'; reason='Last session was near-maximal effort (avg RPE '+avgRPE.toFixed(1)+').'; }
+            else if(avgReps<lower) { action='Reduce Weight'; reason='You averaged '+avgReps.toFixed(1)+' reps, below your '+targetReps+' target.'; }
+            else if(avgReps>=upper && (avgRPE===null||avgRPE<=7.5)) { action='Increase Weight'; reason='You hit '+avgReps.toFixed(1)+' reps comfortably at the top of your range.'; }
+            else if(avgReps<upper) { action='Increase Reps'; reason='Aim for more reps at the same weight before adding load.'; }
+            else { action='Maintain Current Weight'; reason='Last session was within your target range — keep building consistency.'; }
+            return { status:'ok', action, reason, basedOn: stats.lastWorkoutDate };
         },
         isRecentlyUsedExercise(name) {
             const recent=[...this.workouts].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
