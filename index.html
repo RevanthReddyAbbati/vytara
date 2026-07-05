@@ -756,8 +756,291 @@
 <div x-show="activeTab==='workouts'" class="space-y-6 p-4 md:p-8 lg:p-10">
     <div class="flex flex-wrap justify-between items-center gap-4">
         <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Workouts</h2>
-        <button @click="openModal('modalWorkout')" class="bg-brand-500 hover:bg-brand-600 text-white font-black py-3 px-6 rounded-xl text-xs tracking-widest uppercase transition-all shadow-md">+ Log Workout</button>
+        <div class="flex gap-2" x-show="!workoutBuilder.active">
+            <button @click="openModal('modalWorkout','cardio')" class="border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-black py-3 px-4 rounded-xl text-xs tracking-widest uppercase transition-all hover:bg-slate-50 dark:hover:bg-slate-800">🏃 Cardio</button>
+            <button @click="startWorkoutBuilder()" class="bg-brand-500 hover:bg-brand-600 text-white font-black py-3 px-6 rounded-xl text-xs tracking-widest uppercase transition-all shadow-md">+ Log Workout</button>
+        </div>
     </div>
+
+    <!-- ============ INLINE WORKOUT BUILDER (Muscles -> Exercises -> Guide -> Log) ============ -->
+    <template x-if="workoutBuilder.active">
+        <div class="space-y-6">
+            <!-- Progress + cancel -->
+            <div class="flex items-center justify-between gap-3">
+                <button @click="closeWorkoutBuilder()" class="flex items-center gap-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-black text-xs uppercase tracking-wider transition-colors"><span>←</span><span>Cancel</span></button>
+                <div class="flex items-center gap-2">
+                    <template x-for="(s,i) in ['muscles','exercises','guide','log']" :key="s">
+                        <div class="h-1.5 rounded-full transition-all duration-300"
+                            :class="workoutBuilder.step===s?'w-8 bg-brand-500':(['muscles','exercises','guide','log'].indexOf(workoutBuilder.step)>i?'w-4 bg-brand-500/40':'w-4 bg-slate-200 dark:bg-slate-800')"></div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- STEP 1: MUSCLE SELECTION -->
+            <template x-if="workoutBuilder.step==='muscles'">
+                <div class="space-y-5">
+                    <div>
+                        <h2 class="text-2xl font-extrabold tracking-tight">Choose Muscles</h2>
+                        <p class="text-sm text-slate-400 font-medium mt-1">Select the muscle groups you're training today.</p>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                        <template x-for="mg in systemMuscleGroups" :key="mg">
+                            <button @click="builderToggleMuscle(mg)" type="button"
+                                :class="workoutBuilder.selectedMuscles.includes(mg)?'border-brand-500 bg-brand-500/10 scale-[1.02] shadow-md':'border-slate-200 dark:border-slate-800 hover:border-brand-500/40'"
+                                class="relative flex flex-col items-center gap-2 p-4 rounded-[1.25rem] border-2 bg-white dark:bg-panelDark transition-all duration-200 text-center">
+                                <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand-500 text-white text-[10px] font-black flex items-center justify-center transition-all duration-200"
+                                    :class="workoutBuilder.selectedMuscles.includes(mg)?'opacity-100 scale-100':'opacity-0 scale-0'">✓</span>
+                                <span class="text-3xl" x-text="MUSCLE_ICONS[mg]||'💪'"></span>
+                                <span class="text-xs font-black text-slate-700 dark:text-slate-200" x-text="mg"></span>
+                                <span class="text-[10px] font-bold text-slate-400" x-text="(BUILTIN_EXERCISES[mg]||[]).length+' exercises'"></span>
+                            </button>
+                        </template>
+                    </div>
+                    <div class="flex justify-end pt-2">
+                        <button @click="workoutBuilder.step='exercises'" :disabled="workoutBuilder.selectedMuscles.length===0"
+                            :class="workoutBuilder.selectedMuscles.length===0?'opacity-40 cursor-not-allowed':'hover:bg-brand-600'"
+                            class="bg-brand-500 text-white font-black py-3 px-8 rounded-xl text-xs uppercase tracking-widest shadow-md transition-all">Continue →</button>
+                    </div>
+                </div>
+            </template>
+
+            <!-- STEP 2: EXERCISE SELECTION -->
+            <template x-if="workoutBuilder.step==='exercises'">
+                <div class="space-y-5">
+                    <div class="flex items-center justify-between flex-wrap gap-3">
+                        <div>
+                            <h2 class="text-2xl font-extrabold tracking-tight">Pick an Exercise</h2>
+                            <p class="text-sm text-slate-400 font-medium mt-1" x-text="workoutBuilder.selectedMuscles.join(', ')||'All muscle groups'"></p>
+                        </div>
+                        <button @click="workoutBuilder.step='muscles'" class="text-[10px] font-black text-brand-400 uppercase tracking-widest hover:text-brand-500 shrink-0">Edit Muscles</button>
+                    </div>
+                    <div class="flex gap-2 flex-wrap items-center">
+                        <input type="text" x-model="workoutBuilder.exerciseSearch" placeholder="Search exercises..." class="!w-auto flex-1 min-w-[180px]">
+                        <select x-model="workoutBuilder.equipmentFilter" class="!w-auto">
+                            <option value="">All Equipment</option>
+                            <template x-for="eq in ['Barbell','Dumbbell','Cable','Machine','Bodyweight','Resistance Band','Ab Wheel','Weight Plate','Pull-up Bar']" :key="eq">
+                                <option :value="eq" x-text="eq"></option>
+                            </template>
+                        </select>
+                        <select x-model="workoutBuilder.difficultyFilter" class="!w-auto">
+                            <option value="">All Levels</option>
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced</option>
+                        </select>
+                    </div>
+                    <div x-show="builderExercisePool.length===0" class="p-8 text-center text-slate-400 text-sm font-medium border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">No exercises match your filters.</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <template x-for="ex in builderExercisePool" :key="ex">
+                            <div @click="builderSelectExercise(ex)" class="group cursor-pointer bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.25rem] p-4 hover:border-brand-500/50 hover:shadow-lg transition-all duration-200 space-y-2.5">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800/70 flex items-center justify-center text-xl shrink-0" x-text="MUSCLE_ICONS[getExerciseMeta(ex).primary[0]]||'💪'"></div>
+                                    <button @click.stop="toggleFavoriteExercise(ex)" class="text-lg shrink-0 transition-transform hover:scale-110" :title="isFavoriteExercise(ex)?'Remove favorite':'Add favorite'" x-text="isFavoriteExercise(ex)?'⭐':'☆'"></button>
+                                </div>
+                                <p class="text-sm font-extrabold text-slate-800 dark:text-slate-100 leading-snug" x-text="ex"></p>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 uppercase tracking-wider" x-text="getExerciseMeta(ex).equipment"></span>
+                                    <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 uppercase tracking-wider" x-text="getExerciseMeta(ex).category"></span>
+                                    <span class="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider"
+                                        :class="getExerciseMeta(ex).difficulty==='Advanced'?'bg-red-500/10 text-red-400':getExerciseMeta(ex).difficulty==='Intermediate'?'bg-amber-500/10 text-amber-400':'bg-emerald-500/10 text-emerald-400'"
+                                        x-text="getExerciseMeta(ex).difficulty"></span>
+                                </div>
+                                <div class="flex items-center gap-1.5 flex-wrap" x-show="isRecentlyUsedExercise(ex)||getExercisePR(ex)>0">
+                                    <span x-show="isRecentlyUsedExercise(ex)" class="text-[9px] font-black px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 uppercase tracking-wider">Recent</span>
+                                    <span x-show="getExercisePR(ex)>0" class="text-[9px] font-black px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 uppercase tracking-wider" x-text="'PR '+getExercisePR(ex)+'kg'"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- STEP 3: EXERCISE GUIDE -->
+            <template x-if="workoutBuilder.step==='guide' && workoutBuilder.activeExercise">
+                <div class="space-y-5">
+                    <button @click="workoutBuilder.step='exercises'" class="flex items-center gap-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-black text-xs uppercase tracking-wider transition-colors"><span>←</span><span>Back to Exercises</span></button>
+
+                    <!-- Header -->
+                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-5 sm:p-7">
+                        <div class="flex flex-wrap items-start justify-between gap-4">
+                            <div class="space-y-2.5">
+                                <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight" x-text="workoutBuilder.activeExercise"></h2>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <span class="text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider"
+                                        :class="activeExerciseMeta.difficulty==='Advanced'?'bg-red-500/10 text-red-400':activeExerciseMeta.difficulty==='Intermediate'?'bg-amber-500/10 text-amber-400':'bg-emerald-500/10 text-emerald-400'"
+                                        x-text="activeExerciseMeta.difficulty"></span>
+                                    <span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-brand-500/10 text-brand-400 uppercase tracking-wider" x-text="activeExerciseMeta.equipment"></span>
+                                    <span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 uppercase tracking-wider" x-text="activeExerciseMeta.category"></span>
+                                    <template x-for="m in activeExerciseMeta.primary" :key="m"><span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 uppercase tracking-wider" x-text="m"></span></template>
+                                </div>
+                            </div>
+                            <button @click="builderStartLogging()" class="bg-brand-500 hover:bg-brand-600 text-white font-black py-3 px-6 rounded-xl text-xs uppercase tracking-widest shadow-md transition-all shrink-0">Start Exercise →</button>
+                        </div>
+                    </div>
+
+                    <!-- Media placeholder / illustration -->
+                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-6 sm:p-10 flex items-center justify-center" style="min-height:220px;">
+                        <div x-html="getExerciseSVG(workoutBuilder.activeExercise)"></div>
+                    </div>
+
+                    <!-- Muscles worked -->
+                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-5 sm:p-7">
+                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-4">Muscles Worked</p>
+                        <div class="flex justify-center overflow-x-auto" x-html="generateMuscleSVG(activeExerciseMeta.primary,activeExerciseMeta.secondary,theme==='dark',2.1)"></div>
+                    </div>
+
+                    <!-- Info cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Sets</p>
+                            <p class="text-lg font-extrabold text-brand-400" x-text="activeExerciseDefaults.sets"></p>
+                        </div>
+                        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Reps</p>
+                            <p class="text-lg font-extrabold text-brand-400" x-text="activeExerciseDefaults.reps"></p>
+                        </div>
+                        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Rest</p>
+                            <p class="text-lg font-extrabold text-brand-400" x-text="activeExerciseDefaults.rest"></p>
+                        </div>
+                        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tempo</p>
+                            <p class="text-xs font-extrabold text-brand-400 leading-tight" x-text="activeExerciseDefaults.tempo"></p>
+                        </div>
+                    </div>
+
+                    <!-- How to perform -->
+                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-5 sm:p-7">
+                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-4">How To Perform</p>
+                        <ol class="space-y-3">
+                            <template x-for="(step,si) in (activeExerciseInfo.steps||[])" :key="si">
+                                <li class="flex gap-3 items-start">
+                                    <span class="shrink-0 w-6 h-6 rounded-full bg-brand-500/15 text-brand-400 font-black text-xs flex items-center justify-center mt-0.5" x-text="si+1"></span>
+                                    <span class="text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug pt-0.5" x-text="step"></span>
+                                </li>
+                            </template>
+                            <li x-show="!(activeExerciseInfo.steps&&activeExerciseInfo.steps.length)" class="text-sm text-slate-400 italic">Detailed steps for this exercise are coming soon.</li>
+                        </ol>
+                    </div>
+
+                    <!-- Breathing -->
+                    <div class="bg-blue-500/5 border border-blue-500/20 rounded-[1.5rem] p-5 sm:p-7 flex gap-3 items-start">
+                        <span class="text-xl shrink-0">🫁</span>
+                        <div>
+                            <p class="text-[10px] font-black tracking-widest text-blue-400 uppercase mb-1.5">Breathing</p>
+                            <p class="text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug" x-text="activeExerciseDefaults.breathing"></p>
+                        </div>
+                    </div>
+
+                    <!-- Common Mistakes -->
+                    <div class="bg-red-500/5 border border-red-500/20 rounded-[1.5rem] p-5 sm:p-7">
+                        <p class="text-[10px] font-black tracking-widest text-red-400 uppercase mb-3">Common Mistakes</p>
+                        <ul class="space-y-2">
+                            <template x-for="(m,mi) in activeExerciseDefaults.mistakes" :key="mi">
+                                <li class="flex gap-2.5 items-start text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug">
+                                    <span class="text-red-400 shrink-0 font-black">✕</span><span x-text="m"></span>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+
+                    <!-- Pro Tips -->
+                    <div class="bg-amber-500/5 border border-amber-500/20 rounded-[1.5rem] p-5 sm:p-7">
+                        <p class="text-[10px] font-black tracking-widest text-amber-400 uppercase mb-3">Pro Tips</p>
+                        <ul class="space-y-2">
+                            <template x-for="(t,ti) in activeExerciseTips" :key="ti">
+                                <li class="flex gap-2.5 items-start text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug">
+                                    <span class="text-amber-400 shrink-0">💡</span><span x-text="t"></span>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+
+                    <!-- Variations -->
+                    <div x-show="activeExerciseRelated.length>0">
+                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Exercise Variations</p>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <template x-for="r in activeExerciseRelated" :key="r">
+                                <button @click="builderSelectExercise(r)" class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 hover:border-brand-500/50 rounded-xl p-3 text-left transition-all">
+                                    <p class="text-xs font-extrabold text-slate-700 dark:text-slate-200 leading-snug" x-text="r"></p>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- STEP 4: INLINE LOGGING (not a popup) -->
+            <template x-if="workoutBuilder.step==='log'">
+                <div class="space-y-5">
+                    <div class="flex items-center justify-between flex-wrap gap-3">
+                        <div>
+                            <h2 class="text-2xl font-extrabold tracking-tight">Log Your Sets</h2>
+                            <p class="text-sm text-slate-400 font-medium mt-1">Track weight, reps, RPE and rest for each set.</p>
+                        </div>
+                        <button @click="builderAddAnotherExercise()" class="bg-brand-500/10 border border-brand-500/30 text-brand-400 font-black text-[10px] px-4 py-2.5 rounded-xl uppercase tracking-wider hover:bg-brand-500/20 transition-all">+ Add Exercise</button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Date</label><input type="date" x-model="workoutBuilder.date"></div>
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Duration (min)</label><input type="number" x-model="workoutBuilder.duration" placeholder="min"></div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <template x-for="(v,vi) in workoutBuilder.variations" :key="vi">
+                            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.25rem] overflow-hidden">
+                                <div class="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-slate-100 dark:border-slate-800/80">
+                                    <p class="text-sm font-extrabold text-slate-800 dark:text-slate-100" x-text="v.exercise"></p>
+                                    <div class="flex items-center gap-2">
+                                        <button @click="workoutBuilder.activeExercise=v.exercise;workoutBuilder.step='guide'" class="text-[10px] font-black text-brand-400 uppercase tracking-wider hover:text-brand-500">💡 Guide</button>
+                                        <button x-show="workoutBuilder.variations.length>1" @click="builderRemoveVariation(vi)" class="text-red-400 hover:text-red-500 font-black text-sm px-1">✕</button>
+                                    </div>
+                                </div>
+                                <div class="p-4 sm:p-5 space-y-2">
+                                    <div class="grid text-[9px] font-black text-slate-400 uppercase tracking-widest" style="grid-template-columns:1.5rem 1fr 1fr .8fr .8fr auto;gap:.4rem;">
+                                        <span class="text-center">#</span>
+                                        <span x-text="isTimedExercise(v.exercise)?'Seconds':'Reps'"></span>
+                                        <span>Weight (kg)</span>
+                                        <span>RPE</span>
+                                        <span>Rest</span>
+                                        <span></span>
+                                    </div>
+                                    <template x-for="(s,si) in v.sets" :key="si">
+                                        <div class="set-row" style="grid-template-columns:1.5rem 1fr 1fr .8fr .8fr auto;">
+                                            <div class="flex items-center justify-center">
+                                                <span class="w-5 h-5 rounded-full bg-brand-500/15 text-brand-400 text-[9px] font-black flex items-center justify-center shrink-0" x-text="si+1"></span>
+                                            </div>
+                                            <input type="number" x-model="s.reps" :placeholder="isTimedExercise(v.exercise)?'Secs':'Reps'" min="0">
+                                            <input type="number" step="any" x-model="s.weight" placeholder="kg" min="0">
+                                            <input type="number" step="0.5" x-model="s.rpe" placeholder="RPE" min="0" max="10" title="Rate of Perceived Exertion (0-10)">
+                                            <input type="text" x-model="s.rest" placeholder="90s">
+                                            <button @click="builderRemoveSet(vi,si)" x-show="v.sets.length>1" class="shrink-0 text-red-400 text-xs font-black hover:text-red-500 px-1">✕</button>
+                                            <div x-show="v.sets.length===1" class="w-5"></div>
+                                        </div>
+                                    </template>
+                                    <div class="flex items-center justify-between pt-1">
+                                        <button @click="builderAddSet(vi)" class="text-[10px] font-black text-brand-400 border border-brand-500/20 px-3 py-1.5 rounded-lg hover:bg-brand-500/10 transition-all">+ Add Set</button>
+                                        <span class="text-[10px] font-black text-slate-400" x-show="v.sets.filter(s=>s.reps>0).length>0">Sets: <span class="text-brand-500" x-text="v.sets.filter(s=>s.reps>0).length"></span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Overall Notes</label><textarea x-model="workoutBuilder.notes" rows="2" placeholder="How did it feel?" class="!resize-none"></textarea></div>
+
+                    <div class="flex gap-3">
+                        <button @click="builderAddAnotherExercise()" class="flex-1 border border-slate-200 dark:border-slate-700 font-bold py-3 rounded-xl text-xs uppercase tracking-wider text-slate-400">+ Add Exercise</button>
+                        <button @click="builderSaveWorkout()" class="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-black py-3 rounded-xl text-xs uppercase tracking-widest shadow-md transition-all">Save Workout</button>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </template>
+
+    <!-- ============ NORMAL WORKOUTS VIEW (history / charts / PRs) ============ -->
+    <template x-if="!workoutBuilder.active">
+    <div class="space-y-6">
     <div class="flex flex-wrap gap-3 items-center">
         <div><label class="text-[10px] font-black text-slate-400 uppercase block mb-1">From</label><input type="date" x-model="filters.workoutsFrom" class="!w-auto"></div>
         <div><label class="text-[10px] font-black text-slate-400 uppercase block mb-1">To</label><input type="date" x-model="filters.workoutsTo" class="!w-auto"></div>
@@ -880,6 +1163,8 @@
             </template>
         </div>
     </div>
+    </div>
+    </template>
 </div>
 
 <!-- DIET TAB -->
@@ -2849,6 +3134,12 @@ const MOTIVATION_MSGS = [
 
 const SYSTEM_MUSCLE_GROUPS = ['Chest','Back','Shoulders','Biceps','Triceps','Legs','Glutes','Core','Calves','Forearms'];
 
+// Icons for muscle-selection cards (Workout Builder)
+const MUSCLE_ICONS = {
+    'Chest':'🫁','Back':'🧗','Shoulders':'🤷','Biceps':'💪','Triceps':'🤜',
+    'Legs':'🦵','Glutes':'🍑','Core':'🎯','Calves':'🦶','Forearms':'✊'
+};
+
 const BUILTIN_EXERCISES = {
     'Chest':['Bench Press','Incline Bench Press','Decline Bench Press','Push-Ups','Dumbbell Flyes','Cable Flyes','Chest Dips','Pec Deck'],
     'Back':['Pull-Ups','Lat Pulldown','Barbell Row','Seated Cable Row','Deadlift','T-Bar Row','Face Pull','Good Mornings'],
@@ -2941,6 +3232,160 @@ const EXERCISE_INFO = {
 'Reverse Curl':{primary:['Forearms'],secondary:['Biceps'],steps:['Stand holding barbell or dumbbells with overhand grip.','Keep elbows at sides throughout.','Curl bar up by bending elbows — wrists stay neutral or slightly extended.','Squeeze the brachioradialis at the top.','Lower slowly to full extension.'],tip:'The overhand grip shifts load to the brachioradialis, building arm thickness and forearm strength.'},
 
 };
+
+// ==================== EXERCISE METADATA (equipment / difficulty) ====================
+// Curated classification used by the Exercise Selection cards + Exercise Guide.
+const EXERCISE_META = {
+    'Bench Press':{equipment:'Barbell',difficulty:'Intermediate'},
+    'Incline Bench Press':{equipment:'Barbell',difficulty:'Intermediate'},
+    'Decline Bench Press':{equipment:'Barbell',difficulty:'Intermediate'},
+    'Push-Ups':{equipment:'Bodyweight',difficulty:'Beginner'},
+    'Dumbbell Flyes':{equipment:'Dumbbell',difficulty:'Intermediate'},
+    'Cable Flyes':{equipment:'Cable',difficulty:'Intermediate'},
+    'Chest Dips':{equipment:'Bodyweight',difficulty:'Advanced'},
+    'Pec Deck':{equipment:'Machine',difficulty:'Beginner'},
+    'Pull-Ups':{equipment:'Bodyweight',difficulty:'Advanced'},
+    'Lat Pulldown':{equipment:'Machine',difficulty:'Beginner'},
+    'Barbell Row':{equipment:'Barbell',difficulty:'Intermediate'},
+    'Seated Cable Row':{equipment:'Cable',difficulty:'Beginner'},
+    'Deadlift':{equipment:'Barbell',difficulty:'Advanced'},
+    'T-Bar Row':{equipment:'Machine',difficulty:'Intermediate'},
+    'Face Pull':{equipment:'Cable',difficulty:'Beginner'},
+    'Good Mornings':{equipment:'Barbell',difficulty:'Advanced'},
+    'Overhead Press':{equipment:'Barbell',difficulty:'Intermediate'},
+    'Dumbbell Lateral Raise':{equipment:'Dumbbell',difficulty:'Beginner'},
+    'Front Raise':{equipment:'Dumbbell',difficulty:'Beginner'},
+    'Arnold Press':{equipment:'Dumbbell',difficulty:'Intermediate'},
+    'Upright Row':{equipment:'Barbell',difficulty:'Intermediate'},
+    'Reverse Flyes':{equipment:'Dumbbell',difficulty:'Beginner'},
+    'Shrugs':{equipment:'Barbell',difficulty:'Beginner'},
+    'Cable Lateral Raise':{equipment:'Cable',difficulty:'Beginner'},
+    'Barbell Curl':{equipment:'Barbell',difficulty:'Beginner'},
+    'Dumbbell Curl':{equipment:'Dumbbell',difficulty:'Beginner'},
+    'Hammer Curl':{equipment:'Dumbbell',difficulty:'Beginner'},
+    'Preacher Curl':{equipment:'Machine',difficulty:'Intermediate'},
+    'Concentration Curl':{equipment:'Dumbbell',difficulty:'Beginner'},
+    'Cable Curl':{equipment:'Cable',difficulty:'Beginner'},
+    'Incline Dumbbell Curl':{equipment:'Dumbbell',difficulty:'Intermediate'},
+    'EZ-Bar Curl':{equipment:'Barbell',difficulty:'Beginner'},
+    'Tricep Pushdown':{equipment:'Cable',difficulty:'Beginner'},
+    'Skull Crushers':{equipment:'Barbell',difficulty:'Intermediate'},
+    'Close-Grip Bench Press':{equipment:'Barbell',difficulty:'Intermediate'},
+    'Tricep Dips':{equipment:'Bodyweight',difficulty:'Intermediate'},
+    'Overhead Extension':{equipment:'Dumbbell',difficulty:'Beginner'},
+    'Diamond Push-Ups':{equipment:'Bodyweight',difficulty:'Intermediate'},
+    'Cable Kickback':{equipment:'Cable',difficulty:'Beginner'},
+    'Rope Pushdown':{equipment:'Cable',difficulty:'Beginner'},
+    'Squat':{equipment:'Barbell',difficulty:'Intermediate'},
+    'Leg Press':{equipment:'Machine',difficulty:'Beginner'},
+    'Lunges':{equipment:'Dumbbell',difficulty:'Beginner'},
+    'Leg Extension':{equipment:'Machine',difficulty:'Beginner'},
+    'Leg Curl':{equipment:'Machine',difficulty:'Beginner'},
+    'Romanian Deadlift':{equipment:'Barbell',difficulty:'Intermediate'},
+    'Front Squat':{equipment:'Barbell',difficulty:'Advanced'},
+    'Step-Ups':{equipment:'Dumbbell',difficulty:'Beginner'},
+    'Hip Thrust':{equipment:'Barbell',difficulty:'Intermediate'},
+    'Glute Bridge':{equipment:'Bodyweight',difficulty:'Beginner'},
+    'Bulgarian Split Squat':{equipment:'Dumbbell',difficulty:'Advanced'},
+    'Sumo Squat':{equipment:'Barbell',difficulty:'Intermediate'},
+    'Donkey Kicks':{equipment:'Bodyweight',difficulty:'Beginner'},
+    'Clamshells':{equipment:'Bodyweight',difficulty:'Beginner'},
+    'Lateral Band Walk':{equipment:'Resistance Band',difficulty:'Beginner'},
+    'Plank':{equipment:'Bodyweight',difficulty:'Beginner'},
+    'Crunches':{equipment:'Bodyweight',difficulty:'Beginner'},
+    'Leg Raises':{equipment:'Bodyweight',difficulty:'Intermediate'},
+    'Russian Twists':{equipment:'Bodyweight',difficulty:'Beginner'},
+    'Cable Crunch':{equipment:'Cable',difficulty:'Intermediate'},
+    'Ab Wheel Rollout':{equipment:'Ab Wheel',difficulty:'Advanced'},
+    'Hanging Knee Raise':{equipment:'Bodyweight',difficulty:'Intermediate'},
+    'Side Plank':{equipment:'Bodyweight',difficulty:'Beginner'},
+    'Standing Calf Raise':{equipment:'Machine',difficulty:'Beginner'},
+    'Seated Calf Raise':{equipment:'Machine',difficulty:'Beginner'},
+    'Donkey Calf Raise':{equipment:'Bodyweight',difficulty:'Beginner'},
+    'Single-Leg Calf Raise':{equipment:'Bodyweight',difficulty:'Beginner'},
+    'Wrist Curls':{equipment:'Barbell',difficulty:'Beginner'},
+    'Reverse Wrist Curls':{equipment:'Barbell',difficulty:'Beginner'},
+    "Farmer's Walk":{equipment:'Dumbbell',difficulty:'Beginner'},
+    'Plate Pinch':{equipment:'Weight Plate',difficulty:'Intermediate'},
+    'Bar Hang':{equipment:'Pull-up Bar',difficulty:'Beginner'},
+    'Reverse Curl':{equipment:'Barbell',difficulty:'Beginner'},
+};
+
+const TIMED_EXERCISE_NAMES = ['Plank','Side Plank','Wall Sit','Hollow Hold','Dead Hang','Bar Hang',"Farmer's Walk",'L-Sit','Banded Walk','Lateral Band Walk'];
+function isTimedExerciseName(name) {
+    return TIMED_EXERCISE_NAMES.some(t => (name||'').toLowerCase().includes(t.toLowerCase()));
+}
+
+// Compound vs isolation heuristic — derived from real secondary-muscle data, not fabricated.
+function getExerciseCategory(name) {
+    if (isTimedExerciseName(name)) return 'Isometric';
+    const info = EXERCISE_INFO[name];
+    if (!info) return 'Isolation';
+    return (info.secondary && info.secondary.length >= 2) ? 'Compound' : 'Isolation';
+}
+
+// Full metadata for an exercise card / guide header. Falls back to honest placeholders
+// (never fabricated specifics) when an exercise has no curated entry (e.g. custom exercises).
+function getExerciseMeta(name) {
+    const info = EXERCISE_INFO[name] || {};
+    const meta = EXERCISE_META[name] || {};
+    return {
+        equipment: meta.equipment || 'Not specified',
+        difficulty: meta.difficulty || 'Intermediate',
+        category: getExerciseCategory(name),
+        primary: info.primary || [],
+        secondary: info.secondary || [],
+    };
+}
+
+// Generic, category-based training guidelines (standard programming defaults, not
+// per-exercise claims) — used when displaying recommended sets/reps/rest/tempo.
+function getExerciseGuideDefaults(name) {
+    const cat = getExerciseCategory(name);
+    const primary = (EXERCISE_INFO[name]?.primary || [])[0] || '';
+    if (cat === 'Isometric') {
+        return {
+            sets:'3', reps:'30-45 sec hold', rest:'45-60 sec', tempo:'Controlled, steady breathing',
+            breathing:'Breathe steadily and continuously throughout the hold — never hold your breath.',
+            mistakes:['Holding your breath','Letting the hips sag or pike out of line','Rushing to end the hold instead of maintaining tight form'],
+        };
+    }
+    if (cat === 'Compound') {
+        const isLowerBody = ['Legs','Glutes','Back'].includes(primary);
+        const isPull = primary === 'Back';
+        return {
+            sets:'4', reps: isLowerBody ? '6-10' : '8-12', rest: isLowerBody ? '90-120 sec' : '75-90 sec', tempo:'2 sec down · 1 sec pause · 2 sec up',
+            breathing:'Inhale and brace your core before lowering the weight, exhale forcefully as you drive through the hardest part of the lift.',
+            mistakes: isPull
+                ? ['Using momentum instead of pulling with the target muscle','Rounding the back instead of hinging at the hips','Shrugging up instead of driving the elbows down and back']
+                : isLowerBody
+                ? ['Letting the knees cave inward','Rounding the lower back under load','Rising onto the toes instead of driving through the whole foot']
+                : ['Flaring the elbows too wide','Bouncing the weight instead of controlling it','Not using a full range of motion'],
+        };
+    }
+    return {
+        sets:'3', reps:'10-15', rest:'45-60 sec', tempo:'2 sec down · 1 sec squeeze · 2 sec up',
+        breathing:'Exhale as you contract the target muscle, inhale as you lower back under control.',
+        mistakes:['Using too much weight and losing form','Not completing the full range of motion','Letting momentum do the work instead of the target muscle'],
+    };
+}
+
+// Pro tips: the exercise's own curated tip (real, unique per exercise) plus one
+// universal progressive-overload reminder.
+function getExerciseProTips(name) {
+    const tips = [];
+    const info = EXERCISE_INFO[name];
+    if (info?.tip) tips.push(info.tip);
+    tips.push('Progressive overload: aim to add a small amount of weight or reps most weeks for continual gains.');
+    return tips;
+}
+
+// Real cross-referenced variations — other exercises that train the same primary muscle.
+function getRelatedExercises(name) {
+    const primary = (EXERCISE_INFO[name]?.primary || [])[0];
+    if (!primary || !BUILTIN_EXERCISES[primary]) return [];
+    return BUILTIN_EXERCISES[primary].filter(n => n !== name).slice(0, 4);
+}
 
 // ==================== EXERCISE ILLUSTRATION ====================
 function getExerciseImageSVG(name, isDark) {
@@ -3534,7 +3979,7 @@ function getExerciseImageSVG(name, isDark) {
 
 
 // ==================== MUSCLE SVG DIAGRAM (Hevy/Strong style) ====================
-function generateMuscleSVG(primary=[], secondary=[], isDark=true) {
+function generateMuscleSVG(primary=[], secondary=[], isDark=true, scale=1) {
     const id = Math.random().toString(36).slice(2,6);
 
     // Color palette — matches reference images (Hevy / Strong app style)
@@ -3819,7 +4264,7 @@ function generateMuscleSVG(primary=[], secondary=[], isDark=true) {
 <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;">
 <div style="text-align:center;">
   <p style="font-size:8px;font-weight:900;color:${LABEL};letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">FRONT</p>
-  <svg viewBox="0 0 100 240" width="72" height="173" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
+  <svg viewBox="0 0 100 240" width="${Math.round(72*scale)}" height="${Math.round(173*scale)}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
     ${DEFS}
     ${BODY_BASE('front')}
     ${renderOverlays('front')}
@@ -3827,7 +4272,7 @@ function generateMuscleSVG(primary=[], secondary=[], isDark=true) {
 </div>
 <div style="text-align:center;">
   <p style="font-size:8px;font-weight:900;color:${LABEL};letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">BACK</p>
-  <svg viewBox="0 0 100 240" width="72" height="173" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
+  <svg viewBox="0 0 100 240" width="${Math.round(72*scale)}" height="${Math.round(173*scale)}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
     ${DEFS}
     ${BACK_BASE()}
     ${renderOverlays('back')}
@@ -3871,6 +4316,7 @@ function vytaraApp() {
         photos: [],
         customGoals: [],
         customExercises: [],
+        favoriteExercises: [],
         challenges: [],
         reportRange: { from:'', to:'' },
         filters: { workoutsFrom:'', workoutsTo:'', dietFrom:'', dietTo:'', metricsFrom:'', metricsTo:'' },
@@ -3896,6 +4342,8 @@ function vytaraApp() {
         mealEntry: { name:'', type:'meal', time:'', mealDate:'', calories:'', protein:'', carbs:'', fat:'', fibre:'', _unit:'g', _showSugg:false, _suggestions:[] },
         metricsForm: { date:'', weight:'', bodyFat:'', muscleMass:'', waist:'', chest:'', arms:'', hips:'', sleep:'', notes:'' },
         workoutForm: { date:'', type:'strength', duration:'', muscles:[], variations:[], notes:'', distance:'', pace:'', speed:'', caloriesBurned:'' },
+        // Inline (non-modal) premium workout builder: Muscles -> Exercises -> Guide -> Log
+        workoutBuilder: { active:false, step:'muscles', date:'', duration:'', selectedMuscles:[], exerciseSearch:'', equipmentFilter:'', difficultyFilter:'', activeExercise:'', variations:[], notes:'' },
         photoForm: { date:'', category:'Front', notes:'', fileObj:null },
         newGoalText: '',
         newExerciseName: '',
@@ -3939,6 +4387,25 @@ function vytaraApp() {
             if(this.filters.workoutsTo) list=list.filter(w=>w.date<=this.filters.workoutsTo);
             return list;
         },
+        // -- Workout Builder (Muscles -> Exercises -> Guide -> Log) --
+        get builderExercisePool() {
+            const b=this.workoutBuilder;
+            let pool=[];
+            if(b.selectedMuscles.length>0) b.selectedMuscles.forEach(m=>{ if(BUILTIN_EXERCISES[m]) pool.push(...BUILTIN_EXERCISES[m]); });
+            else Object.values(BUILTIN_EXERCISES).forEach(arr=>pool.push(...arr));
+            this.customExercises.forEach(ex=>{ if(!pool.includes(ex.name)&&(b.selectedMuscles.length===0||b.selectedMuscles.includes(ex.muscle))) pool.push(ex.name); });
+            pool=[...new Set(pool)];
+            const q=(b.exerciseSearch||'').toLowerCase().trim();
+            if(q) pool=pool.filter(ex=>ex.toLowerCase().includes(q));
+            if(b.equipmentFilter) pool=pool.filter(ex=>getExerciseMeta(ex).equipment===b.equipmentFilter);
+            if(b.difficultyFilter) pool=pool.filter(ex=>getExerciseMeta(ex).difficulty===b.difficultyFilter);
+            return pool.sort();
+        },
+        get activeExerciseMeta() { return getExerciseMeta(this.workoutBuilder.activeExercise); },
+        get activeExerciseInfo() { return EXERCISE_INFO[this.workoutBuilder.activeExercise]||{}; },
+        get activeExerciseDefaults() { return getExerciseGuideDefaults(this.workoutBuilder.activeExercise); },
+        get activeExerciseTips() { return getExerciseProTips(this.workoutBuilder.activeExercise); },
+        get activeExerciseRelated() { return getRelatedExercises(this.workoutBuilder.activeExercise); },
         get filteredDietLogs() {
             let list=[...this.dietLogs].sort((a,b)=>b.date.localeCompare(a.date));
             if(this.filters.dietFrom) list=list.filter(d=>d.date>=this.filters.dietFrom);
@@ -4146,6 +4613,7 @@ function vytaraApp() {
             if(this.photos.some(p=>p.data&&!p.url)) this.photos=this.photos.map(p=>({...p,url:p.url||p.data}));
             this.customGoals = s.customGoals||[];
             this.customExercises = s.customExercises||[];
+            this.favoriteExercises = s.favoriteExercises||[];
             this.challenges = s.challenges||[];
             this.mealHistory       = s.mealHistory||[];
             this.foodDatabase      = s.foodDatabase||[];
@@ -4228,10 +4696,10 @@ function vytaraApp() {
             }
         },
 
-        openModal(name) {
+        openModal(name, presetType) {
             if(name==='modalWorkout') {
                 const today=this.getToday();
-                this.workoutForm={date:today,type:'strength',duration:'',muscles:[],variations:[{exercise:'',sets:[{reps:'',weight:'',notes:''}],_showSugg:false,_suggestions:[],_showInfo:false}],notes:'',distance:'',pace:'',speed:'',caloriesBurned:''};
+                this.workoutForm={date:today,type:presetType||'strength',duration:'',muscles:[],variations:[{exercise:'',sets:[{reps:'',weight:'',notes:''}],_showSugg:false,_suggestions:[],_showInfo:false}],notes:'',distance:'',pace:'',speed:'',caloriesBurned:''};
             }
             if(name==='modalDiet') {
                 const t=this.getToday();
@@ -4523,7 +4991,7 @@ function vytaraApp() {
         },
 
         persist() {
-            const data = { profile:this.profile, workouts:this.workouts, dietLogs:this.dietLogs, metricsLogs:this.metricsLogs, waterLogs:this.waterLogs, photos:this.photos.map(p=>({...p,url:p.storagePath?undefined:p.url,data:p.storagePath?undefined:p.url})), customGoals:this.customGoals, customExercises:this.customExercises, challenges:this.challenges, mealHistory:this.mealHistory, foodDatabase:this.foodDatabase, googleFitConnected:this.googleFitConnected, googleFitAccessToken:this.googleFitAccessToken, googleFitData:this.googleFitData };
+            const data = { profile:this.profile, workouts:this.workouts, dietLogs:this.dietLogs, metricsLogs:this.metricsLogs, waterLogs:this.waterLogs, photos:this.photos.map(p=>({...p,url:p.storagePath?undefined:p.url,data:p.storagePath?undefined:p.url})), customGoals:this.customGoals, customExercises:this.customExercises, favoriteExercises:this.favoriteExercises, challenges:this.challenges, mealHistory:this.mealHistory, foodDatabase:this.foodDatabase, googleFitConnected:this.googleFitConnected, googleFitAccessToken:this.googleFitAccessToken, googleFitData:this.googleFitData };
             localStorage.setItem(VAULT_KEY, JSON.stringify(data));
             if(this.firebaseUser&&window._fb) this.persistCloud(data);
             this.generateHeatmapData();
@@ -5068,7 +5536,7 @@ function vytaraApp() {
                 type: this.workoutForm.type||'strength',
                 duration: parseInt(this.workoutForm.duration)||0,
                 muscles: [...(this.workoutForm.muscles||[])],
-                variations: isStrength ? this.workoutForm.variations.map(v=>({exercise:v.exercise,sets:v.sets.map(s=>({reps:parseInt(s.reps)||0,weight:parseFloat(s.weight)||0,notes:s.notes||''})).filter(s=>s.reps>0||s.weight>0)})) : [],
+                variations: isStrength ? this.workoutForm.variations.map(v=>({exercise:v.exercise,sets:v.sets.map(s=>({reps:parseInt(s.reps)||0,weight:parseFloat(s.weight)||0,rpe:parseFloat(s.rpe)||0,rest:s.rest||'',notes:s.notes||''})).filter(s=>s.reps>0||s.weight>0)})) : [],
                 notes: this.workoutForm.notes||'',
                 distance: parseFloat(this.workoutForm.distance)||0,
                 pace: parseFloat(this.workoutForm.pace)||0,
@@ -5087,7 +5555,7 @@ function vytaraApp() {
         },
 
         editWorkout(w) {
-            const variations=(w.variations&&w.variations.length>0)?w.variations.map(v=>({exercise:v.exercise,sets:(v.sets||[{reps:'',weight:'',notes:''}]).map(s=>({reps:s.reps||'',weight:s.weight||'',notes:s.notes||''})),_showSugg:false,_suggestions:[],_showInfo:false})):[{exercise:w.exercise||'',sets:(w.sets||[{reps:'',weight:'',notes:''}]).map(s=>({reps:s.reps||'',weight:s.weight||'',notes:s.notes||''})),_showSugg:false,_suggestions:[],_showInfo:false}];
+            const variations=(w.variations&&w.variations.length>0)?w.variations.map(v=>({exercise:v.exercise,sets:(v.sets||[{reps:'',weight:'',rpe:'',rest:'',notes:''}]).map(s=>({reps:s.reps||'',weight:s.weight||'',rpe:s.rpe||'',rest:s.rest||'',notes:s.notes||''})),_showSugg:false,_suggestions:[],_showInfo:false})):[{exercise:w.exercise||'',sets:(w.sets||[{reps:'',weight:'',rpe:'',rest:'',notes:''}]).map(s=>({reps:s.reps||'',weight:s.weight||'',rpe:s.rpe||'',rest:s.rest||'',notes:s.notes||''})),_showSugg:false,_suggestions:[],_showInfo:false}];
             this.workoutForm={_editId:w.id,date:w.date,type:w.type||'strength',duration:w.duration||w.minutes||'',muscles:[...(w.muscles||[])],variations,notes:w.notes||'',distance:w.distance||'',pace:w.pace||'',speed:w.speed||'',caloriesBurned:w.caloriesBurned||''};
             this.openModals.modalWorkout=true;
         },
@@ -5100,8 +5568,7 @@ function vytaraApp() {
         },
 
         isTimedExercise(name) {
-            const TIMED = ['Plank','Side Plank','Wall Sit','Hollow Hold','Dead Hang','Bar Hang',"Farmer's Walk",'L-Sit','Banded Walk','Lateral Band Walk'];
-            return TIMED.some(t => (name||'').toLowerCase().includes(t.toLowerCase()));
+            return isTimedExerciseName(name);
         },
 
         calculateVolume(w) {
@@ -5133,6 +5600,66 @@ function vytaraApp() {
             this.persist();
         },
         deleteCustomExercise(id) { this.customExercises=this.customExercises.filter(e=>e.id!==id); this.persist(); },
+
+        // ==================== WORKOUT BUILDER (inline premium flow) ====================
+        startWorkoutBuilder() {
+            this.workoutBuilder = { active:true, step:'muscles', date:this.getToday(), duration:'', selectedMuscles:[], exerciseSearch:'', equipmentFilter:'', difficultyFilter:'', activeExercise:'', variations:[], notes:'' };
+        },
+        closeWorkoutBuilder() {
+            if(this.workoutBuilder.variations.length>0 && !confirm('Discard this workout? Your progress will be lost.')) return;
+            this.workoutBuilder.active=false;
+        },
+        builderToggleMuscle(mg) {
+            const i=this.workoutBuilder.selectedMuscles.indexOf(mg);
+            if(i>-1) this.workoutBuilder.selectedMuscles.splice(i,1); else this.workoutBuilder.selectedMuscles.push(mg);
+        },
+        builderSelectExercise(name) {
+            this.workoutBuilder.activeExercise=name;
+            this.workoutBuilder.step='guide';
+        },
+        builderStartLogging() {
+            const name=this.workoutBuilder.activeExercise;
+            if(!this.workoutBuilder.variations.some(v=>v.exercise===name)) {
+                this.workoutBuilder.variations.push({ exercise:name, sets:[{reps:'',weight:'',rpe:'',rest:'',notes:''}] });
+            }
+            this.workoutBuilder.step='log';
+        },
+        builderAddAnotherExercise() { this.workoutBuilder.step='exercises'; },
+        builderAddSet(vi) { this.workoutBuilder.variations[vi].sets.push({reps:'',weight:'',rpe:'',rest:'',notes:''}); },
+        builderRemoveSet(vi,si) { this.workoutBuilder.variations[vi].sets.splice(si,1); },
+        builderRemoveVariation(vi) { this.workoutBuilder.variations.splice(vi,1); },
+        builderSaveWorkout() {
+            if(this.workoutBuilder.variations.length===0) { alert('Add at least one exercise before saving.'); return; }
+            this.workoutForm = {
+                date: this.workoutBuilder.date||this.getToday(),
+                type: 'strength',
+                duration: this.workoutBuilder.duration,
+                muscles: [...this.workoutBuilder.selectedMuscles],
+                variations: this.workoutBuilder.variations.map(v=>({...v, sets:v.sets.map(s=>({...s}))})),
+                notes: this.workoutBuilder.notes,
+                distance:'', pace:'', speed:'', caloriesBurned:'', _editId:null,
+            };
+            this.saveWorkoutLog();
+            this.workoutBuilder.active=false;
+        },
+        getExercisePR(name) {
+            let max=0;
+            this.workouts.forEach(w=>{
+                (w.variations||[]).forEach(v=>{ if(v.exercise===name) (v.sets||[]).forEach(s=>{ if(parseFloat(s.weight)>max) max=parseFloat(s.weight); }); });
+                if((!w.variations||w.variations.length===0)&&w.exercise===name) (w.sets||[]).forEach(s=>{ if(parseFloat(s.weight)>max) max=parseFloat(s.weight); });
+            });
+            return max;
+        },
+        isRecentlyUsedExercise(name) {
+            const recent=[...this.workouts].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+            return recent.some(w=>(w.variations||[]).some(v=>v.exercise===name)||w.exercise===name);
+        },
+        isFavoriteExercise(name) { return this.favoriteExercises.includes(name); },
+        toggleFavoriteExercise(name) {
+            const i=this.favoriteExercises.indexOf(name);
+            if(i>-1) this.favoriteExercises.splice(i,1); else this.favoriteExercises.push(name);
+            this.persist();
+        },
         saveMealPresets() {
             // Ensure every preset has an items array
             this.profile.mealPresets.forEach(p => { if(!p.items) p.items=[]; }); this.persist(); alert('Meal presets saved!'); },
@@ -5140,7 +5667,7 @@ function vytaraApp() {
         removeMealPreset(idx) { if(this.profile.mealPresets.length>1) this.profile.mealPresets.splice(idx,1); },
         // Expose globals to Alpine template scope
         get EXERCISE_INFO() { return EXERCISE_INFO; },
-        generateMuscleSVG(p,s,dark) { return generateMuscleSVG(p,s,dark); },
+        generateMuscleSVG(p,s,dark,scale) { return generateMuscleSVG(p,s,dark,scale); },
         getExerciseSVG(name) { return getExerciseImageSVG(name, this.theme==='dark'); },
         updateProfileGoals() { this.persist(); alert('Goals saved!'); },
         toggleProfileGoal(g) {
