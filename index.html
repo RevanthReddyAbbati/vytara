@@ -58,6 +58,15 @@
         .set-row{display:grid;gap:.5rem;align-items:center}
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
+        /* Premium UX: fade-in, skeleton loading, success pop, focus-visible for new interactive elements */
+        @keyframes fadeInUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+        .fade-in-up { animation: fadeInUp .25s ease-out; }
+        @keyframes skeletonPulse { 0%,100%{opacity:.55} 50%{opacity:1} }
+        .skeleton { animation: skeletonPulse 1.4s ease-in-out infinite; background:#1e293b; border-radius:.6rem; }
+        .light .skeleton { background:#e2e8f0; }
+        @keyframes popIn { 0%{transform:scale(.85);opacity:0} 60%{transform:scale(1.04)} 100%{transform:scale(1);opacity:1} }
+        .success-pop { animation: popIn .35s cubic-bezier(.34,1.56,.64,1); }
+        .vytara-focusable:focus-visible { outline:2px solid #3b82f6; outline-offset:2px; border-radius:.5rem; }
         @media print{.no-print{display:none!important}.print-only{display:block!important}body{background:white!important;color:black!important}table{width:100%;border-collapse:collapse}th,td{padding:10px!important;text-align:left!important;color:black!important}th{background-color:#f1f5f9!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
         /* Mobile safe area for notch/home bar */
         .pb-safe{padding-bottom:env(safe-area-inset-bottom,12px)}
@@ -733,6 +742,68 @@
         </div>
     </div>
 
+    <!-- Training Snapshot -->
+    <div class="fade-in-up">
+        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Training Snapshot</p>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+                <span class="text-[9px] font-black text-slate-400 uppercase block tracking-wider">Today's Workout</span>
+                <h3 class="text-sm font-black mt-1.5 text-slate-700 dark:text-slate-200" x-show="weeklyTrainingSnapshot.todaysWorkouts.length===0">No workout logged today.</h3>
+                <div x-show="weeklyTrainingSnapshot.todaysWorkouts.length>0">
+                    <template x-for="w in weeklyTrainingSnapshot.todaysWorkouts" :key="w.id">
+                        <p class="text-sm font-black text-brand-500 leading-snug" x-text="(w.variations&&w.variations.length>0)?w.variations.map(v=>v.exercise).filter(Boolean).slice(0,2).join(', '):(w.exercise||w.type)"></p>
+                    </template>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+                <span class="text-[9px] font-black text-slate-400 uppercase block tracking-wider">This Week's Sessions</span>
+                <h3 class="text-2xl font-black mt-1 text-emerald-500" x-text="weeklyTrainingSnapshot.sessions"></h3>
+            </div>
+            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+                <span class="text-[9px] font-black text-slate-400 uppercase block tracking-wider">Weekly Volume</span>
+                <h3 class="text-2xl font-black mt-1 text-brand-500" x-text="weeklyTrainingSnapshot.volume>0?weeklyTrainingSnapshot.volume.toLocaleString()+' kg':'--'"></h3>
+            </div>
+            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+                <span class="text-[9px] font-black text-slate-400 uppercase block tracking-wider">Weekly Duration</span>
+                <h3 class="text-2xl font-black mt-1 text-indigo-500" x-text="weeklyTrainingSnapshot.duration>0?weeklyTrainingSnapshot.duration+' min':'--'"></h3>
+            </div>
+            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+                <span class="text-[9px] font-black text-slate-400 uppercase block tracking-wider">Calories Burned (Week)</span>
+                <h3 class="text-2xl font-black mt-1 text-orange-500" x-text="weeklyTrainingSnapshot.calories>0?weeklyTrainingSnapshot.calories+' kcal':'--'"></h3>
+            </div>
+            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+                <span class="text-[9px] font-black text-slate-400 uppercase block tracking-wider">Current Streak</span>
+                <h3 class="text-2xl font-black mt-1 text-amber-500" x-text="computedMetrics.workoutStreak+' days'"></h3>
+            </div>
+            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+                <span class="text-[9px] font-black text-slate-400 uppercase block tracking-wider">Active Goals</span>
+                <h3 class="text-2xl font-black mt-1 text-purple-500" x-text="structuredGoalsProgress.length+((profile.goals||[]).length>0?(' + '+(profile.goals||[]).length):'')"></h3>
+            </div>
+            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+                <span class="text-[9px] font-black text-slate-400 uppercase block tracking-wider">Next Scheduled Workout</span>
+                <h3 class="text-sm font-black mt-1.5 text-slate-400 italic">No scheduled workouts yet.</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recovery & Readiness -->
+    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase">Recovery &amp; Readiness</p>
+            <span class="text-xs font-black px-3 py-1 rounded-full" :class="readinessScore===null?'bg-slate-100 dark:bg-slate-800 text-slate-400':readinessScore>=75?'bg-emerald-500/10 text-emerald-400':readinessScore>=50?'bg-amber-500/10 text-amber-400':'bg-red-500/10 text-red-400'" x-text="readinessScore===null?'Not logged today':readinessScore+'% — '+readinessLabel"></span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <template x-for="f in ['sleep','energy','soreness','hydration','mood']" :key="f">
+                <div>
+                    <label class="text-[9px] font-black text-slate-400 uppercase block mb-1" x-text="f"></label>
+                    <input type="range" min="1" max="5" step="1" x-model="recoveryForm[f]" class="w-full vytara-focusable">
+                    <p class="text-center text-xs font-black text-brand-400 mt-0.5" x-text="recoveryForm[f]+'/5'"></p>
+                </div>
+            </template>
+        </div>
+        <button @click="logRecovery()" class="bg-brand-500 hover:bg-brand-600 text-white font-black py-2.5 px-5 rounded-xl text-xs uppercase tracking-widest transition-all vytara-focusable">Save Today's Recovery</button>
+    </div>
+
     <!-- Charts -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm" style="height:260px;">
@@ -747,6 +818,41 @@
             <div class="relative" style="height:200px;">
                 <div x-show="dietLogs.length===0" class="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-bold border border-dashed border-slate-200 dark:border-slate-800 rounded-xl italic text-center p-4">No nutrition entries yet.</div>
                 <canvas id="canvas-dash-calories" x-show="dietLogs.length>0" style="display:block;width:100%;height:100%;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Premium Analytics -->
+    <div>
+        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Analytics</p>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm" style="height:260px;">
+                <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Monthly Workout Frequency</p>
+                <div class="relative" style="height:200px;">
+                    <div x-show="workouts.length===0" class="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-bold border border-dashed border-slate-200 dark:border-slate-800 rounded-xl italic text-center p-4">No workouts yet.</div>
+                    <canvas id="canvas-dash-monthly-freq" x-show="workouts.length>0" style="display:block;width:100%;height:100%;"></canvas>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm" style="height:260px;">
+                <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Muscle Group Distribution</p>
+                <div class="relative" style="height:200px;">
+                    <div x-show="workouts.length===0" class="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-bold border border-dashed border-slate-200 dark:border-slate-800 rounded-xl italic text-center p-4">No workouts yet.</div>
+                    <canvas id="canvas-dash-muscle-dist" x-show="workouts.length>0" style="display:block;width:100%;height:100%;"></canvas>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm" style="height:260px;">
+                <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Personal Record Timeline</p>
+                <div class="relative" style="height:200px;">
+                    <div x-show="!workouts.some(w=>w.newRecords&&w.newRecords.length>0)" class="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-bold border border-dashed border-slate-200 dark:border-slate-800 rounded-xl italic text-center p-4">No personal records yet.</div>
+                    <canvas id="canvas-dash-pr-timeline" x-show="workouts.some(w=>w.newRecords&&w.newRecords.length>0)" style="display:block;width:100%;height:100%;"></canvas>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm" style="height:260px;">
+                <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Workout Duration Trend</p>
+                <div class="relative" style="height:200px;">
+                    <div x-show="workouts.length===0" class="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-bold border border-dashed border-slate-200 dark:border-slate-800 rounded-xl italic text-center p-4">No workouts yet.</div>
+                    <canvas id="canvas-dash-duration-trend" x-show="workouts.length>0" style="display:block;width:100%;height:100%;"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -1142,14 +1248,65 @@
             </div>
         </div>
     </div>
-    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] overflow-hidden shadow-sm">
+    <!-- History controls: view toggle + search + muscle/exercise filters -->
+    <div class="flex flex-wrap items-center gap-2">
+        <div class="flex gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
+            <template x-for="v in ['list','calendar','timeline']" :key="v">
+                <button @click="historyView=v" :aria-pressed="historyView===v" class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all vytara-focusable" :class="historyView===v?'bg-white dark:bg-panelDark text-brand-500 shadow-sm':'text-slate-400'" x-text="v"></button>
+            </template>
+        </div>
+        <input type="text" x-model="historyFilters.search" placeholder="Search history..." class="!w-auto flex-1 min-w-[160px]">
+        <select x-model="historyFilters.muscle" class="!w-auto">
+            <option value="">All Muscles</option>
+            <template x-for="mg in systemMuscleGroups" :key="mg"><option :value="mg" x-text="mg"></option></template>
+        </select>
+        <select x-model="historyFilters.exercise" class="!w-auto">
+            <option value="">All Exercises</option>
+            <template x-for="ex in historyExerciseOptions" :key="ex"><option :value="ex" x-text="ex"></option></template>
+        </select>
+    </div>
+
+    <!-- Calendar view -->
+    <div x-show="historyView==='calendar'" class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-5 shadow-sm fade-in-up">
+        <div class="flex items-center justify-between mb-4">
+            <button @click="calendarShiftMonth(-1)" class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 font-black vytara-focusable">←</button>
+            <p class="text-sm font-black text-slate-700 dark:text-slate-200" x-text="calendarMonthLabel"></p>
+            <button @click="calendarShiftMonth(1)" class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 font-black vytara-focusable">→</button>
+        </div>
+        <div class="grid grid-cols-7 gap-1.5 text-center">
+            <template x-for="dn in ['S','M','T','W','T','F','S']" :key="dn"><span class="text-[9px] font-black text-slate-400 uppercase" x-text="dn"></span></template>
+            <template x-for="(c,ci) in calendarDays" :key="ci">
+                <div class="aspect-square rounded-lg flex items-center justify-center text-xs font-bold cursor-pointer transition-all"
+                     :class="!c?'':(c.hasWorkout?'bg-brand-500 text-white':'bg-slate-50 dark:bg-slate-800/50 text-slate-500')+(c&&c.isToday?' ring-2 ring-amber-400':'')"
+                     @click="c&&(filters.workoutsFrom=c.date,filters.workoutsTo=c.date,historyView='list')"
+                     x-text="c?c.day:''"></div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Timeline view -->
+    <div x-show="historyView==='timeline'" class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-5 shadow-sm fade-in-up">
+        <div x-show="filteredHistoryWorkouts.length===0" class="p-6 text-center text-slate-400 text-sm font-medium">No workouts for this period.</div>
+        <div class="relative pl-5 space-y-5 border-l-2 border-slate-100 dark:border-slate-800">
+            <template x-for="w in filteredHistoryWorkouts" :key="w.id">
+                <div class="relative">
+                    <span class="absolute -left-[1.4rem] top-1 w-2.5 h-2.5 rounded-full bg-brand-500"></span>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider" x-text="w.date"></p>
+                    <p class="text-sm font-extrabold text-slate-800 dark:text-slate-100" x-text="(w.variations&&w.variations.length>0)?w.variations.map(v=>v.exercise).filter(Boolean).join(', '):(w.exercise||w.type)"></p>
+                    <p class="text-[10px] text-slate-400 font-bold" x-show="calculateVolume(w)>0" x-text="calculateVolume(w).toLocaleString()+' kg volume'"></p>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <div x-show="historyView==='list'" class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] overflow-hidden shadow-sm fade-in-up">
         <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800/80 text-[10px] font-black text-slate-400 uppercase tracking-widest flex justify-between">
             <span>Workout History</span>
-            <span x-text="filteredWorkouts.length+' entries'"></span>
+            <span x-text="filteredHistoryWorkouts.length+' entries'"></span>
         </div>
-        <div x-show="filteredWorkouts.length===0" class="p-10 text-center text-slate-400 text-sm font-medium">No workouts for this period.</div>
-        <div class="divide-y divide-slate-100 dark:divide-slate-800/50" x-show="filteredWorkouts.length>0">
-            <template x-for="w in filteredWorkouts" :key="w.id">
+        <div x-show="filteredHistoryWorkouts.length===0" class="p-10 text-center text-slate-400 text-sm font-medium">No workouts for this period.</div>
+        <div class="divide-y divide-slate-100 dark:divide-slate-800/50" x-show="filteredHistoryWorkouts.length>0">
+            <template x-for="w in filteredHistoryWorkouts" :key="w.id">
                 <div class="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
                     <!-- Main row -->
                     <div class="px-4 py-3 cursor-pointer select-none" @click="w._expanded=!w._expanded">
@@ -1361,6 +1518,50 @@
 <!-- GOALS TAB -->
 <div x-show="activeTab==='goals'" class="space-y-6 p-4 md:p-8 lg:p-10">
     <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Goals</h2>
+
+    <!-- Goal Progress (weight / body fat / frequency / streak / strength — real data only) -->
+    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[1.5rem] shadow-sm space-y-4">
+        <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">Goal Progress</h3>
+        <div x-show="structuredGoalsProgress.length===0" class="text-xs text-slate-400 italic">Set a target weight/body fat below, or add a frequency, streak or strength goal to track progress here.</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" x-show="structuredGoalsProgress.length>0">
+            <template x-for="g in structuredGoalsProgress" :key="g.id">
+                <div class="p-4 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <p class="text-xs font-black text-slate-700 dark:text-slate-200" x-text="g.label"></p>
+                        <span x-show="g.achieved" class="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 uppercase success-pop">🏅 Achieved</span>
+                    </div>
+                    <div class="flex justify-between text-[10px] font-bold text-slate-400">
+                        <span x-text="g.current+' '+g.unit"></span>
+                        <span x-text="'Target: '+g.target+' '+g.unit"></span>
+                    </div>
+                    <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-700" :class="g.achieved?'bg-emerald-500':'bg-brand-500'" :style="'width:'+Math.min(100,Math.max(0,g.pct))+'%'"></div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <p class="text-[9px] text-slate-400" x-text="Math.min(100,Math.max(0,g.pct))+'% complete'"></p>
+                        <button x-show="g.isStrength" @click="deleteStrengthGoal(g.goalId)" class="text-[9px] font-black text-red-400 hover:text-red-500 uppercase">Remove</button>
+                    </div>
+                </div>
+            </template>
+        </div>
+        <!-- Milestones for the closest goal to completion -->
+        <div x-show="structuredGoalsProgress.length>0" class="flex flex-wrap gap-2 pt-1">
+            <template x-for="pct in [25,50,75,100]" :key="pct">
+                <span class="text-[9px] font-black px-2 py-1 rounded-full uppercase" :class="Math.max(...structuredGoalsProgress.map(g=>g.pct))>=pct?'bg-brand-500/15 text-brand-400':'bg-slate-100 dark:bg-slate-800 text-slate-400'" x-text="pct+'% milestone'"></span>
+            </template>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Weekly Frequency Goal</label><input type="number" x-model="goalTargets.workoutFrequencyPerWeek" placeholder="e.g. 4" @change="persist()"></div>
+            <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Streak Goal (days)</label><input type="number" x-model="goalTargets.streakTarget" placeholder="e.g. 30" @change="persist()"></div>
+            <div class="flex items-end"><button @click="persist()" class="w-full bg-brand-500/10 border border-brand-500/30 text-brand-400 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider hover:bg-brand-500/20 transition-all">Save Targets</button></div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Strength Goal — Exercise</label><input type="text" x-model="newStrengthGoal.exercise" placeholder="e.g. Bench Press" list="goalExerciseList"></div>
+            <datalist id="goalExerciseList"><template x-for="ex in historyExerciseOptions" :key="ex"><option :value="ex"></option></template></datalist>
+            <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Target Weight (kg)</label><input type="number" step="any" x-model="newStrengthGoal.targetWeight" placeholder="kg"></div>
+            <div class="flex items-end"><button @click="addStrengthGoal()" class="w-full bg-brand-500 text-white font-black py-2.5 rounded-xl text-xs uppercase tracking-wider hover:bg-brand-600 transition-all">Add Strength Goal</button></div>
+        </div>
+    </div>
 
     <!-- My Fitness Goals (from onboarding) -->
     <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[1.5rem] shadow-sm space-y-4">
@@ -4483,6 +4684,14 @@ function vytaraApp() {
         customGoals: [],
         customExercises: [],
         favoriteExercises: [],
+        recoveryLogs: [],
+        strengthGoals: [],
+        goalTargets: { workoutFrequencyPerWeek:'', streakTarget:'' },
+        recoveryForm: { sleep:3, energy:3, soreness:3, hydration:3, mood:3 },
+        newStrengthGoal: { exercise:'', targetWeight:'' },
+        historyView: 'list',
+        historyFilters: { search:'', muscle:'', exercise:'' },
+        calendarMonth: '',
         challenges: [],
         reportRange: { from:'', to:'' },
         filters: { workoutsFrom:'', workoutsTo:'', dietFrom:'', dietTo:'', metricsFrom:'', metricsTo:'' },
@@ -4628,7 +4837,17 @@ function vytaraApp() {
             if(week.length) weeks.push(week);
             return weeks;
         },
+        // Memoized wrapper — getDashboardMetrics() is called many times per render tick from
+        // the template; recompute only when the underlying data actually changed (perf optimization).
         getDashboardMetrics() {
+            const key = [this.dashboardDate,this.workouts.length,this.dietLogs.length,this.metricsLogs.length,this.waterLogs.length,this.profile.targetWeight,this.profile.currentWeight].join('|');
+            if(this._dashMetricsCache && this._dashMetricsCache.key===key) return this._dashMetricsCache.value;
+            const value = this._computeDashboardMetrics();
+            this._dashMetricsCache = { key, value };
+            return value;
+        },
+        _dashMetricsCache: null,
+        _computeDashboardMetrics() {
             const viewDate = this.dashboardDate || this.getToday();
             const sorted = [...this.metricsLogs].sort((a,b)=>b.date.localeCompare(a.date));
             // get weight closest to or on viewDate
@@ -4703,6 +4922,131 @@ function vytaraApp() {
                 workoutsThisMonth:this.workouts.filter(w=>w.date&&w.date.startsWith(today.slice(0,7))).length+'× this month',
                 nutritionThisMonth:this.dietLogs.filter(d=>d.date&&d.date.startsWith(today.slice(0,7))).length+'× this month',
                 heatmap };
+        },
+
+        // ==================== TRAINING SNAPSHOT (Dashboard) — real data only, single pass ====================
+        get weeklyTrainingSnapshot() {
+            const today = this.getToday();
+            const d = new Date(today+'T12:00:00');
+            const dow = d.getDay();
+            const monday = new Date(d); monday.setDate(d.getDate()-((dow+6)%7));
+            const weekStart = monday.getFullYear()+'-'+String(monday.getMonth()+1).padStart(2,'0')+'-'+String(monday.getDate()).padStart(2,'0');
+            let sessions=0, volume=0, duration=0, calories=0;
+            const todaysWorkouts = [];
+            this.workouts.forEach(w=>{
+                if(w.date===today) todaysWorkouts.push(w);
+                if(w.date>=weekStart && w.date<=today) {
+                    sessions++;
+                    volume += this.calculateVolume(w);
+                    duration += parseInt(w.duration||w.minutes)||0;
+                    calories += parseInt(w.caloriesBurned)||0;
+                }
+            });
+            return { todaysWorkouts, sessions, volume: Math.round(volume), duration, calories, weekStart };
+        },
+        get workoutDatesSet() { return new Set(this.workouts.map(w=>w.date)); },
+
+        // ==================== RECOVERY & READINESS (real self-reported data only) ====================
+        get todayRecovery() { const t=this.getToday(); return this.recoveryLogs.find(r=>r.date===t)||null; },
+        get readinessScore() {
+            const r=this.todayRecovery; if(!r) return null;
+            const norm=v=>Math.max(0,Math.min(100,(parseFloat(v)||0)/5*100));
+            const soreInv = 100-norm(r.soreness);
+            return Math.round((norm(r.sleep)+norm(r.energy)+soreInv+norm(r.hydration)+norm(r.mood))/5);
+        },
+        get readinessLabel() {
+            const s=this.readinessScore; if(s===null) return 'Not logged today';
+            return s>=75?'Ready to train':s>=50?'Train with caution':'Prioritize recovery';
+        },
+        logRecovery() {
+            const t=this.getToday();
+            const entry={date:t, sleep:parseFloat(this.recoveryForm.sleep)||3, energy:parseFloat(this.recoveryForm.energy)||3, soreness:parseFloat(this.recoveryForm.soreness)||3, hydration:parseFloat(this.recoveryForm.hydration)||3, mood:parseFloat(this.recoveryForm.mood)||3};
+            const i=this.recoveryLogs.findIndex(r=>r.date===t);
+            if(i>-1) this.recoveryLogs.splice(i,1,entry); else this.recoveryLogs.push(entry);
+            this.persist();
+        },
+
+        // ==================== GOALS: structured progress (weight/bodyfat/frequency/streak/strength) ====================
+        get structuredGoalsProgress() {
+            const goals=[];
+            const m=this.getDashboardMetrics();
+            if(parseFloat(this.profile.targetWeight)>0 && m.currentWeight>0) {
+                goals.push({ id:'weight', label:'Weight Goal', unit:'kg', current:m.currentWeight, target:parseFloat(this.profile.targetWeight), pct:m.progressPercent, achieved:m.progressPercent>=100 });
+            }
+            if(parseFloat(this.profile.targetBodyFat)>0) {
+                const sorted=[...this.metricsLogs].sort((a,b)=>b.date.localeCompare(a.date));
+                const latestBF=sorted.length>0?parseFloat(sorted[0].bodyFat)||0:0;
+                const startBF=parseFloat(this.profile.currentBodyFat)||latestBF;
+                const targetBF=parseFloat(this.profile.targetBodyFat);
+                let pct=0; if(startBF!==targetBF) pct=Math.min(100,Math.max(0,Math.round(Math.abs(startBF-latestBF)/Math.abs(startBF-targetBF)*100)));
+                if(latestBF>0) goals.push({ id:'bodyfat', label:'Body Fat Goal', unit:'%', current:latestBF, target:targetBF, pct, achieved: (startBF>targetBF&&latestBF<=targetBF)||(startBF<targetBF&&latestBF>=targetBF) });
+            }
+            if(parseFloat(this.goalTargets.workoutFrequencyPerWeek)>0) {
+                const target=parseFloat(this.goalTargets.workoutFrequencyPerWeek);
+                const current=this.weeklyTrainingSnapshot.sessions;
+                goals.push({ id:'frequency', label:'Weekly Frequency', unit:'sessions', current, target, pct:Math.min(100,Math.round(current/target*100)), achieved:current>=target });
+            }
+            if(parseFloat(this.goalTargets.streakTarget)>0) {
+                const target=parseFloat(this.goalTargets.streakTarget);
+                const current=m.workoutStreak;
+                goals.push({ id:'streak', label:'Streak Goal', unit:'days', current, target, pct:Math.min(100,Math.round(current/target*100)), achieved:current>=target });
+            }
+            this.strengthGoals.forEach(g=>{
+                const current=this.getExercisePR(g.exercise);
+                const target=parseFloat(g.targetWeight)||0;
+                goals.push({ id:'strength-'+g.id, label:g.exercise+' Strength Goal', unit:'kg', current, target, pct: target>0?Math.min(100,Math.round(current/target*100)):0, achieved: target>0&&current>=target, isStrength:true, goalId:g.id });
+            });
+            return goals;
+        },
+        addStrengthGoal() {
+            if(!this.newStrengthGoal.exercise||!this.newStrengthGoal.targetWeight) return;
+            this.strengthGoals.push({ id:Date.now().toString(36)+Math.random().toString(36).slice(2), exercise:this.newStrengthGoal.exercise, targetWeight:parseFloat(this.newStrengthGoal.targetWeight) });
+            this.newStrengthGoal={exercise:'',targetWeight:''};
+            this.persist();
+        },
+        deleteStrengthGoal(id) { this.strengthGoals=this.strengthGoals.filter(g=>g.id!==id); this.persist(); },
+
+        // ==================== CALENDAR VIEW (Workout History) ====================
+        get calendarDays() {
+            const month = this.calendarMonth || this.getToday().slice(0,7);
+            const [y,mo] = month.split('-').map(Number);
+            const first = new Date(y,mo-1,1);
+            const startOffset = first.getDay();
+            const daysInMonth = new Date(y,mo,0).getDate();
+            const dateSet = this.workoutDatesSet;
+            const cells=[];
+            for(let i=0;i<startOffset;i++) cells.push(null);
+            for(let d=1;d<=daysInMonth;d++) {
+                const ds = y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+                cells.push({ date:ds, day:d, hasWorkout:dateSet.has(ds), isToday:ds===this.getToday() });
+            }
+            return cells;
+        },
+        calendarShiftMonth(delta) {
+            const month = this.calendarMonth || this.getToday().slice(0,7);
+            const [y,mo] = month.split('-').map(Number);
+            const d = new Date(y,mo-1+delta,1);
+            this.calendarMonth = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+        },
+        get calendarMonthLabel() {
+            const month = this.calendarMonth || this.getToday().slice(0,7);
+            const [y,mo] = month.split('-').map(Number);
+            return new Date(y,mo-1,1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+        },
+
+        // Extended history filtering (search/muscle/exercise) — additive, does not alter filteredWorkouts.
+        get filteredHistoryWorkouts() {
+            let list = this.filteredWorkouts;
+            const q=(this.historyFilters.search||'').toLowerCase().trim();
+            if(q) list=list.filter(w=>(w.notes||'').toLowerCase().includes(q)||(w.variations||[]).some(v=>(v.exercise||'').toLowerCase().includes(q))||(w.exercise||'').toLowerCase().includes(q));
+            if(this.historyFilters.muscle) list=list.filter(w=>(w.muscles||[]).includes(this.historyFilters.muscle));
+            if(this.historyFilters.exercise) list=list.filter(w=>(w.variations||[]).some(v=>v.exercise===this.historyFilters.exercise)||w.exercise===this.historyFilters.exercise);
+            return list;
+        },
+        get historyExerciseOptions() {
+            const set=new Set();
+            this.workouts.forEach(w=>{ (w.variations||[]).forEach(v=>{ if(v.exercise) set.add(v.exercise); }); if(w.exercise) set.add(w.exercise); });
+            return [...set].sort();
         },
 
         // ==================== INIT ====================
@@ -4788,6 +5132,9 @@ function vytaraApp() {
             this.customGoals = s.customGoals||[];
             this.customExercises = s.customExercises||[];
             this.favoriteExercises = s.favoriteExercises||[];
+            this.recoveryLogs = s.recoveryLogs||[];
+            this.strengthGoals = s.strengthGoals||[];
+            this.goalTargets = s.goalTargets||{ workoutFrequencyPerWeek:'', streakTarget:'' };
             this.challenges = s.challenges||[];
             this.mealHistory       = s.mealHistory||[];
             this.foodDatabase      = s.foodDatabase||[];
@@ -5165,7 +5512,7 @@ function vytaraApp() {
         },
 
         persist() {
-            const data = { profile:this.profile, workouts:this.workouts, dietLogs:this.dietLogs, metricsLogs:this.metricsLogs, waterLogs:this.waterLogs, photos:this.photos.map(p=>({...p,url:p.storagePath?undefined:p.url,data:p.storagePath?undefined:p.url})), customGoals:this.customGoals, customExercises:this.customExercises, favoriteExercises:this.favoriteExercises, challenges:this.challenges, mealHistory:this.mealHistory, foodDatabase:this.foodDatabase, googleFitConnected:this.googleFitConnected, googleFitAccessToken:this.googleFitAccessToken, googleFitData:this.googleFitData };
+            const data = { profile:this.profile, workouts:this.workouts, dietLogs:this.dietLogs, metricsLogs:this.metricsLogs, waterLogs:this.waterLogs, photos:this.photos.map(p=>({...p,url:p.storagePath?undefined:p.url,data:p.storagePath?undefined:p.url})), customGoals:this.customGoals, customExercises:this.customExercises, favoriteExercises:this.favoriteExercises, recoveryLogs:this.recoveryLogs, strengthGoals:this.strengthGoals, goalTargets:this.goalTargets, challenges:this.challenges, mealHistory:this.mealHistory, foodDatabase:this.foodDatabase, googleFitConnected:this.googleFitConnected, googleFitAccessToken:this.googleFitAccessToken, googleFitData:this.googleFitData };
             localStorage.setItem(VAULT_KEY, JSON.stringify(data));
             if(this.firebaseUser&&window._fb) this.persistCloud(data);
             this.generateHeatmapData();
@@ -6878,6 +7225,33 @@ function vytaraApp() {
                 recent.forEach(d=>{ tp+=parseInt(d.protein||d.totalProtein)||0; tc+=parseInt(d.carbs||d.totalCarbs)||0; tf+=parseInt(d.fat||d.totalFat)||0; tfi+=parseInt(d.fibre||d.totalFibre||d.fiber||0); });
                 if(tp+tc+tf>0) makeChart('canvas-diet-macros',{type:'doughnut',data:{labels:['Protein','Carbs','Fat','Fibre'],datasets:[{data:[tp,tc,tf,tfi],backgroundColor:['rgba(59,130,246,0.7)','rgba(34,197,94,0.7)','rgba(249,115,22,0.7)','rgba(132,204,22,0.7)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:labelColor,font:{size:10,weight:'bold'},boxWidth:10}},tooltip:{...defaults.plugins.tooltip}}}});
             }
+
+            // Monthly workout frequency (last 6 months)
+            if(this.workouts.length>0) {
+                const months=[]; const d0=new Date();
+                for(let i=5;i>=0;i--){ const d=new Date(d0.getFullYear(),d0.getMonth()-i,1); months.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); }
+                const counts=months.map(mo=>this.workouts.filter(w=>w.date&&w.date.startsWith(mo)).length);
+                makeChart('canvas-dash-monthly-freq',{type:'bar',data:{labels:months.map(mo=>new Date(mo+'-01T12:00:00').toLocaleDateString('en-US',{month:'short'})),datasets:[{data:counts,backgroundColor:'rgba(16,185,129,0.5)',borderColor:'#10b981',borderWidth:1,borderRadius:5}]},options:{...defaults}});
+            }
+
+            // Muscle group distribution (all-time, from logged workouts)
+            if(this.workouts.length>0) {
+                const dist={};
+                this.workouts.forEach(w=>(w.muscles||[]).forEach(m=>dist[m]=(dist[m]||0)+1));
+                const labels=Object.keys(dist);
+                if(labels.length>0) makeChart('canvas-dash-muscle-dist',{type:'doughnut',data:{labels,datasets:[{data:labels.map(l=>dist[l]),backgroundColor:['#3b82f6','#10b981','#f59e0b','#a855f7','#ef4444','#06b6d4','#84cc16','#ec4899','#6366f1','#f97316'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:labelColor,font:{size:9,weight:'bold'},boxWidth:8}},tooltip:{...defaults.plugins.tooltip}}}});
+            }
+
+            // PR timeline — new records detected per month (from Personal Record Engine, real data only)
+            if(this.workouts.some(w=>w.newRecords&&w.newRecords.length>0)) {
+                const byMonth={};
+                this.workouts.forEach(w=>{ if(w.newRecords&&w.newRecords.length>0){ const mo=w.date.slice(0,7); byMonth[mo]=(byMonth[mo]||0)+w.newRecords.length; } });
+                const months=Object.keys(byMonth).sort();
+                makeChart('canvas-dash-pr-timeline',{type:'line',data:{labels:months.map(mo=>new Date(mo+'-01T12:00:00').toLocaleDateString('en-US',{month:'short',year:'2-digit'})),datasets:[{data:months.map(mo=>byMonth[mo]),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.1)',tension:.3,fill:true,pointBackgroundColor:'#f59e0b',pointRadius:4}]},options:{...defaults}});
+            }
+
+            // Workout duration trend (last 14 sessions)
+            if(wv.length>0) makeChart('canvas-dash-duration-trend',{type:'line',data:{labels:wv.map(w=>w.date.slice(5)),datasets:[{data:wv.map(w=>parseInt(w.duration||w.minutes)||0),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,0.08)',tension:.4,fill:true,pointBackgroundColor:'#6366f1',pointRadius:3}]},options:{...defaults}});
         },
 
         // ==================== EXPORT / IMPORT ====================
