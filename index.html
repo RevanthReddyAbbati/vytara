@@ -68,6 +68,10 @@
         .success-pop { animation: popIn .35s cubic-bezier(.34,1.56,.64,1); }
         .vytara-focusable:focus-visible { outline:2px solid #3b82f6; outline-offset:2px; border-radius:.5rem; }
         .muscle-png-card { will-change: transform; }
+        /* Muscle PNG rendering — fixed, centered, never cropped or transformed. */
+        .muscle-img-wrap { overflow:hidden; display:flex; align-items:center; justify-content:center; height:180px; padding:16px; position:relative; }
+        .muscle-img-wrap img, .muscle-thumb img { width:100%; height:100%; object-fit:contain; display:block; transform:none; max-width:100%; max-height:100%; }
+        .muscle-thumb { display:flex; align-items:center; justify-content:center; overflow:hidden; }
         .ripple-dot { position:absolute; inset:0; z-index:5; border-radius:inherit; background:radial-gradient(circle at center, rgba(59,130,246,.35), transparent 70%); opacity:0; pointer-events:none; }
         .ripple-dot.ripple-active { animation: ripplePulse .5s ease-out; }
         @keyframes ripplePulse { 0%{opacity:.9; transform:scale(.4);} 100%{opacity:0; transform:scale(1.3);} }
@@ -790,24 +794,6 @@
         </div>
     </div>
 
-    <!-- Recovery & Readiness -->
-    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase">Recovery &amp; Readiness</p>
-            <span class="text-xs font-black px-3 py-1 rounded-full" :class="readinessScore===null?'bg-slate-100 dark:bg-slate-800 text-slate-400':readinessScore>=75?'bg-emerald-500/10 text-emerald-400':readinessScore>=50?'bg-amber-500/10 text-amber-400':'bg-red-500/10 text-red-400'" x-text="readinessScore===null?'Not logged today':readinessScore+'% — '+readinessLabel"></span>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            <template x-for="f in ['sleep','energy','soreness','hydration','mood']" :key="f">
-                <div>
-                    <label class="text-[9px] font-black text-slate-400 uppercase block mb-1" x-text="f"></label>
-                    <input type="range" min="1" max="5" step="1" x-model="recoveryForm[f]" class="w-full vytara-focusable">
-                    <p class="text-center text-xs font-black text-brand-400 mt-0.5" x-text="recoveryForm[f]+'/5'"></p>
-                </div>
-            </template>
-        </div>
-        <button @click="logRecovery()" class="bg-brand-500 hover:bg-brand-600 text-white font-black py-2.5 px-5 rounded-xl text-xs uppercase tracking-widest transition-all vytara-focusable">Save Today's Recovery</button>
-    </div>
-
     <!-- Charts -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm" style="height:260px;">
@@ -907,19 +893,17 @@
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                         <template x-for="mg in systemMuscleGroups" :key="mg">
                             <button @click="builderSelectMuscle(mg)" type="button" x-data="{ripple:false}" @click.capture="ripple=true; setTimeout(()=>ripple=false, 500)"
-                                class="muscle-png-card group relative rounded-[1.5rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-panelDark overflow-hidden text-left transition-all duration-300 hover:border-brand-500/50 hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] vytara-focusable">
+                                class="muscle-png-card group relative rounded-[1.5rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-panelDark overflow-hidden text-left transition-all duration-300 ease-out hover:border-brand-500/50 hover:shadow-2xl hover:shadow-brand-500/10 hover:-translate-y-1 active:scale-[0.98] vytara-focusable">
                                 <span class="ripple-dot" :class="ripple?'ripple-active':''"></span>
-                                <div class="relative aspect-[4/3] overflow-hidden bg-gradient-to-b from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-950">
-                                    <img :src="'assets/muscles/figures/'+mg.toLowerCase()+'_figure.png'" :alt="mg" loading="lazy"
-                                        class="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105">
-                                    <div class="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent"></div>
+                                <div class="muscle-img-wrap bg-gradient-to-b from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-950 border-b border-slate-200 dark:border-slate-800/80">
+                                    <img :src="'assets/muscles/figures/'+mg.toLowerCase()+'_figure.png'" :alt="mg">
                                 </div>
                                 <div class="p-3.5 sm:p-4 flex items-center justify-between gap-2">
                                     <div class="min-w-0">
                                         <p class="text-sm font-extrabold text-slate-800 dark:text-slate-100 truncate" x-text="mg"></p>
                                         <p class="text-[11px] font-bold text-slate-400 mt-0.5" x-text="(BUILTIN_EXERCISES[mg]||[]).length+' exercises'"></p>
                                     </div>
-                                    <span class="shrink-0 text-slate-300 dark:text-slate-600 text-xl font-bold transition-transform group-hover:translate-x-1">›</span>
+                                    <span class="shrink-0 text-slate-300 dark:text-slate-600 text-xl font-bold transition-transform duration-300 group-hover:translate-x-1">›</span>
                                 </div>
                             </button>
                         </template>
@@ -962,47 +946,136 @@
                         </div>
                     </div>
 
-                    <!-- Recent (only shown when not searching) -->
-                    <div x-show="!workoutBuilder.exerciseSearch && builderRecentForMuscle.length>0">
-                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Recent</p>
-                        <div class="space-y-1.5">
-                            <template x-for="ex in builderRecentForMuscle" :key="'recent-'+ex">
-                                <div @click="builderSelectExercise(ex)" class="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors">
-                                    <template x-if="MUSCLE_ICONS[getExerciseMetaFor(ex).primary[0]]">
-                                        <img :src="'assets/muscles/figures/'+getExerciseMetaFor(ex).primary[0].toLowerCase()+'_figure.png'" class="w-11 h-11 rounded-lg object-cover object-top shrink-0" loading="lazy">
+                    <!-- CHEST: premium thumbnail cards (workout photo, badges, favorite, PR, session/set info) -->
+                    <template x-if="workoutBuilder.selectedMuscle==='Chest'">
+                        <div class="space-y-5">
+                            <div x-show="!workoutBuilder.exerciseSearch && builderRecentForMuscle.length>0">
+                                <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Recent</p>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                                    <template x-for="ex in builderRecentForMuscle" :key="'recent-chest-'+ex">
+                                        <div @click="builderSelectExercise(ex)" class="group relative bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.25rem] overflow-hidden cursor-pointer transition-all duration-300 ease-out hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/10 hover:-translate-y-1 active:scale-[0.97]">
+                                            <button @click.stop="toggleFavoriteExercise(ex)" class="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-base leading-none transition-transform duration-200 hover:scale-125" x-text="isFavoriteExercise(ex)?'★':'☆'" :class="isFavoriteExercise(ex)?'text-amber-400':'text-white/85'"></button>
+                                            <span x-show="getExercisePR(ex)>0" class="absolute top-2 left-2 z-10 text-[9px] font-black px-2 py-1 rounded-full bg-blue-500 text-white uppercase tracking-wider shadow">PR</span>
+                                            <div class="relative w-full aspect-video bg-slate-100 dark:bg-slate-900 overflow-hidden">
+                                                <template x-if="getExerciseWorkoutAssets(ex)">
+                                                    <img :src="getExerciseWorkoutAssets(ex).photo" :alt="ex" class="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105">
+                                                </template>
+                                                <template x-if="!getExerciseWorkoutAssets(ex)">
+                                                    <div class="w-full h-full flex items-center justify-center text-3xl">🏋️</div>
+                                                </template>
+                                                <div class="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/45 to-transparent pointer-events-none"></div>
+                                            </div>
+                                            <div class="p-3 space-y-1.5">
+                                                <p class="text-sm font-extrabold text-slate-800 dark:text-slate-100 truncate" x-text="ex"></p>
+                                                <div class="flex flex-wrap items-center gap-1">
+                                                    <span class="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-brand-500/10 text-brand-400 uppercase tracking-wider" x-text="getExerciseMetaFor(ex).equipment"></span>
+                                                    <span class="text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider"
+                                                        :class="getExerciseMetaFor(ex).difficulty==='Advanced'?'bg-red-500/10 text-red-400':getExerciseMetaFor(ex).difficulty==='Intermediate'?'bg-amber-500/10 text-amber-400':'bg-emerald-500/10 text-emerald-400'"
+                                                        x-text="getExerciseMetaFor(ex).difficulty"></span>
+                                                    <span x-show="getExerciseStats(ex)" class="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 uppercase tracking-wider" x-text="getExerciseStats(ex)?('Last '+getExerciseStats(ex).lastWorkoutDate):''"></span>
+                                                </div>
+                                                <p x-show="!getExerciseStats(ex)" class="text-[10px] font-bold text-slate-400 truncate" x-text="'Est. '+getExerciseGuideDefaults(ex).sets+' sets'"></p>
+                                            </div>
+                                        </div>
                                     </template>
-                                    <template x-if="!MUSCLE_ICONS[getExerciseMetaFor(ex).primary[0]]"><div class="w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0"></div></template>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate" x-text="ex"></p>
-                                        <p class="text-[11px] text-slate-400 font-semibold" x-text="getExerciseMetaFor(ex).equipment"></p>
-                                    </div>
-                                    <span x-show="getExercisePR(ex)>0" class="shrink-0 text-[10px] font-black px-2 py-1 rounded-full bg-purple-500/15 text-purple-400 uppercase tracking-wider">PR</span>
-                                    <button @click.stop="toggleFavoriteExercise(ex)" class="shrink-0 text-lg transition-transform hover:scale-110" x-text="isFavoriteExercise(ex)?'★':'☆'" :class="isFavoriteExercise(ex)?'text-amber-400':'text-slate-300 dark:text-slate-600'"></button>
                                 </div>
-                            </template>
+                            </div>
+                            <div x-show="builderExercisePool.length>0">
+                                <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2" x-text="workoutBuilder.exerciseSearch?'Results':'All Exercises'"></p>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                                    <template x-for="ex in builderExercisePool" :key="'all-chest-'+ex">
+                                        <div @click="builderSelectExercise(ex)" class="group relative bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.25rem] overflow-hidden cursor-pointer transition-all duration-300 ease-out hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/10 hover:-translate-y-1 active:scale-[0.97]">
+                                            <button @click.stop="toggleFavoriteExercise(ex)" class="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-base leading-none transition-transform duration-200 hover:scale-125" x-text="isFavoriteExercise(ex)?'★':'☆'" :class="isFavoriteExercise(ex)?'text-amber-400':'text-white/85'"></button>
+                                            <span x-show="getExercisePR(ex)>0" class="absolute top-2 left-2 z-10 text-[9px] font-black px-2 py-1 rounded-full bg-blue-500 text-white uppercase tracking-wider shadow">PR</span>
+                                            <div class="relative w-full aspect-video bg-slate-100 dark:bg-slate-900 overflow-hidden">
+                                                <template x-if="getExerciseWorkoutAssets(ex)">
+                                                    <img :src="getExerciseWorkoutAssets(ex).photo" :alt="ex" class="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105">
+                                                </template>
+                                                <template x-if="!getExerciseWorkoutAssets(ex)">
+                                                    <div class="w-full h-full flex items-center justify-center text-3xl">🏋️</div>
+                                                </template>
+                                                <div class="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/45 to-transparent pointer-events-none"></div>
+                                            </div>
+                                            <div class="p-3 space-y-1.5">
+                                                <p class="text-sm font-extrabold text-slate-800 dark:text-slate-100 truncate" x-text="ex"></p>
+                                                <div class="flex flex-wrap items-center gap-1">
+                                                    <span class="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-brand-500/10 text-brand-400 uppercase tracking-wider" x-text="getExerciseMetaFor(ex).equipment"></span>
+                                                    <span class="text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider"
+                                                        :class="getExerciseMetaFor(ex).difficulty==='Advanced'?'bg-red-500/10 text-red-400':getExerciseMetaFor(ex).difficulty==='Intermediate'?'bg-amber-500/10 text-amber-400':'bg-emerald-500/10 text-emerald-400'"
+                                                        x-text="getExerciseMetaFor(ex).difficulty"></span>
+                                                    <span x-show="getExerciseStats(ex)" class="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 uppercase tracking-wider" x-text="getExerciseStats(ex)?('Last '+getExerciseStats(ex).lastWorkoutDate):''"></span>
+                                                </div>
+                                                <p x-show="!getExerciseStats(ex)" class="text-[10px] font-bold text-slate-400 truncate" x-text="'Est. '+getExerciseGuideDefaults(ex).sets+' sets'"></p>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    </template>
 
-                    <!-- All exercises for this muscle (filtered by search/equipment) -->
-                    <div x-show="builderExercisePool.length>0">
-                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2" x-text="workoutBuilder.exerciseSearch?'Results':'All Exercises'"></p>
-                        <div class="space-y-1.5">
-                            <template x-for="ex in builderExercisePool" :key="ex">
-                                <div @click="builderSelectExercise(ex)" class="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors">
-                                    <template x-if="MUSCLE_ICONS[getExerciseMetaFor(ex).primary[0]]">
-                                        <img :src="'assets/muscles/figures/'+getExerciseMetaFor(ex).primary[0].toLowerCase()+'_figure.png'" class="w-11 h-11 rounded-lg object-cover object-top shrink-0" loading="lazy">
+                    <!-- ALL OTHER MUSCLES: existing simple row list, unchanged -->
+                    <template x-if="workoutBuilder.selectedMuscle!=='Chest'">
+                        <div class="space-y-5">
+                            <!-- Recent (only shown when not searching) -->
+                            <div x-show="!workoutBuilder.exerciseSearch && builderRecentForMuscle.length>0">
+                                <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Recent</p>
+                                <div class="space-y-1.5">
+                                    <template x-for="ex in builderRecentForMuscle" :key="'recent-'+ex">
+                                        <div @click="builderSelectExercise(ex)" class="group flex items-center gap-3 p-2.5 rounded-xl border border-transparent hover:border-brand-500/20 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm cursor-pointer transition-all duration-200">
+                                            <div class="w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0 muscle-thumb p-1">
+                                                <template x-if="MUSCLE_ICONS[getExerciseMetaFor(ex).primary[0]]">
+                                                    <img :src="'assets/muscles/figures/'+getExerciseMetaFor(ex).primary[0].toLowerCase()+'_figure.png'">
+                                                </template>
+                                            </div>
+                                            <div class="flex-1 min-w-0 py-0.5">
+                                                <p class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate" x-text="ex"></p>
+                                                <div class="flex flex-wrap items-center gap-1 mt-1">
+                                                    <span class="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-brand-500/10 text-brand-400 uppercase tracking-wider" x-text="getExerciseMetaFor(ex).equipment"></span>
+                                                    <span class="text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider"
+                                                        :class="getExerciseMetaFor(ex).difficulty==='Advanced'?'bg-red-500/10 text-red-400':getExerciseMetaFor(ex).difficulty==='Intermediate'?'bg-amber-500/10 text-amber-400':'bg-emerald-500/10 text-emerald-400'"
+                                                        x-text="getExerciseMetaFor(ex).difficulty"></span>
+                                                    <span x-show="getExerciseMetaFor(ex).primary[0]" class="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 uppercase tracking-wider" x-text="getExerciseMetaFor(ex).primary[0]"></span>
+                                                    <span x-show="isRecentlyUsedExercise(ex)" class="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 uppercase tracking-wider">Recent</span>
+                                                </div>
+                                            </div>
+                                            <span x-show="getExercisePR(ex)>0" class="shrink-0 text-[10px] font-black px-2 py-1 rounded-full bg-blue-500/15 text-blue-400 uppercase tracking-wider">PR</span>
+                                            <button @click.stop="toggleFavoriteExercise(ex)" class="shrink-0 text-lg transition-transform duration-200 hover:scale-125" x-text="isFavoriteExercise(ex)?'★':'☆'" :class="isFavoriteExercise(ex)?'text-amber-400':'text-slate-300 dark:text-slate-600'"></button>
+                                        </div>
                                     </template>
-                                    <template x-if="!MUSCLE_ICONS[getExerciseMetaFor(ex).primary[0]]"><div class="w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0"></div></template>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate" x-text="ex"></p>
-                                        <p class="text-[11px] text-slate-400 font-semibold" x-text="getExerciseMetaFor(ex).equipment"></p>
-                                    </div>
-                                    <span x-show="getExercisePR(ex)>0" class="shrink-0 text-[10px] font-black px-2 py-1 rounded-full bg-purple-500/15 text-purple-400 uppercase tracking-wider">PR</span>
-                                    <button @click.stop="toggleFavoriteExercise(ex)" class="shrink-0 text-lg transition-transform hover:scale-110" x-text="isFavoriteExercise(ex)?'★':'☆'" :class="isFavoriteExercise(ex)?'text-amber-400':'text-slate-300 dark:text-slate-600'"></button>
                                 </div>
-                            </template>
+                            </div>
+
+                            <!-- All exercises for this muscle (filtered by search/equipment) -->
+                            <div x-show="builderExercisePool.length>0">
+                                <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2" x-text="workoutBuilder.exerciseSearch?'Results':'All Exercises'"></p>
+                                <div class="space-y-1.5">
+                                    <template x-for="ex in builderExercisePool" :key="ex">
+                                        <div @click="builderSelectExercise(ex)" class="group flex items-center gap-3 p-2.5 rounded-xl border border-transparent hover:border-brand-500/20 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm cursor-pointer transition-all duration-200">
+                                            <div class="w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0 muscle-thumb p-1">
+                                                <template x-if="MUSCLE_ICONS[getExerciseMetaFor(ex).primary[0]]">
+                                                    <img :src="'assets/muscles/figures/'+getExerciseMetaFor(ex).primary[0].toLowerCase()+'_figure.png'">
+                                                </template>
+                                            </div>
+                                            <div class="flex-1 min-w-0 py-0.5">
+                                                <p class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate" x-text="ex"></p>
+                                                <div class="flex flex-wrap items-center gap-1 mt-1">
+                                                    <span class="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-brand-500/10 text-brand-400 uppercase tracking-wider" x-text="getExerciseMetaFor(ex).equipment"></span>
+                                                    <span class="text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider"
+                                                        :class="getExerciseMetaFor(ex).difficulty==='Advanced'?'bg-red-500/10 text-red-400':getExerciseMetaFor(ex).difficulty==='Intermediate'?'bg-amber-500/10 text-amber-400':'bg-emerald-500/10 text-emerald-400'"
+                                                        x-text="getExerciseMetaFor(ex).difficulty"></span>
+                                                    <span x-show="getExerciseMetaFor(ex).primary[0]" class="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 uppercase tracking-wider" x-text="getExerciseMetaFor(ex).primary[0]"></span>
+                                                    <span x-show="isRecentlyUsedExercise(ex)" class="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 uppercase tracking-wider">Recent</span>
+                                                </div>
+                                            </div>
+                                            <span x-show="getExercisePR(ex)>0" class="shrink-0 text-[10px] font-black px-2 py-1 rounded-full bg-blue-500/15 text-blue-400 uppercase tracking-wider">PR</span>
+                                            <button @click.stop="toggleFavoriteExercise(ex)" class="shrink-0 text-lg transition-transform duration-200 hover:scale-125" x-text="isFavoriteExercise(ex)?'★':'☆'" :class="isFavoriteExercise(ex)?'text-amber-400':'text-slate-300 dark:text-slate-600'"></button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    </template>
 
                     <div class="text-center pt-1" x-show="builderExercisePool.length>0">
                         <button @click="openCustomExerciseModal()" class="text-[11px] font-black text-brand-400 uppercase tracking-widest hover:text-brand-500">+ Create Custom Exercise</button>
@@ -1065,13 +1138,13 @@
 
             <!-- STEP 3: EXERCISE GUIDE -->
             <template x-if="workoutBuilder.step==='guide' && workoutBuilder.activeExercise">
-                <div class="space-y-5">
+                <div class="space-y-6">
                     <button @click="workoutBuilder.step='exercises'" class="flex items-center gap-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-black text-xs uppercase tracking-wider transition-colors"><span>←</span><span>Back to Exercises</span></button>
 
                     <!-- Header -->
-                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-5 sm:p-7">
+                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-6 sm:p-8">
                         <div class="flex flex-wrap items-start justify-between gap-4">
-                            <div class="space-y-2.5 min-w-0">
+                            <div class="space-y-3 min-w-0">
                                 <div class="flex items-center gap-2.5">
                                     <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight" x-text="workoutBuilder.activeExercise"></h2>
                                     <button @click="toggleFavoriteExercise(workoutBuilder.activeExercise)" class="text-2xl leading-none shrink-0 transition-transform hover:scale-110 vytara-focusable" x-text="isFavoriteExercise(workoutBuilder.activeExercise)?'★':'☆'" :class="isFavoriteExercise(workoutBuilder.activeExercise)?'text-amber-400':'text-slate-300 dark:text-slate-600'"></button>
@@ -1085,7 +1158,7 @@
                                     <span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 uppercase tracking-wider" x-text="activeExerciseMeta.movementPattern"></span>
                                     <template x-for="m in activeExerciseMeta.primary" :key="m">
                                         <span class="inline-flex items-center gap-1.5 text-[10px] font-black pl-1 pr-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 uppercase tracking-wider">
-                                            <template x-if="MUSCLE_ICONS[m]"><img :src="'assets/muscles/figures/'+m.toLowerCase()+'_figure.png'" class="w-4 h-4 rounded-full object-cover object-top"></template>
+                                            <template x-if="MUSCLE_ICONS[m]"><span class="w-4 h-4 rounded-full shrink-0 muscle-thumb"><img :src="'assets/muscles/figures/'+m.toLowerCase()+'_figure.png'"></span></template>
                                             <span x-text="m"></span>
                                         </span>
                                     </template>
@@ -1096,8 +1169,8 @@
                     </div>
 
                     <!-- Workout Intelligence: real history stats (empty state if none) -->
-                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-5 sm:p-7">
-                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-4">Your History</p>
+                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-6 sm:p-8">
+                        <p class="text-xs font-black tracking-widest text-slate-400 uppercase mb-5">Your History</p>
                         <div x-show="!activeExerciseStats" class="text-sm text-slate-400 italic">No logged history yet for this exercise.</div>
                         <div x-show="activeExerciseStats" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <div><p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Last Session</p><p class="text-sm font-extrabold text-slate-700 dark:text-slate-200" x-text="activeExerciseStats?activeExerciseStats.lastWorkoutDate:'--'"></p></div>
@@ -1119,128 +1192,192 @@
                         </div>
                     </div>
 
-                    <!-- Media placeholder / illustration (swap for video/animation later without layout changes) -->
-                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-6 sm:p-10 flex items-center justify-center" style="min-height:220px;">
-                        <div x-html="getExerciseSVG(workoutBuilder.activeExercise)"></div>
+                    <!-- Media: workout demo photo in a premium dark glass card; SVG fallback for exercises without a built asset library -->
+                    <template x-if="getExerciseWorkoutAssets(workoutBuilder.activeExercise)">
+                        <div class="relative bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-[1.75rem] overflow-hidden shadow-lg mx-auto" style="aspect-ratio:3/5;max-width:420px;">
+                            <img :src="getExerciseWorkoutAssets(workoutBuilder.activeExercise).photo" :alt="workoutBuilder.activeExercise" class="w-full h-full object-cover object-top">
+                            <div class="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/50 to-transparent pointer-events-none"></div>
+                        </div>
+                    </template>
+                    <template x-if="!getExerciseWorkoutAssets(workoutBuilder.activeExercise)">
+                        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.75rem] p-6 sm:p-10 flex items-center justify-center" style="min-height:220px;">
+                            <div x-html="getExerciseSVG(workoutBuilder.activeExercise)"></div>
+                        </div>
+                    </template>
+
+                    <!-- Tab bar -->
+                    <div class="flex gap-1 overflow-x-auto no-scrollbar bg-slate-100 dark:bg-slate-800/60 rounded-xl p-1">
+                        <template x-for="t in [['overview','Overview'],['howto','How to Perform'],['muscles','Muscles Worked'],['mistakes','Mistakes'],['tips','Tips'],['variations','Variations']]" :key="t[0]">
+                            <button @click="workoutBuilder.guideTab=t[0]" :aria-pressed="workoutBuilder.guideTab===t[0]"
+                                class="shrink-0 px-3.5 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all duration-200 vytara-focusable"
+                                :class="workoutBuilder.guideTab===t[0]?'bg-white dark:bg-panelDark text-brand-500 shadow-sm':'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'"
+                                x-text="t[1]"></button>
+                        </template>
                     </div>
 
-                    <!-- Muscles worked -->
-                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-5 sm:p-7">
-                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-4">Muscles Worked</p>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-                            <template x-for="m in activeExerciseMeta.primary" :key="'pm-'+m">
-                                <div class="flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                                    <template x-if="MUSCLE_ICONS[m]"><img :src="'assets/muscles/figures/'+m.toLowerCase()+'_figure.png'" class="w-9 h-9 rounded-lg object-cover object-top shrink-0"></template>
-                                    <div class="min-w-0"><p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Primary</p><p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate" x-text="m"></p></div>
+                    <!-- TAB: Overview -->
+                    <div x-show="workoutBuilder.guideTab==='overview'" class="space-y-4 fade-in-up">
+                        <div class="grid grid-cols-3 gap-3 sm:gap-4">
+                            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-5 text-center transition-shadow hover:shadow-sm">
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Sets</p>
+                                <p class="text-lg sm:text-xl font-extrabold text-brand-400 leading-tight" x-text="activeExerciseDefaults.sets"></p>
+                            </div>
+                            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-5 text-center transition-shadow hover:shadow-sm">
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Reps</p>
+                                <p class="text-lg sm:text-xl font-extrabold text-brand-400 leading-tight" x-text="activeExerciseDefaults.reps"></p>
+                            </div>
+                            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-5 text-center transition-shadow hover:shadow-sm">
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Rest</p>
+                                <p class="text-lg sm:text-xl font-extrabold text-brand-400 leading-tight" x-text="activeExerciseDefaults.rest"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: How to Perform -->
+                    <div x-show="workoutBuilder.guideTab==='howto'" class="space-y-4 fade-in-up">
+                        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-6 sm:p-8">
+                            <p class="text-xs font-black tracking-widest text-slate-400 uppercase mb-5">How To Perform</p>
+                            <ol class="space-y-3">
+                                <template x-for="(step,si) in (activeExerciseInfo.steps||[])" :key="si">
+                                    <li class="flex gap-3 items-start">
+                                        <span class="shrink-0 w-6 h-6 rounded-full bg-brand-500/15 text-brand-400 font-black text-xs flex items-center justify-center mt-0.5" x-text="si+1"></span>
+                                        <span class="text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug pt-0.5" x-text="step"></span>
+                                    </li>
+                                </template>
+                                <li x-show="!(activeExerciseInfo.steps&&activeExerciseInfo.steps.length)" class="text-sm text-slate-400 italic">Detailed steps for this exercise are coming soon.</li>
+                            </ol>
+                        </div>
+                        <div class="bg-blue-500/5 border border-blue-500/20 rounded-[1.5rem] p-6 sm:p-8 flex gap-3 items-start">
+                            <span class="w-1 self-stretch rounded-full bg-blue-400 shrink-0"></span>
+                            <div>
+                                <p class="text-xs font-black tracking-widest text-blue-400 uppercase mb-2">Breathing</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug" x-text="activeExerciseDefaults.breathing"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Muscles Worked -->
+                    <div x-show="workoutBuilder.guideTab==='muscles'" class="space-y-4 fade-in-up">
+                        <!-- Anatomy: front + back, premium dark cards. Falls back to the procedural SVG diagram when no asset library exists. -->
+                        <template x-if="getExerciseWorkoutAssets(workoutBuilder.activeExercise)">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                <div class="relative bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-[1.5rem] overflow-hidden shadow-sm" style="aspect-ratio:3/4;">
+                                    <span class="absolute top-3.5 left-4 text-[9px] font-black tracking-widest text-slate-400 uppercase z-10">Front</span>
+                                    <img :src="getExerciseWorkoutAssets(workoutBuilder.activeExercise).front" :alt="workoutBuilder.activeExercise+' front muscles'" class="absolute inset-0 w-full h-full object-contain p-4">
                                 </div>
-                            </template>
-                            <template x-for="m in activeExerciseMeta.secondary" :key="'sm-'+m">
-                                <div class="flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                                    <template x-if="MUSCLE_ICONS[m]"><img :src="'assets/muscles/figures/'+m.toLowerCase()+'_figure.png'" class="w-9 h-9 rounded-lg object-cover object-top shrink-0"></template>
-                                    <div class="min-w-0"><p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Secondary</p><p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate" x-text="m"></p></div>
+                                <div class="relative bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-[1.5rem] overflow-hidden shadow-sm" style="aspect-ratio:3/4;">
+                                    <span class="absolute top-3.5 left-4 text-[9px] font-black tracking-widest text-slate-400 uppercase z-10">Back</span>
+                                    <img :src="getExerciseWorkoutAssets(workoutBuilder.activeExercise).back" :alt="workoutBuilder.activeExercise+' back muscles'" class="absolute inset-0 w-full h-full object-contain p-4">
                                 </div>
-                            </template>
-                        </div>
-                        <div class="flex justify-center overflow-x-auto" x-html="generateMuscleSVG(activeExerciseMeta.primary,activeExerciseMeta.secondary,theme==='dark',2.1)"></div>
-                        <div x-show="activeExerciseMeta.stabilizers.length>0" class="flex flex-wrap gap-1.5 justify-center mt-3">
-                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest self-center mr-1">Stabilizers:</span>
-                            <template x-for="m in activeExerciseMeta.stabilizers" :key="m"><span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 uppercase tracking-wider" x-text="m"></span></template>
+                            </div>
+                        </template>
+                        <template x-if="!getExerciseWorkoutAssets(workoutBuilder.activeExercise)">
+                            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-6 sm:p-8 flex justify-center overflow-x-auto">
+                                <div x-html="generateMuscleSVG(activeExerciseMeta.primary,activeExerciseMeta.secondary,theme==='dark',2.1)"></div>
+                            </div>
+                        </template>
+
+                        <!-- Muscle role chips — only shown for the PNG-based anatomy path; the procedural SVG fallback already renders its own primary/secondary legend, so we never duplicate it, just add stabilizers. -->
+                        <template x-if="getExerciseWorkoutAssets(workoutBuilder.activeExercise) || activeExerciseMeta.stabilizers.length>0">
+                            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-6 sm:p-8 space-y-5">
+                                <template x-if="getExerciseWorkoutAssets(workoutBuilder.activeExercise)">
+                                    <div class="space-y-5">
+                                        <div x-show="activeExerciseMeta.primary.length>0">
+                                            <p class="text-xs font-black tracking-widest text-slate-400 uppercase mb-2.5">Primary</p>
+                                            <div class="flex flex-wrap gap-2">
+                                                <template x-for="m in activeExerciseMeta.primary" :key="'pm-'+m"><span class="text-xs font-bold px-3 py-1.5 rounded-full bg-purple-500/10 text-purple-400" x-text="m"></span></template>
+                                            </div>
+                                        </div>
+                                        <div x-show="activeExerciseMeta.secondary.length>0">
+                                            <p class="text-xs font-black tracking-widest text-slate-400 uppercase mb-2.5">Secondary</p>
+                                            <div class="flex flex-wrap gap-2">
+                                                <template x-for="m in activeExerciseMeta.secondary" :key="'sm-'+m"><span class="text-xs font-bold px-3 py-1.5 rounded-full bg-brand-500/10 text-brand-400" x-text="m"></span></template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div x-show="activeExerciseMeta.stabilizers.length>0">
+                                    <p class="text-xs font-black tracking-widest text-slate-400 uppercase mb-2.5">Stabilizers</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        <template x-for="m in activeExerciseMeta.stabilizers" :key="'st-'+m"><span class="text-xs font-bold px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400" x-text="m"></span></template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Mechanics -->
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Movement Pattern</p>
+                                <p class="text-sm font-extrabold text-brand-400 leading-tight" x-text="activeExerciseMeta.movementPattern"></p>
+                            </div>
+                            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Force Type</p>
+                                <p class="text-sm font-extrabold text-brand-400 leading-tight" x-text="activeExerciseMeta.category"></p>
+                            </div>
+                            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Mechanic</p>
+                                <p class="text-sm font-extrabold text-brand-400 leading-tight" x-text="activeExerciseMeta.mechanic"></p>
+                            </div>
+                            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Grip</p>
+                                <p class="text-sm font-extrabold text-brand-400 leading-tight" x-text="activeExerciseMeta.grip"></p>
+                            </div>
+                            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">ROM</p>
+                                <p class="text-sm font-extrabold text-brand-400 leading-tight" x-text="activeExerciseMeta.rangeOfMotion"></p>
+                            </div>
+                            <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tempo</p>
+                                <p class="text-sm font-extrabold text-brand-400 leading-tight" x-text="activeExerciseDefaults.tempo"></p>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Info cards -->
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Sets</p>
-                            <p class="text-lg font-extrabold text-brand-400" x-text="activeExerciseDefaults.sets"></p>
-                        </div>
-                        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Reps</p>
-                            <p class="text-lg font-extrabold text-brand-400" x-text="activeExerciseDefaults.reps"></p>
-                        </div>
-                        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Rest</p>
-                            <p class="text-lg font-extrabold text-brand-400" x-text="activeExerciseDefaults.rest"></p>
-                        </div>
-                        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tempo</p>
-                            <p class="text-xs font-extrabold text-brand-400 leading-tight" x-text="activeExerciseDefaults.tempo"></p>
-                        </div>
-                        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Grip</p>
-                            <p class="text-xs font-extrabold text-brand-400 leading-tight" x-text="activeExerciseMeta.grip"></p>
-                        </div>
-                        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Range of Motion</p>
-                            <p class="text-xs font-extrabold text-brand-400 leading-tight" x-text="activeExerciseMeta.rangeOfMotion"></p>
+                    <!-- TAB: Mistakes -->
+                    <div x-show="workoutBuilder.guideTab==='mistakes'" class="fade-in-up">
+                        <div class="bg-red-500/5 border border-red-500/20 rounded-[1.5rem] p-6 sm:p-8">
+                            <p class="text-xs font-black tracking-widest text-red-400 uppercase mb-4">Common Mistakes</p>
+                            <ul class="space-y-2">
+                                <template x-for="(m,mi) in activeExerciseDefaults.mistakes" :key="mi">
+                                    <li class="flex gap-2.5 items-start text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug">
+                                        <span class="text-red-400 shrink-0 font-black">✕</span><span x-text="m"></span>
+                                    </li>
+                                </template>
+                            </ul>
                         </div>
                     </div>
 
-                    <!-- How to perform -->
-                    <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-5 sm:p-7">
-                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-4">How To Perform</p>
-                        <ol class="space-y-3">
-                            <template x-for="(step,si) in (activeExerciseInfo.steps||[])" :key="si">
-                                <li class="flex gap-3 items-start">
-                                    <span class="shrink-0 w-6 h-6 rounded-full bg-brand-500/15 text-brand-400 font-black text-xs flex items-center justify-center mt-0.5" x-text="si+1"></span>
-                                    <span class="text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug pt-0.5" x-text="step"></span>
-                                </li>
-                            </template>
-                            <li x-show="!(activeExerciseInfo.steps&&activeExerciseInfo.steps.length)" class="text-sm text-slate-400 italic">Detailed steps for this exercise are coming soon.</li>
-                        </ol>
-                    </div>
-
-                    <!-- Breathing -->
-                    <div class="bg-blue-500/5 border border-blue-500/20 rounded-[1.5rem] p-5 sm:p-7 flex gap-3 items-start">
-                        <span class="w-1 self-stretch rounded-full bg-blue-400 shrink-0"></span>
-                        <div>
-                            <p class="text-[10px] font-black tracking-widest text-blue-400 uppercase mb-1.5">Breathing</p>
-                            <p class="text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug" x-text="activeExerciseDefaults.breathing"></p>
+                    <!-- TAB: Tips -->
+                    <div x-show="workoutBuilder.guideTab==='tips'" class="space-y-4 fade-in-up">
+                        <div class="bg-amber-500/5 border border-amber-500/20 rounded-[1.5rem] p-6 sm:p-8">
+                            <p class="text-xs font-black tracking-widest text-amber-400 uppercase mb-4">Pro Tips</p>
+                            <ul class="space-y-2">
+                                <template x-for="(t,ti) in activeExerciseTips" :key="ti">
+                                    <li class="flex gap-2.5 items-start text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-1.5"></span><span x-text="t"></span>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-500/5 border border-slate-500/20 rounded-[1.5rem] p-6 sm:p-8">
+                            <p class="text-xs font-black tracking-widest text-slate-400 uppercase mb-4">Safety</p>
+                            <ul class="space-y-2">
+                                <template x-for="(sn,si) in activeExerciseMeta.safetyNotes" :key="si">
+                                    <li class="flex gap-2.5 items-start text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0 mt-1.5"></span><span x-text="sn"></span>
+                                    </li>
+                                </template>
+                            </ul>
                         </div>
                     </div>
 
-                    <!-- Common Mistakes -->
-                    <div class="bg-red-500/5 border border-red-500/20 rounded-[1.5rem] p-5 sm:p-7">
-                        <p class="text-[10px] font-black tracking-widest text-red-400 uppercase mb-3">Common Mistakes</p>
-                        <ul class="space-y-2">
-                            <template x-for="(m,mi) in activeExerciseDefaults.mistakes" :key="mi">
-                                <li class="flex gap-2.5 items-start text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug">
-                                    <span class="text-red-400 shrink-0 font-black">✕</span><span x-text="m"></span>
-                                </li>
-                            </template>
-                        </ul>
-                    </div>
-
-                    <!-- Pro Tips -->
-                    <div class="bg-amber-500/5 border border-amber-500/20 rounded-[1.5rem] p-5 sm:p-7">
-                        <p class="text-[10px] font-black tracking-widest text-amber-400 uppercase mb-3">Pro Tips</p>
-                        <ul class="space-y-2">
-                            <template x-for="(t,ti) in activeExerciseTips" :key="ti">
-                                <li class="flex gap-2.5 items-start text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-1.5"></span><span x-text="t"></span>
-                                </li>
-                            </template>
-                        </ul>
-                    </div>
-
-                    <!-- Safety -->
-                    <div class="bg-slate-500/5 border border-slate-500/20 rounded-[1.5rem] p-5 sm:p-7">
-                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Safety</p>
-                        <ul class="space-y-2">
-                            <template x-for="(sn,si) in activeExerciseMeta.safetyNotes" :key="si">
-                                <li class="flex gap-2.5 items-start text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0 mt-1.5"></span><span x-text="sn"></span>
-                                </li>
-                            </template>
-                        </ul>
-                    </div>
-
-                    <!-- Variations -->
-                    <div x-show="activeExerciseRelated.length>0">
-                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Exercise Variations</p>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <!-- TAB: Variations -->
+                    <div x-show="workoutBuilder.guideTab==='variations'" class="fade-in-up">
+                        <div x-show="activeExerciseRelated.length===0" class="p-6 text-center text-slate-400 text-sm font-medium border border-dashed border-slate-200 dark:border-slate-800 rounded-[1.5rem]">No related variations found.</div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" x-show="activeExerciseRelated.length>0">
                             <template x-for="r in activeExerciseRelated" :key="r">
-                                <button @click="builderSelectExercise(r)" class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 hover:border-brand-500/50 rounded-xl p-3 text-left transition-all">
+                                <button @click="builderSelectExercise(r)" class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 hover:border-brand-500/50 hover:-translate-y-0.5 hover:shadow-md rounded-xl p-3 text-left transition-all duration-200 vytara-focusable">
                                     <p class="text-xs font-extrabold text-slate-700 dark:text-slate-200 leading-snug" x-text="r"></p>
                                 </button>
                             </template>
@@ -1275,22 +1412,42 @@
                                         <button x-show="workoutBuilder.variations.length>1" @click="builderRemoveVariation(vi)" class="text-red-400 hover:text-red-500 font-black text-sm px-1">✕</button>
                                     </div>
                                 </div>
-                                <div class="p-4 sm:p-5 space-y-3">
+                                <div class="p-4 sm:p-5 space-y-2">
+                                    <!-- Column headers (tablet/desktop table view) -->
+                                    <div class="hidden sm:grid gap-2 px-1 pb-1 text-[9px] font-black text-slate-400 uppercase tracking-widest" style="grid-template-columns:1.5rem 6rem 1fr 1fr .9fr 1fr 1fr auto;">
+                                        <span>#</span><span>Type</span><span x-text="isTimedExercise(v.exercise)?'Secs':'Reps'"></span><span>Weight</span><span>RPE</span><span>Rest</span><span>Tempo</span><span></span>
+                                    </div>
                                     <template x-for="(s,si) in v.sets" :key="si">
-                                        <div class="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2.5 space-y-1.5">
-                                            <div class="grid gap-1.5 items-center" style="grid-template-columns:1.5rem 5.5rem 1fr 1fr auto;">
+                                        <div>
+                                            <!-- Desktop/tablet: single aligned table row -->
+                                            <div class="hidden sm:grid gap-2 items-center bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2 mb-1.5" style="grid-template-columns:1.5rem 6rem 1fr 1fr .9fr 1fr 1fr auto;">
                                                 <span class="w-5 h-5 rounded-full bg-brand-500/15 text-brand-400 text-[9px] font-black flex items-center justify-center shrink-0" x-text="si+1"></span>
                                                 <select x-model="s.setType" class="!text-[10px] !py-1.5 !px-1.5" title="Set type">
                                                     <template x-for="t in SET_TYPES" :key="t"><option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option></template>
                                                 </select>
                                                 <input type="number" x-model="s.reps" :placeholder="isTimedExercise(v.exercise)?'Secs':'Reps'" min="0">
                                                 <input type="number" step="any" x-model="s.weight" placeholder="kg" min="0">
+                                                <input type="number" step="0.5" x-model="s.rpe" placeholder="RPE" min="0" max="10" title="Rate of Perceived Exertion (0-10)">
+                                                <input type="text" x-model="s.rest" placeholder="90s">
+                                                <input type="text" x-model="s.tempo" placeholder="2-1-2">
                                                 <button @click="builderRemoveSet(vi,si)" x-show="v.sets.length>1" class="shrink-0 text-red-400 text-xs font-black hover:text-red-500 px-1">✕</button>
                                             </div>
-                                            <div class="grid gap-1.5" style="grid-template-columns:1fr 1fr 1fr;">
-                                                <input type="number" step="0.5" x-model="s.rpe" placeholder="RPE" min="0" max="10" title="Rate of Perceived Exertion (0-10)">
-                                                <input type="text" x-model="s.rest" placeholder="Rest e.g. 90s">
-                                                <input type="text" x-model="s.tempo" placeholder="Tempo e.g. 2-1-2">
+                                            <!-- Mobile: stacked card -->
+                                            <div class="sm:hidden bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2.5 space-y-1.5 mb-1.5">
+                                                <div class="grid gap-1.5 items-center" style="grid-template-columns:1.5rem 5.5rem 1fr 1fr auto;">
+                                                    <span class="w-5 h-5 rounded-full bg-brand-500/15 text-brand-400 text-[9px] font-black flex items-center justify-center shrink-0" x-text="si+1"></span>
+                                                    <select x-model="s.setType" class="!text-[10px] !py-1.5 !px-1.5" title="Set type">
+                                                        <template x-for="t in SET_TYPES" :key="t"><option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option></template>
+                                                    </select>
+                                                    <input type="number" x-model="s.reps" :placeholder="isTimedExercise(v.exercise)?'Secs':'Reps'" min="0">
+                                                    <input type="number" step="any" x-model="s.weight" placeholder="kg" min="0">
+                                                    <button @click="builderRemoveSet(vi,si)" x-show="v.sets.length>1" class="shrink-0 text-red-400 text-xs font-black hover:text-red-500 px-1">✕</button>
+                                                </div>
+                                                <div class="grid gap-1.5" style="grid-template-columns:1fr 1fr 1fr;">
+                                                    <input type="number" step="0.5" x-model="s.rpe" placeholder="RPE" min="0" max="10" title="Rate of Perceived Exertion (0-10)">
+                                                    <input type="text" x-model="s.rest" placeholder="Rest e.g. 90s">
+                                                    <input type="text" x-model="s.tempo" placeholder="Tempo e.g. 2-1-2">
+                                                </div>
                                             </div>
                                         </div>
                                     </template>
@@ -3513,7 +3670,7 @@ const MUSCLE_ICONS = {
 };
 
 const BUILTIN_EXERCISES = {
-    'Chest':['Bench Press','Incline Bench Press','Decline Bench Press','Push-Ups','Dumbbell Flyes','Cable Flyes','Chest Dips','Pec Deck'],
+    'Chest':['Bench Press','Incline Dumbbell Press','Decline Bench Press','Cable Fly','Incline Cable Fly','Pec Deck Fly','Chest Dips','Push Ups'],
     'Back':['Pull-Ups','Lat Pulldown','Barbell Row','Seated Cable Row','Deadlift','T-Bar Row','Face Pull','Good Mornings'],
     'Shoulders':['Overhead Press','Dumbbell Lateral Raise','Front Raise','Arnold Press','Upright Row','Reverse Flyes','Shrugs','Cable Lateral Raise'],
     'Biceps':['Barbell Curl','Dumbbell Curl','Hammer Curl','Preacher Curl','Concentration Curl','Cable Curl','Incline Dumbbell Curl','EZ-Bar Curl'],
@@ -3531,10 +3688,15 @@ const GlobalCharts = {};
 const EXERCISE_INFO = {
 'Bench Press':{primary:['Chest'],secondary:['Triceps','Shoulders'],steps:['Lie flat on bench, feet flat on floor. Eyes directly under the bar.','Grip bar slightly wider than shoulder-width. Retract and depress shoulder blades.','Unrack bar, hold directly above chest with arms extended.','Lower bar slowly to lower chest, keeping elbows at ~75° angle.','Press bar up explosively until arms are fully extended. Repeat.'],tip:'Keep wrists straight and drive your heels into the floor for maximum stability.'},
 'Incline Bench Press':{primary:['Chest'],secondary:['Shoulders','Triceps'],steps:['Set bench to 30-45°. Lie back with eyes under bar.','Grip slightly wider than shoulder-width.','Lower bar to upper chest just below collar bones.','Press up at a slight backward angle following the bench incline.','Control the descent — aim for 2-3 seconds down.'],tip:'The steeper the incline, the more shoulder involvement. 30° is optimal for upper chest.'},
-'Decline Bench Press':{primary:['Chest'],secondary:['Triceps'],steps:['Secure feet under pad, lie on decline bench.','Grip bar slightly wider than shoulders.','Lower bar to lower chest/upper abdomen.','Press up explosively. Keep core tight.','Avoid locking elbows fully at the top.'],tip:'Great for the lower chest. Ensure your feet are firmly hooked before pressing.'},
+'Decline Bench Press':{primary:['Chest'],secondary:['Triceps','Shoulders'],steps:['Secure feet under pad, lie on decline bench.','Grip bar slightly wider than shoulders.','Lower bar to lower chest/upper abdomen.','Press up explosively. Keep core tight.','Avoid locking elbows fully at the top.'],tip:'Great for the lower chest. Ensure your feet are firmly hooked before pressing.'},
 'Push-Ups':{primary:['Chest'],secondary:['Triceps','Shoulders','Core'],steps:['Start in plank: hands slightly wider than shoulder-width.','Keep body in a straight line from head to heels.','Lower chest toward floor by bending elbows to ~90°.','Push back up by pressing palms into the floor.','Squeeze chest at the top of each rep.'],tip:'To increase difficulty: elevate feet. For more chest: widen hands slightly.'},
 'Dumbbell Flyes':{primary:['Chest'],secondary:['Shoulders'],steps:['Lie on bench holding dumbbells above chest, palms facing each other.','Keep slight bend in elbows throughout the movement.','Open arms wide in a wide arc, lowering until chest feels stretched.','Squeeze chest to bring dumbbells back together.','Stop when dumbbells are above chest — do not clap them.'],tip:'Think of "hugging a barrel" — maintain that arm curve the entire rep.'},
 'Cable Flyes':{primary:['Chest'],secondary:['Shoulders'],steps:['Stand between two cable pulleys set at shoulder or chest height.','Grab handles with slight arm bend. Lean slightly forward.','Bring hands together in front of chest in a wide arc.','Squeeze chest hard at center for 1 second.','Slowly return to start under control.'],tip:'Adjust pulley height to target upper (high pulleys) or lower (low pulleys) chest.'},
+'Incline Dumbbell Press':{primary:['Chest'],secondary:['Shoulders','Triceps'],steps:['Set an adjustable bench to a 30-45° incline and sit back with a dumbbell in each hand at shoulder height.','Plant feet flat on the floor, brace your core, and keep wrists stacked over elbows.','Press both dumbbells up and slightly inward until arms are extended above your upper chest.','Lower the dumbbells slowly back to shoulder height, feeling a stretch across the upper chest.','Keep elbows at roughly 45-60° from your torso throughout — avoid flaring them to 90°.'],tip:'Dumbbells allow a deeper stretch and independent arm path than a barbell — focus on squeezing the upper chest at the top of every rep.'},
+'Cable Fly':{primary:['Chest'],secondary:['Shoulders'],steps:['Stand between two cable pulleys set at shoulder or chest height.','Grab handles with slight arm bend. Lean slightly forward.','Bring hands together in front of chest in a wide arc.','Squeeze chest hard at center for 1 second.','Slowly return to start under control.'],tip:'Adjust pulley height to target upper (high pulleys) or lower (low pulleys) chest.'},
+'Incline Cable Fly':{primary:['Chest'],secondary:['Shoulders'],steps:['Set both cable pulleys to the lowest position and grab a handle in each hand.','Stand in the center, step forward slightly, and lean your torso forward a few degrees.','With a slight bend in the elbows, sweep the handles up and inward in an arc until hands meet above chin height.','Squeeze the upper chest hard at the top of the movement for one second.','Slowly reverse the arc back to the start, keeping tension on the cables throughout.'],tip:'Pulling the low-to-high arc is what shifts emphasis onto the upper chest — resist the urge to press instead of fly.'},
+'Pec Deck Fly':{primary:['Chest'],secondary:['Shoulders'],steps:['Sit on machine, back flat against pad. Elbows at shoulder height.','Grip handles with forearms flat against pads.','Bring arms together in front of chest by squeezing pecs.','Hold peak contraction for 1 second — really squeeze the chest.','Slowly let arms return to starting position.'],tip:'Great isolation for chest. Focus on feeling the stretch and contraction, not moving heavy weight.'},
+'Push Ups':{primary:['Chest'],secondary:['Triceps','Shoulders','Core'],steps:['Start in plank: hands slightly wider than shoulder-width.','Keep body in a straight line from head to heels.','Lower chest toward floor by bending elbows to ~90°.','Push back up by pressing palms into the floor.','Squeeze chest at the top of each rep.'],tip:'To increase difficulty: elevate feet. For more chest: widen hands slightly.'},
 'Pull-Ups':{primary:['Back'],secondary:['Biceps','Core'],steps:['Hang from bar with overhand grip, slightly wider than shoulder-width.','Retract shoulder blades first, then pull elbows toward hips.','Drive elbows down and back to lift your chin above the bar.','Squeeze your back at the top for a moment.','Lower yourself fully under control (3 seconds down).'],tip:'Avoid swinging. If you cannot do full reps, start with dead hangs and negatives.'},
 'Lat Pulldown':{primary:['Back'],secondary:['Biceps'],steps:['Sit at lat pulldown machine. Grip bar wider than shoulders.','Lock knees under pad. Lean back slightly (~15°).','Pull bar down to upper chest, driving elbows down and back.','Squeeze lats at the bottom for 1 second.','Slowly let bar rise back up, feeling the stretch at the top.'],tip:'Think of "bending the bar" to activate your lats from the start of the pull.'},
 'Barbell Row':{primary:['Back'],secondary:['Biceps','Core'],steps:['Hinge at hips, back straight, bar over mid-foot.','Grip bar slightly wider than shoulder-width, overhand.','Pull bar to lower chest/upper abdomen, driving elbows back.','Squeeze upper back at top, pause for 1 second.','Lower bar under control until arms are fully extended.'],tip:'Keep your torso angle consistent throughout — don\'t use momentum by swinging up.'},
@@ -3616,6 +3778,11 @@ const EXERCISE_META = {
     'Cable Flyes':{equipment:'Cable',difficulty:'Intermediate'},
     'Chest Dips':{equipment:'Bodyweight',difficulty:'Advanced'},
     'Pec Deck':{equipment:'Machine',difficulty:'Beginner'},
+    'Incline Dumbbell Press':{equipment:'Dumbbell',difficulty:'Intermediate'},
+    'Cable Fly':{equipment:'Cable',difficulty:'Intermediate'},
+    'Incline Cable Fly':{equipment:'Cable',difficulty:'Intermediate'},
+    'Pec Deck Fly':{equipment:'Machine',difficulty:'Beginner'},
+    'Push Ups':{equipment:'Bodyweight',difficulty:'Beginner'},
     'Pull-Ups':{equipment:'Bodyweight',difficulty:'Advanced'},
     'Lat Pulldown':{equipment:'Machine',difficulty:'Beginner'},
     'Barbell Row':{equipment:'Barbell',difficulty:'Intermediate'},
@@ -3683,6 +3850,35 @@ const EXERCISE_META = {
     'Reverse Curl':{equipment:'Barbell',difficulty:'Beginner'},
 };
 
+// ==================== CHEST WORKOUT ASSET LIBRARY ====================
+// Pre-built photo/front/back muscle PNGs for the supported Chest exercises.
+// Exercises without an entry here fall back to the procedural SVG guide.
+const EXERCISE_WORKOUT_ASSETS = {
+    'Bench Press':'bench_press',
+    'Incline Dumbbell Press':'incline_dumbbell_press',
+    'Decline Bench Press':'decline_bench_press',
+    'Cable Fly':'cable_fly',
+    'Incline Cable Fly':'incline_cable_fly',
+    'Pec Deck Fly':'pec_deck_fly',
+    'Chest Dips':'chest_dips',
+    'Push Ups':'push_ups',
+};
+function getExerciseWorkoutAssets(name) {
+    const slug = EXERCISE_WORKOUT_ASSETS[name];
+    if (!slug) return null;
+    const base = 'assets/muscles/workouts/chest/' + slug;
+    return { photo: base + '.png', front: base + '_front.png', back: base + '_back.png' };
+}
+
+// Body-position corrections for exercises whose name doesn't carry the usual keywords
+// (e.g. "Incline Dumbbell Press" has no "bench" substring like "Incline Bench Press" does).
+const BODY_POSITION_OVERRIDES = {
+    'Incline Dumbbell Press':'Lying (incline bench)',
+    'Cable Fly':'Standing',
+    'Incline Cable Fly':'Standing',
+    'Pec Deck Fly':'Seated',
+};
+
 const TIMED_EXERCISE_NAMES = ['Plank','Side Plank','Wall Sit','Hollow Hold','Dead Hang','Bar Hang',"Farmer's Walk",'L-Sit','Banded Walk','Lateral Band Walk'];
 function isTimedExerciseName(name) {
     return TIMED_EXERCISE_NAMES.some(t => (name||'').toLowerCase().includes(t.toLowerCase()));
@@ -3721,6 +3917,19 @@ function getMovementPattern(name) {
     return 'Isolation';
 }
 
+// Mechanic — plane-of-movement + pattern combined (real biomechanics terminology, generic not per-exercise unique).
+function getExerciseMechanic(name) {
+    const n=(name||'').toLowerCase();
+    const pattern=getMovementPattern(name);
+    if(pattern==='Push') return (n.includes('overhead')||n.includes('shoulder press')||n.includes('arnold')||n.includes('dip')) ? 'Vertical Push' : 'Horizontal Push';
+    if(pattern==='Pull') return (n.includes('pulldown')||n.includes('pull-up')||n.includes('pull up')||n.includes('chin-up')) ? 'Vertical Pull' : 'Horizontal Pull';
+    if(pattern==='Squat') return 'Lower Body Push';
+    if(pattern==='Hinge') return 'Posterior Chain Hinge';
+    if(pattern==='Carry') return 'Loaded Carry';
+    if(pattern==='Core / Stability') return 'Anti-Movement / Stability';
+    return 'Isolation Movement';
+}
+
 // Stabilizer muscles — general biomechanics knowledge (which muscles brace a lift), not per-exercise fabrication.
 function getStabilizerMuscles(name) {
     const meta=EXERCISE_META[name]||{};
@@ -3748,18 +3957,19 @@ function getExerciseGrip(name) {
 
 // Body position — derived from exercise name keywords (Lying/Seated/Standing/Hanging).
 function getExerciseBodyPosition(name) {
+    if(BODY_POSITION_OVERRIDES[name]) return BODY_POSITION_OVERRIDES[name];
     const n=(name||'').toLowerCase();
-    if(n.includes('bench')||n.includes('lying')||n.includes('crunch')||n.includes('leg raise')||n.includes('flye')) return 'Lying';
+    if(n.includes('bench')||n.includes('lying')||n.includes('crunch')||n.includes('leg raise')||n.includes('fly')) return 'Lying';
     if(n.includes('seated')||n.includes('preacher')) return 'Seated';
     if(n.includes('pull-up')||n.includes('hang')||n.includes('dip')) return 'Hanging / Supported';
-    if(n.includes('plank')||n.includes('rollout')||n.includes('push-up')) return 'Prone / Plank';
+    if(n.includes('plank')||n.includes('rollout')||n.includes('push-up')||n.includes('push up')) return 'Prone / Plank';
     return 'Standing';
 }
 
 // Range of motion — defaults to full ROM; flags exercises trained for an extended stretch.
 function getExerciseROM(name) {
     const n=(name||'').toLowerCase();
-    if(n.includes('flye')||n.includes('pullover')||n.includes('stretch')) return 'Extended (stretch-focused)';
+    if(n.includes('fly')||n.includes('pullover')||n.includes('stretch')) return 'Extended (stretch-focused)';
     return 'Full range of motion';
 }
 
@@ -3791,6 +4001,7 @@ function getExerciseMeta(name) {
         category: getExerciseCategory(name),
         movementType: getExerciseCategory(name),
         movementPattern: getMovementPattern(name),
+        mechanic: getExerciseMechanic(name),
         primary: info.primary || [],
         secondary: info.secondary || [],
         stabilizers: getStabilizerMuscles(name),
@@ -4780,10 +4991,8 @@ function vytaraApp() {
         customGoals: [],
         customExercises: [],
         favoriteExercises: [],
-        recoveryLogs: [],
         strengthGoals: [],
         goalTargets: { workoutFrequencyPerWeek:'', streakTarget:'' },
-        recoveryForm: { sleep:3, energy:3, soreness:3, hydration:3, mood:3 },
         newStrengthGoal: { exercise:'', targetWeight:'' },
         historyView: 'list',
         historyFilters: { search:'', muscle:'', exercise:'' },
@@ -4814,7 +5023,7 @@ function vytaraApp() {
         metricsForm: { date:'', weight:'', bodyFat:'', muscleMass:'', waist:'', chest:'', arms:'', hips:'', sleep:'', notes:'' },
         workoutForm: { date:'', type:'strength', duration:'', muscles:[], variations:[], notes:'', distance:'', pace:'', speed:'', caloriesBurned:'' },
         // Inline (non-modal) premium workout builder: Muscles -> Exercises -> Guide -> Log
-        workoutBuilder: { active:false, step:'muscles', date:'', duration:'', selectedMuscle:'', exerciseSearch:'', equipmentFilter:'', activeExercise:'', variations:[], notes:'' },
+        workoutBuilder: { active:false, step:'muscles', date:'', duration:'', selectedMuscle:'', exerciseSearch:'', equipmentFilter:'', activeExercise:'', guideTab:'overview', variations:[], notes:'' },
         customExerciseForm: { name:'', primaryMuscle:'', secondaryMuscles:[], equipment:'', difficulty:'', category:'', movementPattern:'', notes:'' },
         prCelebration: null,
         photoForm: { date:'', category:'Front', notes:'', fileObj:null },
@@ -4883,7 +5092,14 @@ function vytaraApp() {
             const b=this.workoutBuilder;
             let pool=this.builderMuscleExercises;
             const q=(b.exerciseSearch||'').toLowerCase().trim();
-            if(q) pool=pool.filter(ex=>ex.toLowerCase().includes(q));
+            if(q) pool=pool.filter(ex=>{
+                const meta=this.getExerciseMetaFor(ex);
+                return ex.toLowerCase().includes(q)
+                    || (meta.equipment||'').toLowerCase().includes(q)
+                    || (meta.movementPattern||'').toLowerCase().includes(q)
+                    || (meta.primary||[]).some(m=>m.toLowerCase().includes(q))
+                    || (meta.secondary||[]).some(m=>m.toLowerCase().includes(q));
+            });
             if(b.equipmentFilter) pool=pool.filter(ex=>this.getExerciseMetaFor(ex).equipment===b.equipmentFilter);
             return pool.sort();
         },
@@ -5075,26 +5291,6 @@ function vytaraApp() {
         },
         get workoutDatesSet() { return new Set(this.workouts.map(w=>w.date)); },
 
-        // ==================== RECOVERY & READINESS (real self-reported data only) ====================
-        get todayRecovery() { const t=this.getToday(); return this.recoveryLogs.find(r=>r.date===t)||null; },
-        get readinessScore() {
-            const r=this.todayRecovery; if(!r) return null;
-            const norm=v=>Math.max(0,Math.min(100,(parseFloat(v)||0)/5*100));
-            const soreInv = 100-norm(r.soreness);
-            return Math.round((norm(r.sleep)+norm(r.energy)+soreInv+norm(r.hydration)+norm(r.mood))/5);
-        },
-        get readinessLabel() {
-            const s=this.readinessScore; if(s===null) return 'Not logged today';
-            return s>=75?'Ready to train':s>=50?'Train with caution':'Prioritize recovery';
-        },
-        logRecovery() {
-            const t=this.getToday();
-            const entry={date:t, sleep:parseFloat(this.recoveryForm.sleep)||3, energy:parseFloat(this.recoveryForm.energy)||3, soreness:parseFloat(this.recoveryForm.soreness)||3, hydration:parseFloat(this.recoveryForm.hydration)||3, mood:parseFloat(this.recoveryForm.mood)||3};
-            const i=this.recoveryLogs.findIndex(r=>r.date===t);
-            if(i>-1) this.recoveryLogs.splice(i,1,entry); else this.recoveryLogs.push(entry);
-            this.persist();
-        },
-
         // ==================== GOALS: structured progress (weight/bodyfat/frequency/streak/strength) ====================
         get structuredGoalsProgress() {
             const goals=[];
@@ -5261,7 +5457,6 @@ function vytaraApp() {
             this.customGoals = s.customGoals||[];
             this.customExercises = s.customExercises||[];
             this.favoriteExercises = s.favoriteExercises||[];
-            this.recoveryLogs = s.recoveryLogs||[];
             this.strengthGoals = s.strengthGoals||[];
             this.goalTargets = s.goalTargets||{ workoutFrequencyPerWeek:'', streakTarget:'' };
             this.challenges = s.challenges||[];
@@ -5641,7 +5836,7 @@ function vytaraApp() {
         },
 
         persist() {
-            const data = { profile:this.profile, workouts:this.workouts, dietLogs:this.dietLogs, metricsLogs:this.metricsLogs, waterLogs:this.waterLogs, photos:this.photos.map(p=>({...p,url:p.storagePath?undefined:p.url,data:p.storagePath?undefined:p.url})), customGoals:this.customGoals, customExercises:this.customExercises, favoriteExercises:this.favoriteExercises, recoveryLogs:this.recoveryLogs, strengthGoals:this.strengthGoals, goalTargets:this.goalTargets, challenges:this.challenges, mealHistory:this.mealHistory, foodDatabase:this.foodDatabase, googleFitConnected:this.googleFitConnected, googleFitAccessToken:this.googleFitAccessToken, googleFitData:this.googleFitData };
+            const data = { profile:this.profile, workouts:this.workouts, dietLogs:this.dietLogs, metricsLogs:this.metricsLogs, waterLogs:this.waterLogs, photos:this.photos.map(p=>({...p,url:p.storagePath?undefined:p.url,data:p.storagePath?undefined:p.url})), customGoals:this.customGoals, customExercises:this.customExercises, favoriteExercises:this.favoriteExercises, strengthGoals:this.strengthGoals, goalTargets:this.goalTargets, challenges:this.challenges, mealHistory:this.mealHistory, foodDatabase:this.foodDatabase, googleFitConnected:this.googleFitConnected, googleFitAccessToken:this.googleFitAccessToken, googleFitData:this.googleFitData };
             localStorage.setItem(VAULT_KEY, JSON.stringify(data));
             if(this.firebaseUser&&window._fb) this.persistCloud(data);
             this.generateHeatmapData();
@@ -6279,7 +6474,7 @@ function vytaraApp() {
 
         // ==================== WORKOUT BUILDER (inline premium flow) ====================
         startWorkoutBuilder() {
-            this.workoutBuilder = { active:true, step:'muscles', date:this.getToday(), duration:'', selectedMuscle:'', exerciseSearch:'', equipmentFilter:'', activeExercise:'', variations:[], notes:'' };
+            this.workoutBuilder = { active:true, step:'muscles', date:this.getToday(), duration:'', selectedMuscle:'', exerciseSearch:'', equipmentFilter:'', activeExercise:'', guideTab:'overview', variations:[], notes:'' };
             this.openModals.modalCustomExercise = false;
             this.customExerciseForm = { name:'', primaryMuscle:'', secondaryMuscles:[], equipment:'', difficulty:'', category:'', movementPattern:'', notes:'' };
         },
@@ -6336,6 +6531,7 @@ function vytaraApp() {
         },
         builderSelectExercise(name) {
             this.workoutBuilder.activeExercise=name;
+            this.workoutBuilder.guideTab='overview';
             this.workoutBuilder.step='guide';
         },
         builderStartLogging() {
