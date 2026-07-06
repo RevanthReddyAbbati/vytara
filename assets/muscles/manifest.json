@@ -1,0 +1,67 @@
+{
+  "source": "source/muscle_groups_reference.png",
+  "sourceSize": [1536, 1024],
+  "notes": "figure.size/box are relative to the corresponding card PNG (text-free crop from the top of the card down to just above the title/subtitle).",
+  "muscles": [
+    {
+      "name": "Chest",
+      "exerciseCount": 12,
+      "card": { "file": "cards/chest_card.png", "size": [286, 478] },
+      "figure": { "file": "figures/chest_figure.png", "box": [0, 0, 286, 361], "size": [286, 361] }
+    },
+    {
+      "name": "Back",
+      "exerciseCount": 14,
+      "card": { "file": "cards/back_card.png", "size": [285, 478] },
+      "figure": { "file": "figures/back_figure.png", "box": [0, 0, 285, 362], "size": [285, 362] }
+    },
+    {
+      "name": "Shoulders",
+      "exerciseCount": 10,
+      "card": { "file": "cards/shoulders_card.png", "size": [282, 478] },
+      "figure": { "file": "figures/shoulders_figure.png", "box": [0, 0, 282, 362], "size": [282, 362] }
+    },
+    {
+      "name": "Biceps",
+      "exerciseCount": 8,
+      "card": { "file": "cards/biceps_card.png", "size": [282, 478] },
+      "figure": { "file": "figures/biceps_figure.png", "box": [0, 0, 282, 363], "size": [282, 363] }
+    },
+    {
+      "name": "Triceps",
+      "exerciseCount": 8,
+      "card": { "file": "cards/triceps_card.png", "size": [304, 478] },
+      "figure": { "file": "figures/triceps_figure.png", "box": [0, 0, 304, 362], "size": [304, 362] }
+    },
+    {
+      "name": "Legs",
+      "exerciseCount": 16,
+      "card": { "file": "cards/legs_card.png", "size": [286, 502] },
+      "figure": { "file": "figures/legs_figure.png", "box": [0, 0, 286, 381], "size": [286, 381] }
+    },
+    {
+      "name": "Glutes",
+      "exerciseCount": 8,
+      "card": { "file": "cards/glutes_card.png", "size": [285, 502] },
+      "figure": { "file": "figures/glutes_figure.png", "box": [0, 0, 285, 378], "size": [285, 378] }
+    },
+    {
+      "name": "Core",
+      "exerciseCount": 12,
+      "card": { "file": "cards/core_card.png", "size": [282, 502] },
+      "figure": { "file": "figures/core_figure.png", "box": [0, 0, 282, 377], "size": [282, 377] }
+    },
+    {
+      "name": "Calves",
+      "exerciseCount": 6,
+      "card": { "file": "cards/calves_card.png", "size": [282, 502] },
+      "figure": { "file": "figures/calves_figure.png", "box": [0, 0, 282, 378], "size": [282, 378] }
+    },
+    {
+      "name": "Forearms",
+      "exerciseCount": 6,
+      "card": { "file": "cards/forearms_card.png", "size": [304, 502] },
+      "figure": { "file": "figures/forearms_figure.png", "box": [0, 0, 304, 378], "size": [304, 378] }
+    }
+  ]
+}

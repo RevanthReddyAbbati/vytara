@@ -67,6 +67,10 @@
         @keyframes popIn { 0%{transform:scale(.85);opacity:0} 60%{transform:scale(1.04)} 100%{transform:scale(1);opacity:1} }
         .success-pop { animation: popIn .35s cubic-bezier(.34,1.56,.64,1); }
         .vytara-focusable:focus-visible { outline:2px solid #3b82f6; outline-offset:2px; border-radius:.5rem; }
+        .muscle-png-card { will-change: transform; }
+        .ripple-dot { position:absolute; inset:0; z-index:5; border-radius:inherit; background:radial-gradient(circle at center, rgba(59,130,246,.35), transparent 70%); opacity:0; pointer-events:none; }
+        .ripple-dot.ripple-active { animation: ripplePulse .5s ease-out; }
+        @keyframes ripplePulse { 0%{opacity:.9; transform:scale(.4);} 100%{opacity:0; transform:scale(1.3);} }
         @media print{.no-print{display:none!important}.print-only{display:block!important}body{background:white!important;color:black!important}table{width:100%;border-collapse:collapse}th,td{padding:10px!important;text-align:left!important;color:black!important}th{background-color:#f1f5f9!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
         /* Mobile safe area for notch/home bar */
         .pb-safe{padding-bottom:env(safe-area-inset-bottom,12px)}
@@ -862,7 +866,7 @@
 <div x-show="activeTab==='workouts'" class="space-y-6 p-4 md:p-8 lg:p-10">
     <!-- Personal Record celebration (auto-dismisses) -->
     <div x-show="prCelebration" x-cloak class="bg-amber-500/10 border border-amber-500/30 rounded-[1.25rem] p-4 flex items-start gap-3">
-        <span class="text-xl shrink-0">🏆</span>
+        <span class="w-1.5 self-stretch rounded-full bg-amber-400 shrink-0"></span>
         <div class="flex-1">
             <p class="text-xs font-black text-amber-400 uppercase tracking-widest mb-1">New Personal Record!</p>
             <template x-for="(r,ri) in (prCelebration||[])" :key="ri">
@@ -874,7 +878,7 @@
     <div class="flex flex-wrap justify-between items-center gap-4">
         <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Workouts</h2>
         <div class="flex gap-2" x-show="!workoutBuilder.active">
-            <button @click="openModal('modalWorkout','cardio')" class="border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-black py-3 px-4 rounded-xl text-xs tracking-widest uppercase transition-all hover:bg-slate-50 dark:hover:bg-slate-800">🏃 Cardio</button>
+            <button @click="openModal('modalWorkout','cardio')" class="border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-black py-3 px-4 rounded-xl text-xs tracking-widest uppercase transition-all hover:bg-slate-50 dark:hover:bg-slate-800">Cardio</button>
             <button @click="startWorkoutBuilder()" class="bg-brand-500 hover:bg-brand-600 text-white font-black py-3 px-6 rounded-xl text-xs tracking-widest uppercase transition-all shadow-md">+ Log Workout</button>
         </div>
     </div>
@@ -893,101 +897,171 @@
                 </div>
             </div>
 
-            <!-- STEP 1: MUSCLE SELECTION -->
+            <!-- STEP 1: MUSCLE SELECTION — premium PNG-illustrated browsing entry point -->
             <template x-if="workoutBuilder.step==='muscles'">
                 <div class="space-y-5">
                     <div>
-                        <h2 class="text-2xl font-extrabold tracking-tight">Choose Muscles</h2>
-                        <p class="text-sm text-slate-400 font-medium mt-1">Select the muscle groups you're training today.</p>
+                        <h2 class="text-2xl font-extrabold tracking-tight">Select Muscle Group</h2>
+                        <p class="text-sm text-slate-400 font-medium mt-1">Browse exercises by muscle, or search for anything once inside.</p>
                     </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                         <template x-for="mg in systemMuscleGroups" :key="mg">
-                            <button @click="builderToggleMuscle(mg)" type="button"
-                                :class="workoutBuilder.selectedMuscles.includes(mg)?'border-brand-500 bg-brand-500/10 scale-[1.02] shadow-md':'border-slate-200 dark:border-slate-800 hover:border-brand-500/40'"
-                                class="relative flex flex-col items-center gap-2 p-4 rounded-[1.25rem] border-2 bg-white dark:bg-panelDark transition-all duration-200 text-center">
-                                <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand-500 text-white text-[10px] font-black flex items-center justify-center transition-all duration-200"
-                                    :class="workoutBuilder.selectedMuscles.includes(mg)?'opacity-100 scale-100':'opacity-0 scale-0'">✓</span>
-                                <span class="text-3xl" x-text="MUSCLE_ICONS[mg]||'💪'"></span>
-                                <span class="text-xs font-black text-slate-700 dark:text-slate-200" x-text="mg"></span>
-                                <span class="text-[10px] font-bold text-slate-400" x-text="(BUILTIN_EXERCISES[mg]||[]).length+' exercises'"></span>
+                            <button @click="builderSelectMuscle(mg)" type="button" x-data="{ripple:false}" @click.capture="ripple=true; setTimeout(()=>ripple=false, 500)"
+                                class="muscle-png-card group relative rounded-[1.5rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-panelDark overflow-hidden text-left transition-all duration-300 hover:border-brand-500/50 hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] vytara-focusable">
+                                <span class="ripple-dot" :class="ripple?'ripple-active':''"></span>
+                                <div class="relative aspect-[4/3] overflow-hidden bg-gradient-to-b from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-950">
+                                    <img :src="'assets/muscles/figures/'+mg.toLowerCase()+'_figure.png'" :alt="mg" loading="lazy"
+                                        class="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent"></div>
+                                </div>
+                                <div class="p-3.5 sm:p-4 flex items-center justify-between gap-2">
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-extrabold text-slate-800 dark:text-slate-100 truncate" x-text="mg"></p>
+                                        <p class="text-[11px] font-bold text-slate-400 mt-0.5" x-text="(BUILTIN_EXERCISES[mg]||[]).length+' exercises'"></p>
+                                    </div>
+                                    <span class="shrink-0 text-slate-300 dark:text-slate-600 text-xl font-bold transition-transform group-hover:translate-x-1">›</span>
+                                </div>
                             </button>
                         </template>
-                    </div>
-                    <div class="flex justify-end pt-2">
-                        <button @click="workoutBuilder.step='exercises'" :disabled="workoutBuilder.selectedMuscles.length===0"
-                            :class="workoutBuilder.selectedMuscles.length===0?'opacity-40 cursor-not-allowed':'hover:bg-brand-600'"
-                            class="bg-brand-500 text-white font-black py-3 px-8 rounded-xl text-xs uppercase tracking-widest shadow-md transition-all">Continue →</button>
                     </div>
                 </div>
             </template>
 
-            <!-- STEP 2: EXERCISE SELECTION -->
+            <!-- STEP 2: EXERCISE BROWSER — scoped to the selected muscle, search + custom exercise never blocked -->
             <template x-if="workoutBuilder.step==='exercises'">
                 <div class="space-y-5">
-                    <div class="flex items-center justify-between flex-wrap gap-3">
-                        <div>
-                            <h2 class="text-2xl font-extrabold tracking-tight">Pick an Exercise</h2>
-                            <p class="text-sm text-slate-400 font-medium mt-1" x-text="workoutBuilder.selectedMuscles.join(', ')||'All muscle groups'"></p>
+                    <div class="flex items-center gap-3">
+                        <button @click="workoutBuilder.step='muscles'" class="shrink-0 w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-300 font-black hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors vytara-focusable">←</button>
+                        <div class="min-w-0">
+                            <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight" x-text="workoutBuilder.selectedMuscle+' Exercises'"></h2>
+                            <p class="text-sm text-slate-400 font-medium" x-text="builderMuscleExercises.length+' exercises'"></p>
                         </div>
-                        <button @click="workoutBuilder.step='muscles'" class="text-[10px] font-black text-brand-400 uppercase tracking-widest hover:text-brand-500 shrink-0">Edit Muscles</button>
                     </div>
-                    <div class="flex gap-2 flex-wrap items-center">
-                        <input type="text" x-model="workoutBuilder.exerciseSearch" placeholder="Search exercises..." class="!w-auto flex-1 min-w-[180px]">
-                        <select x-model="workoutBuilder.equipmentFilter" class="!w-auto">
-                            <option value="">All Equipment</option>
-                            <template x-for="eq in ['Barbell','Dumbbell','Cable','Machine','Bodyweight','Resistance Band','Ab Wheel','Weight Plate','Pull-up Bar']" :key="eq">
-                                <option :value="eq" x-text="eq"></option>
-                            </template>
-                        </select>
-                        <select x-model="workoutBuilder.difficultyFilter" class="!w-auto">
-                            <option value="">All Levels</option>
-                            <option value="Beginner">Beginner</option>
-                            <option value="Intermediate">Intermediate</option>
-                            <option value="Advanced">Advanced</option>
-                        </select>
-                        <select x-model="workoutBuilder.categoryFilter" class="!w-auto">
-                            <option value="">All Types</option>
-                            <option value="Compound">Compound</option>
-                            <option value="Isolation">Isolation</option>
-                            <option value="Isometric">Isometric</option>
-                        </select>
-                        <select x-model="workoutBuilder.patternFilter" class="!w-auto">
-                            <option value="">All Patterns</option>
-                            <template x-for="p in ['Push','Pull','Squat','Hinge','Carry','Core / Stability','Isolation']" :key="p">
-                                <option :value="p" x-text="p"></option>
-                            </template>
-                        </select>
-                    </div>
-                    <div class="flex gap-2 flex-wrap">
-                        <button @click="workoutBuilder.favoritesOnly=!workoutBuilder.favoritesOnly" :class="workoutBuilder.favoritesOnly?'bg-brand-500 text-white border-brand-500':'border-slate-200 dark:border-slate-700 text-slate-400'" class="px-3 py-1.5 rounded-xl border font-black text-[10px] uppercase tracking-wider transition-all">⭐ Favorites</button>
-                        <button @click="workoutBuilder.recentOnly=!workoutBuilder.recentOnly" :class="workoutBuilder.recentOnly?'bg-brand-500 text-white border-brand-500':'border-slate-200 dark:border-slate-700 text-slate-400'" class="px-3 py-1.5 rounded-xl border font-black text-[10px] uppercase tracking-wider transition-all">Recent</button>
-                        <button @click="workoutBuilder.prOnly=!workoutBuilder.prOnly" :class="workoutBuilder.prOnly?'bg-brand-500 text-white border-brand-500':'border-slate-200 dark:border-slate-700 text-slate-400'" class="px-3 py-1.5 rounded-xl border font-black text-[10px] uppercase tracking-wider transition-all">Has PR</button>
-                    </div>
-                    <div x-show="builderExercisePool.length===0" class="p-8 text-center text-slate-400 text-sm font-medium border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">No exercises match your filters.</div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        <template x-for="ex in builderExercisePool" :key="ex">
-                            <div @click="builderSelectExercise(ex)" class="group cursor-pointer bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.25rem] p-4 hover:border-brand-500/50 hover:shadow-lg transition-all duration-200 space-y-2.5">
-                                <div class="flex items-start justify-between gap-2">
-                                    <div class="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800/70 flex items-center justify-center text-xl shrink-0" x-text="MUSCLE_ICONS[getExerciseMeta(ex).primary[0]]||'💪'"></div>
-                                    <button @click.stop="toggleFavoriteExercise(ex)" class="text-lg shrink-0 transition-transform hover:scale-110" :title="isFavoriteExercise(ex)?'Remove favorite':'Add favorite'" x-text="isFavoriteExercise(ex)?'⭐':'☆'"></button>
-                                </div>
-                                <p class="text-sm font-extrabold text-slate-800 dark:text-slate-100 leading-snug" x-text="ex"></p>
-                                <div class="flex flex-wrap gap-1.5">
-                                    <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 uppercase tracking-wider" x-text="getExerciseMeta(ex).equipment"></span>
-                                    <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 uppercase tracking-wider" x-text="getExerciseMeta(ex).category"></span>
-                                    <span class="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider"
-                                        :class="getExerciseMeta(ex).difficulty==='Advanced'?'bg-red-500/10 text-red-400':getExerciseMeta(ex).difficulty==='Intermediate'?'bg-amber-500/10 text-amber-400':'bg-emerald-500/10 text-emerald-400'"
-                                        x-text="getExerciseMeta(ex).difficulty"></span>
-                                </div>
-                                <div class="flex items-center gap-1.5 flex-wrap" x-show="isRecentlyUsedExercise(ex)||getExercisePR(ex)>0">
-                                    <span x-show="isRecentlyUsedExercise(ex)" class="text-[9px] font-black px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 uppercase tracking-wider">Recent</span>
-                                    <span x-show="getExercisePR(ex)>0" class="text-[9px] font-black px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 uppercase tracking-wider" x-text="'PR '+getExercisePR(ex)+'kg'"></span>
-                                </div>
-                            </div>
+
+                    <input type="text" x-model="workoutBuilder.exerciseSearch" :placeholder="'Search '+workoutBuilder.selectedMuscle.toLowerCase()+' exercises...'" class="!text-base !py-3.5">
+
+                    <div class="flex gap-2 flex-wrap overflow-x-auto no-scrollbar">
+                        <button @click="workoutBuilder.equipmentFilter=''" :class="!workoutBuilder.equipmentFilter?'bg-brand-500 text-white border-brand-500':'border-slate-200 dark:border-slate-700 text-slate-400 hover:border-brand-500/40'" class="shrink-0 px-3.5 py-1.5 rounded-xl border font-black text-[10px] uppercase tracking-wider transition-all">All</button>
+                        <template x-for="eq in builderEquipmentOptions" :key="eq">
+                            <button @click="workoutBuilder.equipmentFilter=eq" :class="workoutBuilder.equipmentFilter===eq?'bg-brand-500 text-white border-brand-500':'border-slate-200 dark:border-slate-700 text-slate-400 hover:border-brand-500/40'" class="shrink-0 px-3.5 py-1.5 rounded-xl border font-black text-[10px] uppercase tracking-wider transition-all" x-text="eq"></button>
                         </template>
+                    </div>
+
+                    <!-- No match — never blocks logging -->
+                    <div x-show="builderExercisePool.length===0" class="p-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-[1.5rem] space-y-4">
+                        <p class="text-slate-700 dark:text-slate-200 text-sm font-bold">No matching exercise found</p>
+                        <p class="text-slate-400 text-xs" x-show="workoutBuilder.exerciseSearch" x-text="'We couldn\'t find &quot;'+workoutBuilder.exerciseSearch+'&quot; in our database.'"></p>
+                        <button @click="openCustomExerciseModal()" class="bg-brand-500 hover:bg-brand-600 text-white font-black py-2.5 px-5 rounded-xl text-xs uppercase tracking-widest shadow-md transition-all">+ Create Custom Exercise</button>
+                        <div x-show="exerciseSuggestions.length>0" class="pt-2">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Suggestions</p>
+                            <div class="flex flex-wrap justify-center gap-2">
+                                <template x-for="s in exerciseSuggestions" :key="s">
+                                    <button @click="builderSelectExercise(s)" class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-300 text-xs font-bold hover:border-brand-500/50 transition-all" x-text="s"></button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent (only shown when not searching) -->
+                    <div x-show="!workoutBuilder.exerciseSearch && builderRecentForMuscle.length>0">
+                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Recent</p>
+                        <div class="space-y-1.5">
+                            <template x-for="ex in builderRecentForMuscle" :key="'recent-'+ex">
+                                <div @click="builderSelectExercise(ex)" class="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors">
+                                    <template x-if="MUSCLE_ICONS[getExerciseMetaFor(ex).primary[0]]">
+                                        <img :src="'assets/muscles/figures/'+getExerciseMetaFor(ex).primary[0].toLowerCase()+'_figure.png'" class="w-11 h-11 rounded-lg object-cover object-top shrink-0" loading="lazy">
+                                    </template>
+                                    <template x-if="!MUSCLE_ICONS[getExerciseMetaFor(ex).primary[0]]"><div class="w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0"></div></template>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate" x-text="ex"></p>
+                                        <p class="text-[11px] text-slate-400 font-semibold" x-text="getExerciseMetaFor(ex).equipment"></p>
+                                    </div>
+                                    <span x-show="getExercisePR(ex)>0" class="shrink-0 text-[10px] font-black px-2 py-1 rounded-full bg-purple-500/15 text-purple-400 uppercase tracking-wider">PR</span>
+                                    <button @click.stop="toggleFavoriteExercise(ex)" class="shrink-0 text-lg transition-transform hover:scale-110" x-text="isFavoriteExercise(ex)?'★':'☆'" :class="isFavoriteExercise(ex)?'text-amber-400':'text-slate-300 dark:text-slate-600'"></button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- All exercises for this muscle (filtered by search/equipment) -->
+                    <div x-show="builderExercisePool.length>0">
+                        <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2" x-text="workoutBuilder.exerciseSearch?'Results':'All Exercises'"></p>
+                        <div class="space-y-1.5">
+                            <template x-for="ex in builderExercisePool" :key="ex">
+                                <div @click="builderSelectExercise(ex)" class="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors">
+                                    <template x-if="MUSCLE_ICONS[getExerciseMetaFor(ex).primary[0]]">
+                                        <img :src="'assets/muscles/figures/'+getExerciseMetaFor(ex).primary[0].toLowerCase()+'_figure.png'" class="w-11 h-11 rounded-lg object-cover object-top shrink-0" loading="lazy">
+                                    </template>
+                                    <template x-if="!MUSCLE_ICONS[getExerciseMetaFor(ex).primary[0]]"><div class="w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0"></div></template>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate" x-text="ex"></p>
+                                        <p class="text-[11px] text-slate-400 font-semibold" x-text="getExerciseMetaFor(ex).equipment"></p>
+                                    </div>
+                                    <span x-show="getExercisePR(ex)>0" class="shrink-0 text-[10px] font-black px-2 py-1 rounded-full bg-purple-500/15 text-purple-400 uppercase tracking-wider">PR</span>
+                                    <button @click.stop="toggleFavoriteExercise(ex)" class="shrink-0 text-lg transition-transform hover:scale-110" x-text="isFavoriteExercise(ex)?'★':'☆'" :class="isFavoriteExercise(ex)?'text-amber-400':'text-slate-300 dark:text-slate-600'"></button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="text-center pt-1" x-show="builderExercisePool.length>0">
+                        <button @click="openCustomExerciseModal()" class="text-[11px] font-black text-brand-400 uppercase tracking-widest hover:text-brand-500">+ Create Custom Exercise</button>
                     </div>
                 </div>
             </template>
+
+            <!-- CUSTOM EXERCISE MODAL — required: name only. Never blocks logging. -->
+            <div x-show="openModals.modalCustomExercise" x-cloak @click.self="closeModal('modalCustomExercise')" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[90] flex items-start justify-center p-0 sm:p-4 overflow-y-auto">
+                <div @click.stop class="w-full max-w-lg bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-none sm:rounded-[2rem] p-5 sm:p-7 shadow-2xl space-y-4 sm:my-6 min-h-screen sm:min-h-0">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-xl font-extrabold tracking-tight">Create Custom Exercise</h3>
+                        <button @click="closeModal('modalCustomExercise')" class="text-slate-400 hover:text-slate-600 font-black text-lg leading-none">✕</button>
+                    </div>
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Exercise Name *</label><input type="text" x-model="customExerciseForm.name" placeholder="e.g. Zercher Carry" @keydown.enter="saveCustomExercise()"></div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Primary Muscle (optional)</label>
+                            <select x-model="customExerciseForm.primaryMuscle"><option value="">Not specified</option><template x-for="mg in systemMuscleGroups" :key="mg"><option :value="mg" x-text="mg"></option></template></select>
+                        </div>
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Equipment (optional)</label>
+                            <input type="text" x-model="customExerciseForm.equipment" placeholder="e.g. Barbell">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Secondary Muscles (optional)</label>
+                        <div class="flex flex-wrap gap-1.5 mb-1.5" x-show="customExerciseForm.secondaryMuscles.length>0">
+                            <template x-for="(m,mi) in customExerciseForm.secondaryMuscles" :key="m">
+                                <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full bg-brand-500/10 text-brand-400">
+                                    <span x-text="m"></span>
+                                    <button @click="customExerciseForm.secondaryMuscles.splice(mi,1)" class="font-black hover:text-red-400">✕</button>
+                                </span>
+                            </template>
+                        </div>
+                        <select @change="if($event.target.value && !customExerciseForm.secondaryMuscles.includes($event.target.value)) customExerciseForm.secondaryMuscles.push($event.target.value); $event.target.value=''">
+                            <option value="">+ Add secondary muscle...</option>
+                            <template x-for="mg in systemMuscleGroups" :key="mg"><option :value="mg" x-text="mg"></option></template>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Difficulty (optional)</label>
+                            <select x-model="customExerciseForm.difficulty"><option value="">Not specified</option><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select>
+                        </div>
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Category (optional)</label>
+                            <select x-model="customExerciseForm.category"><option value="">Not specified</option><option>Compound</option><option>Isolation</option><option>Isometric</option></select>
+                        </div>
+                    </div>
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Movement Pattern (optional)</label>
+                        <select x-model="customExerciseForm.movementPattern">
+                            <option value="">Not specified</option>
+                            <template x-for="p in ['Push','Pull','Squat','Hinge','Carry','Core / Stability','Isolation']" :key="p"><option :value="p" x-text="p"></option></template>
+                        </select>
+                    </div>
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Notes (optional)</label><textarea x-model="customExerciseForm.notes" rows="2" class="!resize-none" placeholder="Any notes about this exercise"></textarea></div>
+                    <div class="flex gap-3">
+                        <button @click="closeModal('modalCustomExercise')" class="flex-1 border border-slate-200 dark:border-slate-700 font-bold py-3 rounded-xl text-xs uppercase tracking-wider text-slate-400">Cancel</button>
+                        <button @click="saveCustomExercise()" :disabled="!customExerciseForm.name.trim()" :class="!customExerciseForm.name.trim()?'opacity-40 cursor-not-allowed':'hover:bg-brand-600'" class="flex-1 bg-brand-500 text-white font-black py-3 rounded-xl text-xs uppercase tracking-widest shadow-md transition-all">Save Exercise</button>
+                    </div>
+                </div>
+            </div>
 
             <!-- STEP 3: EXERCISE GUIDE -->
             <template x-if="workoutBuilder.step==='guide' && workoutBuilder.activeExercise">
@@ -997,16 +1071,24 @@
                     <!-- Header -->
                     <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-5 sm:p-7">
                         <div class="flex flex-wrap items-start justify-between gap-4">
-                            <div class="space-y-2.5">
-                                <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight" x-text="workoutBuilder.activeExercise"></h2>
-                                <div class="flex flex-wrap gap-1.5">
+                            <div class="space-y-2.5 min-w-0">
+                                <div class="flex items-center gap-2.5">
+                                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight" x-text="workoutBuilder.activeExercise"></h2>
+                                    <button @click="toggleFavoriteExercise(workoutBuilder.activeExercise)" class="text-2xl leading-none shrink-0 transition-transform hover:scale-110 vytara-focusable" x-text="isFavoriteExercise(workoutBuilder.activeExercise)?'★':'☆'" :class="isFavoriteExercise(workoutBuilder.activeExercise)?'text-amber-400':'text-slate-300 dark:text-slate-600'"></button>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-1.5">
                                     <span class="text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider"
                                         :class="activeExerciseMeta.difficulty==='Advanced'?'bg-red-500/10 text-red-400':activeExerciseMeta.difficulty==='Intermediate'?'bg-amber-500/10 text-amber-400':'bg-emerald-500/10 text-emerald-400'"
                                         x-text="activeExerciseMeta.difficulty"></span>
                                     <span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-brand-500/10 text-brand-400 uppercase tracking-wider" x-text="activeExerciseMeta.equipment"></span>
                                     <span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 uppercase tracking-wider" x-text="activeExerciseMeta.category"></span>
                                     <span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 uppercase tracking-wider" x-text="activeExerciseMeta.movementPattern"></span>
-                                    <template x-for="m in activeExerciseMeta.primary" :key="m"><span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 uppercase tracking-wider" x-text="m"></span></template>
+                                    <template x-for="m in activeExerciseMeta.primary" :key="m">
+                                        <span class="inline-flex items-center gap-1.5 text-[10px] font-black pl-1 pr-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 uppercase tracking-wider">
+                                            <template x-if="MUSCLE_ICONS[m]"><img :src="'assets/muscles/figures/'+m.toLowerCase()+'_figure.png'" class="w-4 h-4 rounded-full object-cover object-top"></template>
+                                            <span x-text="m"></span>
+                                        </span>
+                                    </template>
                                 </div>
                             </div>
                             <button @click="builderStartLogging()" class="bg-brand-500 hover:bg-brand-600 text-white font-black py-3 px-6 rounded-xl text-xs uppercase tracking-widest shadow-md transition-all shrink-0">Start Exercise →</button>
@@ -1029,7 +1111,7 @@
                         </div>
                         <!-- Progressive overload recommendation — derived only from real history above -->
                         <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex gap-2.5 items-start">
-                            <span class="text-base shrink-0">📈</span>
+                            <span class="w-1 self-stretch rounded-full bg-emerald-400 shrink-0"></span>
                             <div>
                                 <p class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1" x-show="activeExerciseProgression.status==='ok'" x-text="activeExerciseProgression.action"></p>
                                 <p class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-snug" x-text="activeExerciseProgression.status==='ok'?activeExerciseProgression.reason:activeExerciseProgression.message"></p>
@@ -1045,6 +1127,20 @@
                     <!-- Muscles worked -->
                     <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-5 sm:p-7">
                         <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-4">Muscles Worked</p>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+                            <template x-for="m in activeExerciseMeta.primary" :key="'pm-'+m">
+                                <div class="flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                    <template x-if="MUSCLE_ICONS[m]"><img :src="'assets/muscles/figures/'+m.toLowerCase()+'_figure.png'" class="w-9 h-9 rounded-lg object-cover object-top shrink-0"></template>
+                                    <div class="min-w-0"><p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Primary</p><p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate" x-text="m"></p></div>
+                                </div>
+                            </template>
+                            <template x-for="m in activeExerciseMeta.secondary" :key="'sm-'+m">
+                                <div class="flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                    <template x-if="MUSCLE_ICONS[m]"><img :src="'assets/muscles/figures/'+m.toLowerCase()+'_figure.png'" class="w-9 h-9 rounded-lg object-cover object-top shrink-0"></template>
+                                    <div class="min-w-0"><p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Secondary</p><p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate" x-text="m"></p></div>
+                                </div>
+                            </template>
+                        </div>
                         <div class="flex justify-center overflow-x-auto" x-html="generateMuscleSVG(activeExerciseMeta.primary,activeExerciseMeta.secondary,theme==='dark',2.1)"></div>
                         <div x-show="activeExerciseMeta.stabilizers.length>0" class="flex flex-wrap gap-1.5 justify-center mt-3">
                             <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest self-center mr-1">Stabilizers:</span>
@@ -1096,7 +1192,7 @@
 
                     <!-- Breathing -->
                     <div class="bg-blue-500/5 border border-blue-500/20 rounded-[1.5rem] p-5 sm:p-7 flex gap-3 items-start">
-                        <span class="text-xl shrink-0">🫁</span>
+                        <span class="w-1 self-stretch rounded-full bg-blue-400 shrink-0"></span>
                         <div>
                             <p class="text-[10px] font-black tracking-widest text-blue-400 uppercase mb-1.5">Breathing</p>
                             <p class="text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug" x-text="activeExerciseDefaults.breathing"></p>
@@ -1121,7 +1217,7 @@
                         <ul class="space-y-2">
                             <template x-for="(t,ti) in activeExerciseTips" :key="ti">
                                 <li class="flex gap-2.5 items-start text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug">
-                                    <span class="text-amber-400 shrink-0">💡</span><span x-text="t"></span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-1.5"></span><span x-text="t"></span>
                                 </li>
                             </template>
                         </ul>
@@ -1133,7 +1229,7 @@
                         <ul class="space-y-2">
                             <template x-for="(sn,si) in activeExerciseMeta.safetyNotes" :key="si">
                                 <li class="flex gap-2.5 items-start text-sm text-slate-600 dark:text-slate-300 font-medium leading-snug">
-                                    <span class="text-slate-400 shrink-0">🛡️</span><span x-text="sn"></span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0 mt-1.5"></span><span x-text="sn"></span>
                                 </li>
                             </template>
                         </ul>
@@ -1175,7 +1271,7 @@
                                 <div class="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-slate-100 dark:border-slate-800/80">
                                     <p class="text-sm font-extrabold text-slate-800 dark:text-slate-100" x-text="v.exercise"></p>
                                     <div class="flex items-center gap-2">
-                                        <button @click="workoutBuilder.activeExercise=v.exercise;workoutBuilder.step='guide'" class="text-[10px] font-black text-brand-400 uppercase tracking-wider hover:text-brand-500">💡 Guide</button>
+                                        <button @click="workoutBuilder.activeExercise=v.exercise;workoutBuilder.step='guide'" class="text-[10px] font-black text-brand-400 uppercase tracking-wider hover:text-brand-500">Guide</button>
                                         <button x-show="workoutBuilder.variations.length>1" @click="builderRemoveVariation(vi)" class="text-red-400 hover:text-red-500 font-black text-sm px-1">✕</button>
                                     </div>
                                 </div>
@@ -4697,7 +4793,7 @@ function vytaraApp() {
         filters: { workoutsFrom:'', workoutsTo:'', dietFrom:'', dietTo:'', metricsFrom:'', metricsTo:'' },
         dashboardDate: '',
         mealHistory: [],
-        openModals: { modalWater:false, modalDiet:false, modalMetrics:false, modalWorkout:false, foodEditModal:false, modalDietView:false },
+        openModals: { modalWater:false, modalDiet:false, modalMetrics:false, modalWorkout:false, foodEditModal:false, modalDietView:false, modalCustomExercise:false },
         heatmapDays: [],
         heatmapMonthLabels: [],
         currentStreak: 0,
@@ -4718,7 +4814,8 @@ function vytaraApp() {
         metricsForm: { date:'', weight:'', bodyFat:'', muscleMass:'', waist:'', chest:'', arms:'', hips:'', sleep:'', notes:'' },
         workoutForm: { date:'', type:'strength', duration:'', muscles:[], variations:[], notes:'', distance:'', pace:'', speed:'', caloriesBurned:'' },
         // Inline (non-modal) premium workout builder: Muscles -> Exercises -> Guide -> Log
-        workoutBuilder: { active:false, step:'muscles', date:'', duration:'', selectedMuscles:[], exerciseSearch:'', equipmentFilter:'', difficultyFilter:'', categoryFilter:'', patternFilter:'', favoritesOnly:false, recentOnly:false, prOnly:false, activeExercise:'', variations:[], notes:'' },
+        workoutBuilder: { active:false, step:'muscles', date:'', duration:'', selectedMuscle:'', exerciseSearch:'', equipmentFilter:'', activeExercise:'', variations:[], notes:'' },
+        customExerciseForm: { name:'', primaryMuscle:'', secondaryMuscles:[], equipment:'', difficulty:'', category:'', movementPattern:'', notes:'' },
         prCelebration: null,
         photoForm: { date:'', category:'Front', notes:'', fileObj:null },
         newGoalText: '',
@@ -4764,25 +4861,57 @@ function vytaraApp() {
             return list;
         },
         // -- Workout Builder (Muscles -> Exercises -> Guide -> Log) --
+        // Full exercise universe — every built-in + custom exercise. Never gated by muscle;
+        // "Browse by Muscle" quick filters below are purely optional narrowing.
+        get allExerciseNames() {
+            const pool=[];
+            Object.values(BUILTIN_EXERCISES).forEach(arr=>pool.push(...arr));
+            this.customExercises.forEach(ex=>{ if(!pool.includes(ex.name)) pool.push(ex.name); });
+            return [...new Set(pool)];
+        },
+        // Every exercise (built-in + custom) that belongs to the selected muscle group.
+        get builderMuscleExercises() {
+            const muscle=this.workoutBuilder.selectedMuscle;
+            if(!muscle) return [];
+            const pool=new Set(BUILTIN_EXERCISES[muscle]||[]);
+            this.customExercises.forEach(ex=>{ if(ex.muscle===muscle||ex.primaryMuscle===muscle) pool.add(ex.name); });
+            return [...pool];
+        },
+        // Search + equipment filter applied within the selected muscle's exercises. Never
+        // gated on muscle for custom-exercise creation — that always stays reachable.
         get builderExercisePool() {
             const b=this.workoutBuilder;
-            let pool=[];
-            if(b.selectedMuscles.length>0) b.selectedMuscles.forEach(m=>{ if(BUILTIN_EXERCISES[m]) pool.push(...BUILTIN_EXERCISES[m]); });
-            else Object.values(BUILTIN_EXERCISES).forEach(arr=>pool.push(...arr));
-            this.customExercises.forEach(ex=>{ if(!pool.includes(ex.name)&&(b.selectedMuscles.length===0||b.selectedMuscles.includes(ex.muscle))) pool.push(ex.name); });
-            pool=[...new Set(pool)];
+            let pool=this.builderMuscleExercises;
             const q=(b.exerciseSearch||'').toLowerCase().trim();
             if(q) pool=pool.filter(ex=>ex.toLowerCase().includes(q));
-            if(b.equipmentFilter) pool=pool.filter(ex=>getExerciseMeta(ex).equipment===b.equipmentFilter);
-            if(b.difficultyFilter) pool=pool.filter(ex=>getExerciseMeta(ex).difficulty===b.difficultyFilter);
-            if(b.categoryFilter) pool=pool.filter(ex=>getExerciseMeta(ex).category===b.categoryFilter);
-            if(b.patternFilter) pool=pool.filter(ex=>getExerciseMeta(ex).movementPattern===b.patternFilter);
-            if(b.favoritesOnly) pool=pool.filter(ex=>this.isFavoriteExercise(ex));
-            if(b.recentOnly) pool=pool.filter(ex=>this.isRecentlyUsedExercise(ex));
-            if(b.prOnly) pool=pool.filter(ex=>this.getExercisePR(ex)>0);
+            if(b.equipmentFilter) pool=pool.filter(ex=>this.getExerciseMetaFor(ex).equipment===b.equipmentFilter);
             return pool.sort();
         },
-        get activeExerciseMeta() { return getExerciseMeta(this.workoutBuilder.activeExercise); },
+        get builderEquipmentOptions() {
+            const set=new Set();
+            this.builderMuscleExercises.forEach(ex=>{ const eq=this.getExerciseMetaFor(ex).equipment; if(eq&&eq!=='Not specified') set.add(eq); });
+            return [...set].sort();
+        },
+        get builderRecentForMuscle() { return this.recentExercises.filter(ex=>this.builderMuscleExercises.includes(ex)); },
+        // Cross-muscle fuzzy suggestions shown only when the current muscle's search has zero results.
+        get exerciseSuggestions() {
+            const q=(this.workoutBuilder.exerciseSearch||'').toLowerCase().trim();
+            if(!q || this.builderExercisePool.length>0) return [];
+            const words=q.split(/\s+/).filter(Boolean);
+            const scored=this.allExerciseNames
+                .map(ex=>({ex, score:words.reduce((s,w)=>s+(ex.toLowerCase().includes(w)?1:0),0)}))
+                .filter(r=>r.score>0).sort((a,b)=>b.score-a.score);
+            return scored.slice(0,3).map(r=>r.ex);
+        },
+        get recentExercises() {
+            const seen=new Set(), out=[];
+            [...this.workouts].sort((a,b)=>b.date.localeCompare(a.date)).forEach(w=>{
+                const names=(w.variations&&w.variations.length>0)?w.variations.map(v=>v.exercise):[w.exercise];
+                names.filter(Boolean).forEach(n=>{ if(!seen.has(n)){ seen.add(n); out.push(n); } });
+            });
+            return out.slice(0,8);
+        },
+        get activeExerciseMeta() { return this.getExerciseMetaFor(this.workoutBuilder.activeExercise); },
         get activeExerciseInfo() { return EXERCISE_INFO[this.workoutBuilder.activeExercise]||{}; },
         get activeExerciseDefaults() { return getExerciseGuideDefaults(this.workoutBuilder.activeExercise); },
         get activeExerciseTips() { return getExerciseProTips(this.workoutBuilder.activeExercise); },
@@ -6150,15 +6279,60 @@ function vytaraApp() {
 
         // ==================== WORKOUT BUILDER (inline premium flow) ====================
         startWorkoutBuilder() {
-            this.workoutBuilder = { active:true, step:'muscles', date:this.getToday(), duration:'', selectedMuscles:[], exerciseSearch:'', equipmentFilter:'', difficultyFilter:'', activeExercise:'', variations:[], notes:'' };
+            this.workoutBuilder = { active:true, step:'muscles', date:this.getToday(), duration:'', selectedMuscle:'', exerciseSearch:'', equipmentFilter:'', activeExercise:'', variations:[], notes:'' };
+            this.openModals.modalCustomExercise = false;
+            this.customExerciseForm = { name:'', primaryMuscle:'', secondaryMuscles:[], equipment:'', difficulty:'', category:'', movementPattern:'', notes:'' };
         },
         closeWorkoutBuilder() {
             if(this.workoutBuilder.variations.length>0 && !confirm('Discard this workout? Your progress will be lost.')) return;
             this.workoutBuilder.active=false;
         },
-        builderToggleMuscle(mg) {
-            const i=this.workoutBuilder.selectedMuscles.indexOf(mg);
-            if(i>-1) this.workoutBuilder.selectedMuscles.splice(i,1); else this.workoutBuilder.selectedMuscles.push(mg);
+        builderSelectMuscle(mg) {
+            this.workoutBuilder.selectedMuscle=mg;
+            this.workoutBuilder.exerciseSearch='';
+            this.workoutBuilder.equipmentFilter='';
+            this.workoutBuilder.step='exercises';
+        },
+        openCustomExerciseModal() {
+            this.customExerciseForm = { name:this.workoutBuilder.exerciseSearch||'', primaryMuscle:this.workoutBuilder.selectedMuscle||'', secondaryMuscles:[], equipment:'', difficulty:'', category:'', movementPattern:'', notes:'' };
+            this.openModals.modalCustomExercise = true;
+        },
+        // Merges the curated exercise database with a matching custom exercise's own fields
+        // (if any) — keeps custom exercises first-class everywhere exercise metadata is
+        // displayed (browser rows, guide) without touching the global exercise database.
+        getExerciseMetaFor(name) {
+            const meta = getExerciseMeta(name);
+            const custom = this.customExercises.find(e=>e.name===name);
+            if(custom) {
+                if(custom.equipment) meta.equipment = custom.equipment;
+                if(custom.difficulty) meta.difficulty = custom.difficulty;
+                if(custom.category) meta.category = custom.category;
+                if(custom.movementPattern) meta.movementPattern = custom.movementPattern;
+                if(custom.primaryMuscle) meta.primary = [custom.primaryMuscle];
+                if(custom.secondaryMuscles && custom.secondaryMuscles.length) meta.secondary = custom.secondaryMuscles;
+                else if(custom.secondaryMuscle) meta.secondary = [custom.secondaryMuscle];
+            }
+            return meta;
+        },
+        // Custom exercises are first-class: created from the Exercise Browser when a search
+        // returns no results, stored via the existing customExercises architecture (same
+        // localStorage/Firebase sync as everything else), and immediately searchable/selectable.
+        saveCustomExercise() {
+            const name=(this.customExerciseForm.name||'').trim();
+            if(!name) return;
+            const f=this.customExerciseForm;
+            this.customExercises.push({
+                id:Date.now().toString(36)+Math.random().toString(36).slice(2),
+                name, muscle:f.primaryMuscle||'Other',
+                primaryMuscle:f.primaryMuscle||'', secondaryMuscles:[...f.secondaryMuscles],
+                equipment:f.equipment||'', difficulty:f.difficulty||'', category:f.category||'', movementPattern:f.movementPattern||'',
+                notes:f.notes||'',
+            });
+            this.persist();
+            this.openModals.modalCustomExercise=false;
+            // User should immediately be able to log sets for it.
+            this.builderSelectExercise(name);
+            this.builderStartLogging();
         },
         builderSelectExercise(name) {
             this.workoutBuilder.activeExercise=name;
@@ -6171,7 +6345,7 @@ function vytaraApp() {
             }
             this.workoutBuilder.step='log';
         },
-        builderAddAnotherExercise() { this.workoutBuilder.step='exercises'; },
+        builderAddAnotherExercise() { this.workoutBuilder.step='muscles'; },
         builderAddSet(vi) { this.workoutBuilder.variations[vi].sets.push(blankSet()); },
         builderRemoveSet(vi,si) { this.workoutBuilder.variations[vi].sets.splice(si,1); },
         builderRemoveVariation(vi) { this.workoutBuilder.variations.splice(vi,1); },
@@ -6181,7 +6355,7 @@ function vytaraApp() {
                 date: this.workoutBuilder.date||this.getToday(),
                 type: 'strength',
                 duration: this.workoutBuilder.duration,
-                muscles: [...this.workoutBuilder.selectedMuscles],
+                muscles: [...new Set(this.workoutBuilder.variations.flatMap(v=>this.getExerciseMetaFor(v.exercise).primary||[]))],
                 variations: this.workoutBuilder.variations.map(v=>({...v, sets:v.sets.map(s=>({...s}))})),
                 notes: this.workoutBuilder.notes,
                 distance:'', pace:'', speed:'', caloriesBurned:'', _editId:null,

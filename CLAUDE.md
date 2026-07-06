@@ -604,6 +604,42 @@ Ignore existing architecture
 
 \--------------------------------------------
 
+## Product Rule
+
+
+
+Users must NEVER be prevented from logging a workout.
+
+
+
+The workout logger is the highest priority feature.
+
+
+
+Every workflow must preserve the ability to:
+
+
+
+\- search any exercise
+
+\- create custom exercises
+
+\- edit exercises
+
+\- log workouts immediately
+
+
+
+Muscle groups are optional metadata.
+
+
+
+Exercise categories are optional metadata.
+
+
+
+The workout logger must always remain accessible regardless of the exercise database.
+
 
 
 \## Always
@@ -615,6 +651,4 @@ Build production-ready code.
 
 
 Think before editing.
-
-
 
