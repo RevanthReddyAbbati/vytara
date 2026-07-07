@@ -136,13 +136,22 @@
         <p class="text-[10px] text-slate-500">Get from <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-blue-400 hover:underline">Google Cloud Console</a> → OAuth 2.0 Client IDs</p>
       </div>
 
-      <!-- Redirect URI -->
+      <!-- Redirect URI. The OAuth flow runs on index.html (not this page), and Google requires an
+           EXACT match on the redirect_uri — a mismatch here is the #1 cause of "Error 400:
+           invalid_request" / redirect_uri_mismatch. We can't know whether the app is reached via
+           the bare folder URL or the explicit "index.html" filename, so both candidates are shown —
+           add BOTH to "Authorized redirect URIs" in Google Cloud Console to be safe. -->
       <div style="background:#0a0f1e;border:1px solid #1e293b;border-radius:12px;padding:12px 14px;" class="space-y-2">
-        <p class="text-[10px] font-black text-amber-400 uppercase tracking-wider">Required: Add this URL to Authorized Redirect URIs in Google Cloud Console</p>
+        <p class="text-[10px] font-black text-amber-400 uppercase tracking-wider">Required: Add BOTH of these URLs to Authorized Redirect URIs in Google Cloud Console</p>
         <div class="flex items-center gap-2">
           <code id="redirectUri" class="text-[11px] font-mono text-emerald-300 flex-1 break-all"></code>
           <button onclick="copyUri()" style="background:#1e293b;border:1px solid #334155;color:#60a5fa;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;">Copy</button>
         </div>
+        <div class="flex items-center gap-2">
+          <code id="redirectUriIndex" class="text-[11px] font-mono text-emerald-300 flex-1 break-all"></code>
+          <button onclick="copyUriIndex()" style="background:#1e293b;border:1px solid #334155;color:#60a5fa;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;">Copy</button>
+        </div>
+        <p class="text-[10px] text-slate-500">Also add this exact origin (no path) to "Authorized JavaScript origins".</p>
       </div>
 
       <div id="gfitResult" class="hidden text-xs font-bold px-3 py-2.5 rounded-xl border"></div>
@@ -221,9 +230,10 @@ window.doLogout = async function() {
 
 // ── INIT ADMIN ─────────────────────────────────────────────
 async function initAdmin() {
-    // Set redirect URI
+    // Set redirect URI candidates — see the comment above the Redirect URI card for why there are two.
     const base = window.location.href.replace('settings.html','');
     document.getElementById('redirectUri').textContent = base;
+    document.getElementById('redirectUriIndex').textContent = base + 'index.html';
 
     // Load current config from Firebase
     try {
@@ -343,6 +353,10 @@ window.toggleVis = function(inputId, iconId) {
 
 window.copyUri = function() {
     const uri = document.getElementById('redirectUri').textContent;
+    navigator.clipboard&&navigator.clipboard.writeText(uri).then(()=>alert('Redirect URI copied!'));
+};
+window.copyUriIndex = function() {
+    const uri = document.getElementById('redirectUriIndex').textContent;
     navigator.clipboard&&navigator.clipboard.writeText(uri).then(()=>alert('Redirect URI copied!'));
 };
 
