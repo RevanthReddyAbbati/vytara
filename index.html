@@ -356,7 +356,7 @@
     </header>
 
     <!-- Overlay -->
-    <div x-show="mobileMenuOpen" x-transition:enter="transition-opacity ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[50] lg:hidden no-print" @click="mobileMenuOpen=false"></div>
+    <div x-show="mobileMenuOpen" x-cloak x-transition:enter="transition-opacity ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[50] lg:hidden no-print" @click="mobileMenuOpen=false"></div>
 
     <!-- Sidebar -->
     <aside class="no-print fixed inset-y-0 left-0 z-[60] w-72 max-w-[85vw] bg-white dark:bg-panelDark border-r border-slate-200 dark:border-slate-800 p-5 flex flex-col gap-4 shrink-0 transition-transform duration-300 ease-in-out shadow-2xl lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:max-w-none lg:translate-x-0 lg:shadow-none lg:z-10 overflow-y-auto" :class="mobileMenuOpen?'translate-x-0':'-translate-x-full'">
@@ -2234,12 +2234,21 @@
 
     <!-- Profile summary -->
     <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-6 rounded-[1.5rem] shadow-sm">
-        <h3 class="text-sm font-black uppercase tracking-widest text-slate-400 mb-4">Profile</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-            <div><span class="font-black text-slate-400 block uppercase text-[10px]">Name</span><span class="font-extrabold" x-text="profile.name||'—'"></span></div>
-            <div><span class="font-black text-slate-400 block uppercase text-[10px]">Age</span><span class="font-extrabold" x-text="profile.age||'—'"></span></div>
-            <div><span class="font-black text-slate-400 block uppercase text-[10px]">Height</span><span class="font-extrabold" x-text="profile.height?profile.height+' cm':'—'"></span></div>
-            <div><span class="font-black text-slate-400 block uppercase text-[10px]">Weight</span><span class="font-extrabold" x-text="profile.currentWeight?profile.currentWeight+' kg':'—'"></span></div>
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">Profile</h3>
+            <button @click="openProfileModal()" class="text-[11px] font-black text-brand-400 hover:text-brand-500 uppercase tracking-wider flex items-center gap-1">✎ Edit Profile</button>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div class="w-16 h-16 rounded-full shrink-0 overflow-hidden bg-brand-500/10 border-2 border-brand-500/20 flex items-center justify-center">
+                <img :src="profile.photoUrl" x-show="profile.photoUrl" class="w-full h-full object-cover">
+                <span x-show="!profile.photoUrl" class="text-lg font-black text-brand-400" x-text="(profile.name||'A').trim().charAt(0).toUpperCase()"></span>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs flex-1">
+                <div><span class="font-black text-slate-400 block uppercase text-[10px]">Name</span><span class="font-extrabold" x-text="profile.name||'—'"></span></div>
+                <div><span class="font-black text-slate-400 block uppercase text-[10px]">Age</span><span class="font-extrabold" x-text="profileAge||'—'"></span></div>
+                <div><span class="font-black text-slate-400 block uppercase text-[10px]">Height</span><span class="font-extrabold" x-text="profile.height?profile.height+' cm':'—'"></span></div>
+                <div><span class="font-black text-slate-400 block uppercase text-[10px]">Weight</span><span class="font-extrabold" x-text="profile.currentWeight?profile.currentWeight+' kg':'—'"></span></div>
+            </div>
         </div>
     </div>
 
@@ -3007,7 +3016,7 @@
 </div>
 
 <!-- FOOD EDIT MODAL -->
-<div x-show="openModals.foodEditModal"
+<div x-show="openModals.foodEditModal" x-cloak
      x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
      x-transition:leave-end="opacity-0"
@@ -3084,7 +3093,7 @@
 </div>
 
 <!-- FORGOT PASSWORD MODAL -->
-<div x-show="forgotPasswordMode"
+<div x-show="forgotPasswordMode" x-cloak
      x-transition:enter="transition ease-out duration-200"
      x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100"
@@ -3126,6 +3135,55 @@
             <button @click="forgotPasswordMode=false" class="w-full text-xs text-slate-400 hover:text-slate-300 font-bold py-1">
                 Cancel
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- EDIT PROFILE MODAL -->
+<div x-show="openModals.modalProfile" x-cloak @click.self="closeModal('modalProfile')" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[90] flex items-start justify-center p-0 sm:p-4 overflow-y-auto">
+    <div @click.stop class="w-full max-w-lg bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-none sm:rounded-[2rem] p-5 sm:p-7 shadow-2xl space-y-5 sm:my-6 min-h-screen sm:min-h-0">
+        <div class="flex justify-between items-start">
+            <h3 class="text-xl font-extrabold tracking-tight">Edit Profile</h3>
+            <button @click="closeModal('modalProfile')" class="text-slate-400 hover:text-slate-600 font-black text-lg leading-none">✕</button>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <div class="w-20 h-20 rounded-full shrink-0 overflow-hidden bg-brand-500/10 border-2 border-brand-500/20 flex items-center justify-center relative">
+                <img :src="profileForm.photoUrl" x-show="profileForm.photoUrl && !profilePhotoUploading" class="w-full h-full object-cover">
+                <span x-show="!profileForm.photoUrl && !profilePhotoUploading" class="text-2xl font-black text-brand-400" x-text="(profileForm.name||'A').trim().charAt(0).toUpperCase()"></span>
+                <span x-show="profilePhotoUploading" class="text-[10px] font-black text-brand-400">...</span>
+            </div>
+            <div class="space-y-1.5">
+                <label class="inline-block bg-brand-500/10 border border-brand-500/30 text-brand-400 font-black py-2 px-4 rounded-xl text-[11px] uppercase tracking-wider hover:bg-brand-500/20 transition-all cursor-pointer">
+                    Change Photo
+                    <input type="file" accept="image/*" class="hidden" @change="uploadProfilePhoto($event.target.files[0])">
+                </label>
+                <button x-show="profileForm.photoUrl" @click="profileForm.photoUrl=''" class="block text-[10px] font-bold text-slate-400 hover:text-red-400">Remove photo</button>
+            </div>
+        </div>
+
+        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Name *</label><input type="text" x-model="profileForm.name" placeholder="Your Name"></div>
+
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Date of Birth</label>
+                <input type="date" x-model="profileForm.dob" :max="getToday()">
+                <p x-show="profileForm.dob" class="text-[10px] text-slate-400 mt-1 font-medium" x-text="'Age: '+calcAge(profileForm.dob)"></p>
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Gender</label>
+                <select x-model="profileForm.gender"><option value="">Select</option><option>Male</option><option>Female</option><option>Non-Binary</option></select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Height (cm)</label><input type="number" x-model="profileForm.height" placeholder="cm" min="1"></div>
+            <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Weight (kg)</label><input type="number" step="any" x-model="profileForm.currentWeight" placeholder="kg" min="1"></div>
+        </div>
+
+        <div class="flex gap-3 pt-1">
+            <button @click="closeModal('modalProfile')" class="flex-1 border border-slate-200 dark:border-slate-700 font-black py-3 rounded-xl text-xs uppercase tracking-wider hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">Cancel</button>
+            <button @click="saveProfile()" :disabled="!profileForm.name.trim()" class="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider shadow-md transition-all disabled:opacity-40">✓ Save Changes</button>
         </div>
     </div>
 </div>
@@ -3394,6 +3452,20 @@
                                     <span class="hidden sm:inline text-[10px]">Searching…</span>
                                 </span>
                             </button>
+                            <!-- AI Photo Nutrition Scan (Gemini vision) -->
+                            <label class="shrink-0 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-400 font-black py-2 px-3 rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5"
+                                   :class="aiNutritionLoading?'opacity-40 pointer-events-none':''"
+                                   title="Scan a food photo — auto-detects the food and fills macros">
+                                <span x-show="!aiNutritionLoading" class="flex items-center gap-1">
+                                    <span class="text-[10px]">📷</span>
+                                    <span class="hidden sm:inline">Scan Photo</span>
+                                </span>
+                                <span x-show="aiNutritionLoading" class="flex items-center gap-1">
+                                    <span class="w-3 h-3 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin inline-block"></span>
+                                    <span class="hidden sm:inline text-[10px]">Scanning…</span>
+                                </span>
+                                <input type="file" accept="image/*" capture="environment" class="hidden" :disabled="aiNutritionLoading" @change="lookupNutritionFromImage($event.target.files[0]); $event.target.value=''">
+                            </label>
                             <button @click="addItemToActiveMeal()"
                                     class="flex-1 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all shadow-sm"
                                     :class="mealItemEditTarget ? 'bg-brand-500 hover:bg-brand-600 text-white' : 'bg-emerald-500 hover:bg-emerald-600 text-white'"
@@ -5153,7 +5225,10 @@ function vytaraApp() {
             nutritionTargets:{ calories:2000, protein:150, carbs:200, fat:65, water:2500, fiber:30 },
             mealPresets: [{name:'Meal 1',time:'07:00'},{name:'Meal 2',time:'10:00'},{name:'Meal 3',time:'13:00'},{name:'Meal 4',time:'16:00'},{name:'Meal 5',time:'19:00'},{name:'Meal 6',time:'21:30'}],
             dayStartHour: 4,
+            dob:'', photoUrl:'',
         },
+        profileForm: { name:'', dob:'', gender:'', height:'', currentWeight:'', photoUrl:'' },
+        profilePhotoUploading: false,
         workouts: [],
         dietLogs: [],
         metricsLogs: [],
@@ -5173,7 +5248,7 @@ function vytaraApp() {
         filters: { workoutsFrom:'', workoutsTo:'', dietFrom:'', dietTo:'', metricsFrom:'', metricsTo:'' },
         dashboardDate: '',
         mealHistory: [],
-        openModals: { modalWater:false, modalDiet:false, modalMetrics:false, modalWorkout:false, foodEditModal:false, modalDietView:false, modalCustomExercise:false },
+        openModals: { modalWater:false, modalDiet:false, modalMetrics:false, modalWorkout:false, foodEditModal:false, modalDietView:false, modalCustomExercise:false, modalProfile:false },
         heatmapDays: [],
         heatmapMonthLabels: [],
         currentStreak: 0,
@@ -7041,6 +7116,45 @@ function vytaraApp() {
             });
         },
 
+        // ==================== PROFILE ====================
+        openProfileModal() {
+            this.profileForm = {
+                name: this.profile.name || '',
+                dob: this.profile.dob || '',
+                gender: this.profile.gender || '',
+                height: this.profile.height || '',
+                currentWeight: this.profile.currentWeight || '',
+                photoUrl: this.profile.photoUrl || '',
+            };
+            this.openModals.modalProfile = true;
+        },
+        async uploadProfilePhoto(fileObj) {
+            if(!fileObj) return;
+            this.profilePhotoUploading = true;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const compressed = await this.compressImage(e.target.result, 320, 0.8);
+                this.profileForm.photoUrl = compressed;
+                this.profilePhotoUploading = false;
+            };
+            reader.onerror = () => { this.profilePhotoUploading = false; alert('Could not read that image.'); };
+            reader.readAsDataURL(fileObj);
+        },
+        saveProfile() {
+            if(!this.profileForm.name.trim()) { alert('Please enter your name.'); return; }
+            this.profile.name          = this.profileForm.name.trim();
+            this.profile.dob           = this.profileForm.dob;
+            this.profile.gender        = this.profileForm.gender;
+            this.profile.height        = this.profileForm.height;
+            this.profile.currentWeight = this.profileForm.currentWeight;
+            this.profile.photoUrl      = this.profileForm.photoUrl;
+            // Keep the legacy manual age in sync so old code paths that read profile.age directly
+            // (e.g. exported reports) stay correct even though profileAge is now DOB-driven.
+            if(this.profile.dob) this.profile.age = this.profileAge;
+            this.persist();
+            this.openModals.modalProfile = false;
+        },
+
         async savePhoto() {
             if(!this.photoForm.fileObj) { alert('Please select a photo.'); return; }
             const reader = new FileReader();
@@ -7297,6 +7411,93 @@ function vytaraApp() {
             alert('AI lookup failed (all methods returned 401 Unauthorized).\n\nThis means your API key has restrictions. To fix:\n1. Go to https://console.cloud.google.com/apis/credentials\n2. Find your key → Edit\n3. Under "Application restrictions" → set to None\n4. Save and try again.');
         },
 
+        // Same Gemini SDK→REST fallback chain as lookupNutritionAI(), but multimodal: sends the
+        // photo itself so the model both identifies the food AND estimates its macros, filling
+        // the name field too (unlike the text lookup, which needs the name typed in first).
+        async lookupNutritionFromImage(fileObj) {
+            if(!fileObj) return;
+            const GEMINI_API_KEY = this.appConfig.geminiKey || localStorage.getItem('vytara_gemini_key') || '';
+            const GEMINI_MODEL   = this.appConfig.geminiModel  || localStorage.getItem('vytara_gemini_model') || 'gemini-3.1-flash-lite';
+            if(!GEMINI_API_KEY) { alert('AI Search is not yet available.'); return; }
+
+            this.aiNutritionLoading = true;
+            const compressed = await this.compressImage(await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(fileObj);
+            }), 768, 0.82);
+            const match = compressed.match(/^data:(image\/[a-z0-9.+-]+);base64,(.*)$/i);
+            if(!match) { this.aiNutritionLoading = false; alert('Could not read that image.'); return; }
+            const mimeType = match[1], base64Data = match[2];
+            const prompt = 'Identify the single main food or meal in this photo and estimate its total nutrition as served. Return ONLY a JSON object, no markdown, no extra text. Exact format: {"name":"Food Name","calories":0,"protein":0,"carbs":0,"fat":0,"fibre":0}';
+
+            const parseAndApply = (raw) => {
+                const clean = (raw||'').replace(/```json|```/gi,'').trim();
+                let n; try { n = JSON.parse(clean); } catch(e) { const m = clean.match(/\{[^{}]+\}/); n = m ? JSON.parse(m[0]) : null; }
+                if(!n || !((n.calories||n.protein||n.carbs||n.fat) > 0)) return false;
+                this.mealEntry.name     = n.name || this.mealEntry.name;
+                this.mealEntry.calories = Math.round(n.calories || 0);
+                this.mealEntry.protein  = Math.round((n.protein || 0)*10)/10;
+                this.mealEntry.carbs    = Math.round((n.carbs   || 0)*10)/10;
+                this.mealEntry.fat      = Math.round((n.fat     || 0)*10)/10;
+                this.mealEntry.fibre    = Math.round((n.fibre||n.fiber||0)*10)/10;
+                this.mealEntryFoodRef   = null;
+                return true;
+            };
+
+            // ── APPROACH 1: Official SDK ──
+            if(window.GoogleGenerativeAI) {
+                const sdkModels = [GEMINI_MODEL,'gemini-3.1-flash-lite','gemini-2.0-flash','gemini-1.5-flash'].filter((v,i,a)=>a.indexOf(v)===i&&v);
+                for(const m of sdkModels) {
+                    try {
+                        const genAI  = new window.GoogleGenerativeAI(GEMINI_API_KEY);
+                        const model  = genAI.getGenerativeModel({model: m, generationConfig:{temperature:0, maxOutputTokens:200}});
+                        const result = await model.generateContent([prompt, {inlineData:{mimeType, data:base64Data}}]);
+                        if(parseAndApply(result.response.text())) { this.aiNutritionLoading = false; return; }
+                    } catch(sdkErr) {
+                        const msg = sdkErr.message || '';
+                        if(msg.includes('API_KEY_INVALID') || msg.includes('API key not valid')) {
+                            this.aiNutritionLoading = false;
+                            alert('Invalid API key. Please update GEMINI_API_KEY at https://aistudio.google.com/apikey'); return;
+                        }
+                        if(msg.includes('not found') || msg.includes('404')) break;
+                        console.warn('[AI SDK image]', m, sdkErr.message);
+                        continue;
+                    }
+                }
+            }
+
+            // ── APPROACH 2: REST fallback ──
+            const reqBody = JSON.stringify({contents:[{parts:[{text:prompt},{inlineData:{mimeType, data:base64Data}}]}],generationConfig:{temperature:0,maxOutputTokens:200}});
+            const MODELS  = [GEMINI_MODEL,'gemini-3.1-flash-lite','gemini-2.0-flash','gemini-1.5-flash','gemini-2.5-flash'].filter((v,i,a)=>a.indexOf(v)===i&&v);
+            const BASE    = 'https://generativelanguage.googleapis.com/v1beta/models/';
+            for(const m of MODELS) {
+                const triesArr = [
+                    { url: BASE+m+':generateContent',          headers: {'Content-Type':'application/json','x-goog-api-key': GEMINI_API_KEY} },
+                    { url: BASE+m+':generateContent?key='+GEMINI_API_KEY, headers: {'Content-Type':'application/json'} },
+                ];
+                for(const t of triesArr) {
+                    try {
+                        const resp = await fetch(t.url, {method:'POST', headers:t.headers, body:reqBody, credentials:'omit'});
+                        if(resp.status === 404) break;
+                        if(!resp.ok) {
+                            const errBody = await resp.json().catch(()=>({}));
+                            console.warn('[AI REST image]', m, errBody?.error?.message || ('HTTP '+resp.status));
+                            if(resp.status === 401 || resp.status === 403) break;
+                            continue;
+                        }
+                        const data = await resp.json();
+                        if(data.error) { console.warn('[AI image]', data.error.message); continue; }
+                        const txt = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                        if(parseAndApply(txt)) { this.aiNutritionLoading = false; return; }
+                    } catch(e) { console.warn('[AI fetch image]', e.message); continue; }
+                }
+            }
+            this.aiNutritionLoading = false;
+            alert('Could not identify that photo (all methods failed).\n\nMake sure the food is clearly visible and well-lit, or enter the nutrition manually.');
+        },
+
 
         // ==================== BADGE & RANKING SYSTEM ====================
         computeBadges() {
@@ -7372,6 +7573,25 @@ function vytaraApp() {
                 B('d90','📆','Quarter Champion','90 days of commitment',daysSinceStart>=90,daysSinceStart,90,'gold'),
                 B('d365','🏆','Anniversary','One full year on VYTARA',daysSinceStart>=365,daysSinceStart,365,'platinum'),
             ];
+        },
+
+        // Age derived from DOB when set (kept in sync automatically); falls back to the
+        // legacy manually-entered profile.age for existing users who never set a DOB.
+        // Shared by the profileAge getter (saved profile) and the Edit Profile modal's live
+        // preview (unsaved profileForm draft) so both compute age the same way.
+        calcAge(dobStr) {
+            if(!dobStr) return null;
+            const dob = new Date(dobStr+'T00:00:00');
+            if(isNaN(dob.getTime())) return null;
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const m = today.getMonth() - dob.getMonth();
+            if(m < 0 || (m===0 && today.getDate() < dob.getDate())) age--;
+            return age;
+        },
+        get profileAge() {
+            const fromDob = this.calcAge(this.profile.dob);
+            return fromDob !== null ? fromDob : (this.profile.age || '');
         },
 
         get earnedBadges() { return this.computeBadges().filter(b=>b.earned); },
