@@ -5213,6 +5213,8 @@ function vytaraApp() {
         googleFitSyncing: false,
         googleFitAccessToken: null,
         googleFitLastError: '',
+        _gfitSyncTimer: null,
+        _gfitRefreshTimer: null,
         feedbackForm: { name:'', email:'', message:'', rating:5 },
         feedbackLoading: false,
         feedbackSent: false,
@@ -5606,6 +5608,10 @@ function vytaraApp() {
 
             // 7. Refresh config periodically
             setInterval(() => this.loadAppConfig().catch(()=>{}), 60000);
+
+            // 7.5 Google Fit: if already connected from a prior session, sync immediately
+            //     (so the dashboard never shows stale leftover numbers) and keep it alive.
+            this._startGoogleFitKeepAlive();
 
             // 8. Render charts
             this.$nextTick(()=>{ this.generateHeatmapData(); this.$nextTick(()=>this.renderDataCharts()); });
@@ -7402,6 +7408,90 @@ function vytaraApp() {
         // This uses the OAuth2 implicit grant (response_type=token) via a popup, not Firebase
         // Auth's GoogleAuthProvider — Firebase Auth's default client is not authorized for the
         // Fitness API's scopes, so it cannot be reused for this flow.
+        // Builds the OAuth URL shared by the interactive popup (connectGoogleFit) and the
+        // silent iframe refresh (silentRefreshGoogleFit). Returns null if unconfigured/malformed
+        // so callers can bail out with one consistent check.
+        _googleFitAuthUrl(promptMode) {
+            const GFIT_CLIENT_ID = (this.appConfig.gfitClientId || localStorage.getItem('vytara_gfit_client') || '').trim();
+            if(!GFIT_CLIENT_ID || !GFIT_CLIENT_ID.endsWith('.apps.googleusercontent.com')) return null;
+            const SCOPE = encodeURIComponent([
+                'https://www.googleapis.com/auth/fitness.activity.read',
+                'https://www.googleapis.com/auth/fitness.body.read',
+                'https://www.googleapis.com/auth/fitness.sleep.read',
+                'https://www.googleapis.com/auth/fitness.heart_rate.read',
+            ].join(' '));
+            const redirectUri = window.location.href.split('#')[0];
+            return 'https://accounts.google.com/o/oauth2/v2/auth'
+                + '?client_id=' + GFIT_CLIENT_ID
+                + '&redirect_uri=' + encodeURIComponent(redirectUri)
+                + '&response_type=token'
+                + '&scope=' + SCOPE
+                + '&include_granted_scopes=true'
+                + '&prompt=' + promptMode;
+        },
+
+        // Silently mints a fresh access token via a hidden iframe with prompt=none — if the
+        // user's Google browser session is still active and they've already granted consent,
+        // Google redirects back with a new token with ZERO visible UI. This is what lets the
+        // connection "stay active" despite the implicit-grant flow having no refresh token.
+        // Resolves to the new token string, or null if a silent renewal isn't possible (session
+        // gone / consent revoked) — callers must fall back to the interactive popup in that case.
+        silentRefreshGoogleFit() {
+            return new Promise((resolve) => {
+                const authUrl = this._googleFitAuthUrl('none');
+                if(!authUrl || !navigator.onLine) { resolve(null); return; }
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.setAttribute('aria-hidden', 'true');
+                let settled = false;
+                const finish = (token) => {
+                    if(settled) return;
+                    settled = true;
+                    clearInterval(poll);
+                    clearTimeout(giveUp);
+                    try { iframe.remove(); } catch(e) {}
+                    resolve(token || null);
+                };
+                const poll = setInterval(() => {
+                    let hash = '';
+                    try { hash = iframe.contentWindow.location.hash || ''; }
+                    catch(e) { return; } // still cross-origin on accounts.google.com — keep waiting
+                    if(!hash) return;
+                    const params = new URLSearchParams(hash.replace(/^#/, ''));
+                    finish(params.get('access_token'));
+                }, 400);
+                const giveUp = setTimeout(() => finish(null), 8000);
+                document.body.appendChild(iframe);
+                iframe.src = authUrl;
+            });
+        },
+
+        // Starts (or restarts) the background sync + silent-renewal timers. Safe to call
+        // repeatedly — always clears any existing timers first so we never double-schedule.
+        _startGoogleFitKeepAlive() {
+            if(this._gfitSyncTimer) clearInterval(this._gfitSyncTimer);
+            if(this._gfitRefreshTimer) clearInterval(this._gfitRefreshTimer);
+            this._gfitSyncTimer = null;
+            this._gfitRefreshTimer = null;
+            if(!this.googleFitConnected || !this.googleFitAccessToken) return;
+            this.syncGoogleFitData(); // refresh immediately so the dashboard never shows leftover stale numbers
+            this._gfitSyncTimer = setInterval(() => {
+                if(this.googleFitConnected) this.syncGoogleFitData();
+            }, 5 * 60 * 1000); // re-sync every 5 minutes while connected
+            this._gfitRefreshTimer = setInterval(async () => {
+                if(!this.googleFitConnected) return;
+                const newToken = await this.silentRefreshGoogleFit();
+                if(newToken) { this.googleFitAccessToken = newToken; this.persist(); }
+            }, 45 * 60 * 1000); // proactively renew before the ~60min token lifetime is up
+        },
+
+        _stopGoogleFitKeepAlive() {
+            if(this._gfitSyncTimer) clearInterval(this._gfitSyncTimer);
+            if(this._gfitRefreshTimer) clearInterval(this._gfitRefreshTimer);
+            this._gfitSyncTimer = null;
+            this._gfitRefreshTimer = null;
+        },
+
         connectGoogleFit() {
             this.googleFitLastError = '';
             const GFIT_CLIENT_ID = (this.appConfig.gfitClientId || localStorage.getItem('vytara_gfit_client') || '').trim();
@@ -7420,20 +7510,7 @@ function vytaraApp() {
                 alert(this.googleFitLastError);
                 return;
             }
-            const SCOPE = encodeURIComponent([
-                'https://www.googleapis.com/auth/fitness.activity.read',
-                'https://www.googleapis.com/auth/fitness.body.read',
-                'https://www.googleapis.com/auth/fitness.sleep.read',
-                'https://www.googleapis.com/auth/fitness.heart_rate.read',
-            ].join(' '));
-            const redirectUri = window.location.href.split('#')[0];
-            const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
-                + '?client_id=' + GFIT_CLIENT_ID
-                + '&redirect_uri=' + encodeURIComponent(redirectUri)
-                + '&response_type=token'
-                + '&scope=' + SCOPE
-                + '&include_granted_scopes=true'
-                + '&prompt=select_account';
+            const authUrl = this._googleFitAuthUrl('select_account');
             const popup = window.open(authUrl, 'googlefit_auth', 'width=520,height=640,menubar=no,toolbar=no,location=yes');
             if(!popup) {
                 this.googleFitLastError = 'Your browser blocked the sign-in popup. Allow popups for this site and try again.';
@@ -7478,7 +7555,7 @@ function vytaraApp() {
                     this.googleFitConnected   = true;
                     this.googleFitLastError   = '';
                     this.persist();
-                    this.syncGoogleFitData();
+                    this._startGoogleFitKeepAlive();
                 } else if(errorCode) {
                     clearInterval(poll);
                     try { popup.close(); } catch(e) {}
@@ -7489,6 +7566,7 @@ function vytaraApp() {
         },
 
         disconnectGoogleFit() {
+            this._stopGoogleFitKeepAlive();
             this.googleFitAccessToken = null;
             this.googleFitConnected   = false;
             this.googleFitLastError   = '';
@@ -7496,7 +7574,7 @@ function vytaraApp() {
             this.persist();
         },
 
-        async syncGoogleFitData() {
+        async syncGoogleFitData(isRetry) {
             if(!this.googleFitAccessToken) return;
             if(!navigator.onLine) {
                 this.googleFitLastError = 'Offline — Google Fit will sync again once you\'re back online.';
@@ -7524,10 +7602,23 @@ function vytaraApp() {
                     body
                 });
                 if(res.status===401) {
-                    // Token expired — implicit grant has no refresh token, so the user must reconnect.
+                    // Token expired. Implicit grant has no refresh token, but as long as the
+                    // user's Google browser session is still alive we can mint a new one
+                    // silently (no popup) — only fall back to a full reconnect if that fails too,
+                    // so the connection genuinely "stays active" until the user disconnects.
+                    if(!isRetry) {
+                        this.googleFitSyncing = false;
+                        const newToken = await this.silentRefreshGoogleFit();
+                        if(newToken) {
+                            this.googleFitAccessToken = newToken;
+                            this.persist();
+                            return this.syncGoogleFitData(true);
+                        }
+                    }
+                    this._stopGoogleFitKeepAlive();
                     this.googleFitConnected = false;
                     this.googleFitAccessToken = null;
-                    this.googleFitLastError = 'Your Google Fit session expired. Click "Sign in with Google" to reconnect.';
+                    this.googleFitLastError = 'Your Google Fit session expired and could not be renewed silently. Click "Sign in with Google" to reconnect.';
                     this.persist();
                     console.warn('[VYTARA] Google Fit token expired — please reconnect in Settings');
                     return;
