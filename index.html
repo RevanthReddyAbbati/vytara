@@ -947,8 +947,8 @@
                         </div>
                     </div>
 
-                    <!-- CHEST, BACK & SHOULDERS: compact professional rows on desktop, premium cards on mobile -->
-                    <template x-if="workoutBuilder.selectedMuscle==='Chest' || workoutBuilder.selectedMuscle==='Back' || workoutBuilder.selectedMuscle==='Shoulders'">
+                    <!-- CHEST, BACK, SHOULDERS, BICEPS & TRICEPS: compact professional rows on desktop, premium cards on mobile -->
+                    <template x-if="workoutBuilder.selectedMuscle==='Chest' || workoutBuilder.selectedMuscle==='Back' || workoutBuilder.selectedMuscle==='Shoulders' || workoutBuilder.selectedMuscle==='Biceps' || workoutBuilder.selectedMuscle==='Triceps'">
                         <div class="space-y-5">
                             <div x-show="!workoutBuilder.exerciseSearch && builderRecentForMuscle.length>0">
                                 <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Recent</p>
@@ -1062,7 +1062,7 @@
                     </template>
 
                     <!-- ALL OTHER MUSCLES: existing simple row list, unchanged -->
-                    <template x-if="workoutBuilder.selectedMuscle!=='Chest' && workoutBuilder.selectedMuscle!=='Back' && workoutBuilder.selectedMuscle!=='Shoulders'">
+                    <template x-if="workoutBuilder.selectedMuscle!=='Chest' && workoutBuilder.selectedMuscle!=='Back' && workoutBuilder.selectedMuscle!=='Shoulders' && workoutBuilder.selectedMuscle!=='Biceps' && workoutBuilder.selectedMuscle!=='Triceps'">
                         <div class="space-y-5">
                             <!-- Recent (only shown when not searching) -->
                             <div x-show="!workoutBuilder.exerciseSearch && builderRecentForMuscle.length>0">
@@ -4124,6 +4124,22 @@ const EXERCISE_WORKOUT_ASSETS = {
     'Reverse Flyes':{folder:'shoulders', slug:'reverse_flyes'},
     'Shrugs':{folder:'shoulders', slug:'shrugs'},
     'Upright Row':{folder:'shoulders', slug:'upright_row'},
+    'Barbell Curl':{folder:'biceps', slug:'barbell_curl'},
+    'Cable Curl':{folder:'biceps', slug:'cable_curl'},
+    'Concentration Curl':{folder:'biceps', slug:'concentration_curl'},
+    'Dumbbell Curl':{folder:'biceps', slug:'dumbbell_curl'},
+    'EZ-Bar Curl':{folder:'biceps', slug:'ez_bar_curl'},
+    'Hammer Curl':{folder:'biceps', slug:'hammer_curl'},
+    'Incline Dumbbell Curl':{folder:'biceps', slug:'incline_dumbbell_curl'},
+    'Preacher Curl':{folder:'biceps', slug:'preacher_curl'},
+    'Tricep Pushdown':{folder:'triceps', slug:'tricep_pushdown'},
+    'Skull Crushers':{folder:'triceps', slug:'skull_crushers'},
+    'Close-Grip Bench Press':{folder:'triceps', slug:'close_grip_bench_press'},
+    'Tricep Dips':{folder:'triceps', slug:'tricep_dips'},
+    'Overhead Extension':{folder:'triceps', slug:'overhead_extension'},
+    'Diamond Push-Ups':{folder:'triceps', slug:'diamond_push_ups'},
+    'Cable Kickback':{folder:'triceps', slug:'cable_kickback'},
+    'Rope Pushdown':{folder:'triceps', slug:'rope_pushdown'},
 };
 function getExerciseWorkoutAssets(name) {
     const entry = EXERCISE_WORKOUT_ASSETS[name];
@@ -4205,6 +4221,70 @@ const EXERCISE_MUSCLE_LEGEND = {
     'Upright Row': {
         front: [ {color:LEGEND_COLORS.red, muscle:'Anterior Deltoids (Front Delts)'}, {color:LEGEND_COLORS.yellow, muscle:'Lateral Deltoids (Side Delts)'}, {color:LEGEND_COLORS.purple, muscle:'Upper Trapezius (Traps)'} ],
         back: [ {color:LEGEND_COLORS.blue, muscle:'Posterior Deltoids (Rear Delts)'}, {color:LEGEND_COLORS.purple, muscle:'Upper Trapezius (Traps)'} ],
+    },
+    'Barbell Curl': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Biceps Brachii (Short & Long Head)'}, {color:LEGEND_COLORS.purple, muscle:'Brachialis'}, {color:LEGEND_COLORS.green, muscle:'Brachioradialis'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Brachialis (Visible Laterally)'}, {color:LEGEND_COLORS.blue, muscle:'Forearm Extensors (Wrist Extensors)'} ],
+    },
+    'Cable Curl': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Biceps Brachii (Short & Long Head)'}, {color:LEGEND_COLORS.purple, muscle:'Brachialis'}, {color:LEGEND_COLORS.green, muscle:'Brachioradialis'} ],
+        back: [ {color:LEGEND_COLORS.blue, muscle:'Forearm Extensors (Wrist Extensors)'} ],
+    },
+    'Concentration Curl': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Biceps Brachii (Short Head)'}, {color:LEGEND_COLORS.purple, muscle:'Brachialis'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Brachialis (Visible Laterally)'}, {color:LEGEND_COLORS.blue, muscle:'Forearm Extensors (Wrist Extensors)'} ],
+    },
+    'Dumbbell Curl': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Biceps Brachii (Short & Long Head)'}, {color:LEGEND_COLORS.purple, muscle:'Brachialis'}, {color:LEGEND_COLORS.green, muscle:'Brachioradialis'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Brachialis (Visible Laterally)'}, {color:LEGEND_COLORS.blue, muscle:'Brachioradialis / Forearm Extensors'} ],
+    },
+    'EZ-Bar Curl': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Biceps Brachii (Short & Long Head)'}, {color:LEGEND_COLORS.purple, muscle:'Brachialis'}, {color:LEGEND_COLORS.green, muscle:'Brachioradialis'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Brachialis (Visible Laterally)'}, {color:LEGEND_COLORS.blue, muscle:'Forearm Extensors (Wrist Extensors)'} ],
+    },
+    'Hammer Curl': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Biceps Brachii (Short & Long Head)'}, {color:LEGEND_COLORS.purple, muscle:'Brachialis'}, {color:LEGEND_COLORS.green, muscle:'Brachioradialis'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Brachialis (Visible Laterally)'}, {color:LEGEND_COLORS.blue, muscle:'Forearm Extensors (Wrist Extensors)'} ],
+    },
+    'Incline Dumbbell Curl': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Biceps Brachii (Short & Long Head)'}, {color:LEGEND_COLORS.purple, muscle:'Brachialis'}, {color:LEGEND_COLORS.green, muscle:'Brachioradialis'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Brachialis (Visible Laterally)'}, {color:LEGEND_COLORS.blue, muscle:'Forearm Extensors (Wrist Extensors)'} ],
+    },
+    'Preacher Curl': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Biceps Brachii (Short & Long Head)'}, {color:LEGEND_COLORS.purple, muscle:'Brachialis'}, {color:LEGEND_COLORS.green, muscle:'Brachioradialis'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Brachialis (Visible Laterally)'}, {color:LEGEND_COLORS.blue, muscle:'Forearm Extensors (Wrist Extensors)'} ],
+    },
+    'Tricep Pushdown': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Triceps Brachii (All Heads)'} ],
+        back: [ {color:LEGEND_COLORS.blue, muscle:'Triceps Brachii (Long Head)'} ],
+    },
+    'Skull Crushers': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Triceps Brachii (All Heads)'} ],
+        back: [ {color:LEGEND_COLORS.blue, muscle:'Triceps Brachii (Long Head)'} ],
+    },
+    'Close-Grip Bench Press': {
+        front: [ {color:LEGEND_COLORS.blue, muscle:'Pectoralis Major (Inner Chest)'}, {color:LEGEND_COLORS.red, muscle:'Triceps Brachii'} ],
+        back: [ {color:LEGEND_COLORS.blue, muscle:'Triceps Brachii'} ],
+    },
+    'Tricep Dips': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Triceps Brachii (All Heads)'} ],
+        back: [ {color:LEGEND_COLORS.blue, muscle:'Triceps Brachii (Long Head)'} ],
+    },
+    'Overhead Extension': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Triceps Brachii (All Heads)'} ],
+        back: [ {color:LEGEND_COLORS.blue, muscle:'Triceps Brachii (Long Head)'} ],
+    },
+    'Diamond Push-Ups': {
+        front: [ {color:LEGEND_COLORS.blue, muscle:'Pectoralis Major (Inner Chest)'}, {color:LEGEND_COLORS.red, muscle:'Triceps Brachii'} ],
+        back: [ {color:LEGEND_COLORS.blue, muscle:'Triceps Brachii (Visible Laterally)'} ],
+    },
+    'Cable Kickback': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Triceps Brachii'} ],
+        back: [ {color:LEGEND_COLORS.blue, muscle:'Triceps Brachii'} ],
+    },
+    'Rope Pushdown': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Triceps Brachii (All Heads)'} ],
+        back: [ {color:LEGEND_COLORS.blue, muscle:'Triceps Brachii (Long Head)'} ],
     },
 };
 function getExerciseMuscleLegend(name) { return EXERCISE_MUSCLE_LEGEND[name] || null; }
