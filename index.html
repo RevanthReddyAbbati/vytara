@@ -380,7 +380,7 @@
 
         <nav class="space-y-0.5 flex-1">
             <template x-for="tab in sidebarTabs" :key="tab.id">
-                <button @click="switchTab(tab.id);mobileMenuOpen=false" :class="activeTab===tab.id?'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold':'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-xs uppercase tracking-wider transition-all">
+                <button @click="switchTab(tab.id);if(!tourActive)mobileMenuOpen=false" :data-tour="'nav-'+tab.id" :class="activeTab===tab.id?'bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-white font-bold':'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30'" class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-xs uppercase tracking-wider transition-all">
                     <span class="shrink-0 w-5 h-5 flex items-center justify-center" x-html="getNavIcon(tab.icon,activeTab===tab.id)"></span>
                     <span x-text="tab.label" class="flex-1"></span>
                     <span x-show="tab.id==='challenges'&&challenges.length>0" class="text-[9px] bg-brand-500 text-white rounded-full px-1.5 py-0.5 font-black" x-text="challenges.length"></span>
@@ -392,7 +392,7 @@
             <button @click="openModal('modalWater');mobileMenuOpen=false" class="w-full bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 font-black py-3 rounded-xl text-xs tracking-widest uppercase transition-all">💧 Log Water</button>
             <button @click="openModal('modalDiet');mobileMenuOpen=false" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-black py-3 rounded-xl text-xs tracking-widest uppercase transition-all shadow-md">Add Nutrition Log</button>
             <button @click="openModal('modalMetrics');mobileMenuOpen=false" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-black py-3 rounded-xl text-xs tracking-widest uppercase transition-all">Add Body Metrics</button>
-            <button @click="openModal('modalWorkout');mobileMenuOpen=false" class="w-full border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-black py-3 rounded-xl text-xs tracking-widest uppercase transition-all">Add Workout</button>
+            <button @click="openModal('modalWorkout');mobileMenuOpen=false" data-tour="add-workout-btn" class="w-full border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-black py-3 rounded-xl text-xs tracking-widest uppercase transition-all">Add Workout</button>
             <div class="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
                 <p x-show="firebaseUser" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate px-1" x-text="firebaseUser?'☁ '+firebaseUser.email:''"></p>
                 <p x-show="!firebaseUser" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">⚡ Local mode</p>
@@ -469,6 +469,7 @@
                 <span x-show="googleFitSyncing">Syncing…</span>
             </button>
         </div>
+        <p x-show="googleFitLastError" class="text-[10px] text-red-400 font-bold" x-text="googleFitLastError"></p>
         <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
             <div class="bg-emerald-500/8 border border-emerald-500/15 rounded-xl p-3 text-center">
                 <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Steps</p>
@@ -2634,12 +2635,16 @@
 
     <!-- Quick Start -->
     <div class="bg-gradient-to-r from-brand-500/10 to-purple-500/5 border border-brand-500/20 rounded-[1.5rem] p-6 space-y-3">
-        <h3 class="text-sm font-black text-brand-400 uppercase tracking-widest">⚡ Quick Start — 3 Steps</h3>
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+            <h3 class="text-sm font-black text-brand-400 uppercase tracking-widest">⚡ Quick Start — 3 Steps</h3>
+            <button @click="startTourGuide()" class="shrink-0 bg-brand-500 hover:bg-brand-600 text-white font-black py-2 px-4 rounded-xl text-[11px] uppercase tracking-wider shadow-md transition-all flex items-center gap-1.5">🧭 Take the Interactive Tour</button>
+        </div>
         <ol class="space-y-2">
             <li class="flex gap-3 items-start"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-[10px] font-black flex items-center justify-center">1</span><p class="text-xs text-slate-600 dark:text-slate-300 font-medium">Complete onboarding — enter name, weight, height, age, and select your goals</p></li>
             <li class="flex gap-3 items-start"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-[10px] font-black flex items-center justify-center">2</span><p class="text-xs text-slate-600 dark:text-slate-300 font-medium">Log your first workout or meal using the sidebar or bottom navigation</p></li>
             <li class="flex gap-3 items-start"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-[10px] font-black flex items-center justify-center">3</span><p class="text-xs text-slate-600 dark:text-slate-300 font-medium">Sign in with email to sync your data across devices using Firebase cloud</p></li>
         </ol>
+        <p class="text-[10px] text-slate-400 font-medium">Prefer to explore hands-on? Click "Take the Interactive Tour" any time — it walks through every part of the app and can be cancelled instantly.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -2674,6 +2679,7 @@
             <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
                 <li>• <strong class="text-slate-800 dark:text-white">Log Meals</strong> — Click "+ Log Meal", choose a meal type (Breakfast, Lunch, Supplements…), add food items</li>
                 <li>• <strong class="text-slate-800 dark:text-white">✨ AI Search</strong> — Type a food name + quantity → click "AI Search" → Gemini AI auto-fills Calories, Protein, Carbs, Fat, Fibre</li>
+                <li>• <strong class="text-slate-800 dark:text-white">📷 Scan Photo</strong> — Snap or upload a photo of your meal — Gemini AI identifies the food and estimates its nutrition automatically</li>
                 <li>• <strong class="text-slate-800 dark:text-white">Food Library</strong> — Save custom foods to your library. They appear in autocomplete next time</li>
                 <li>• <strong class="text-slate-800 dark:text-white">Meal Presets</strong> — Create preset meals in Settings for one-tap logging of regular meals</li>
                 <li>• <strong class="text-slate-800 dark:text-white">Units</strong> — Choose g, ml, pc (pieces), tablet, capsule, scoop etc. — great for supplements</li>
@@ -2731,9 +2737,29 @@
             <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
                 <li>• <strong class="text-slate-800 dark:text-white">Sign In</strong> — Use email + password to create an account. Your data syncs to Firebase and is available on any device</li>
                 <li>• <strong class="text-slate-800 dark:text-white">Continue Offline</strong> — You can use the app without an account. Data stays on this device only</li>
-                <li>• <strong class="text-slate-800 dark:text-white">🏃 Google Fit</strong> — In Settings → Google Fit, click "Sign in with Google" to sync steps, calories burned and active minutes from your Google account's Fit data</li>
+                <li>• <strong class="text-slate-800 dark:text-white">🏃 Google Fit</strong> — In Settings → Google Fit (or the Dashboard card), click "Sign in with Google" to sync steps, calories burned, active minutes, heart rate and sleep from your Google account's Fit data</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Stays Connected</strong> — Once connected, VYTARA silently refreshes your session in the background and keeps syncing automatically — no need to log in again until you manually disconnect</li>
                 <li>• <strong class="text-slate-800 dark:text-white">Why Google Sign-In?</strong> — Google Fit data is private to each user. Signing in lets the app read only YOUR Fit data with your permission — just like any fitness app</li>
                 <li>• <strong class="text-slate-800 dark:text-white">Privacy</strong> — Google Fit sign-in reads only YOUR personal step and activity data. The app never stores or shares it.</li>
+            </ul>
+        </div>
+
+        <!-- Profile -->
+        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm space-y-3">
+            <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">👤 Profile</h3>
+            <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                <li>• <strong class="text-slate-800 dark:text-white">Edit Profile</strong> — In Settings, click "✎ Edit Profile" to update your name, date of birth, gender, height and weight</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Dynamic Age</strong> — Set your Date of Birth once and your age updates automatically every year — no manual edits needed</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Profile Photo</strong> — Upload a picture, then drag to reposition and use the zoom slider to crop it — the circular frame shows a live preview of exactly how your avatar will look</li>
+            </ul>
+        </div>
+
+        <!-- Reports & Export -->
+        <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm space-y-3">
+            <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">📤 Reports & Export</h3>
+            <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                <li>• <strong class="text-slate-800 dark:text-white">Summary Reports</strong> — View workout and nutrition summaries over a custom date range</li>
+                <li>• <strong class="text-slate-800 dark:text-white">Export Data</strong> — Download your complete history as PDF, JSON or CSV for backups or sharing with a coach</li>
             </ul>
         </div>
 
@@ -2910,7 +2936,7 @@
 
 
 <!-- DIET LOG VIEW MODAL -->
-<div x-show="openModals.modalDietView && viewingDietLog"
+<div x-show="openModals.modalDietView && viewingDietLog" x-cloak
      x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
      x-transition:leave-end="opacity-0"
@@ -3156,7 +3182,7 @@
             <div class="space-y-1.5">
                 <label class="inline-block bg-brand-500/10 border border-brand-500/30 text-brand-400 font-black py-2 px-4 rounded-xl text-[11px] uppercase tracking-wider hover:bg-brand-500/20 transition-all cursor-pointer">
                     Change Photo
-                    <input type="file" accept="image/*" class="hidden" @change="uploadProfilePhoto($event.target.files[0])">
+                    <input type="file" accept="image/*" class="hidden" @change="openCropModal($event.target.files[0]); $event.target.value=''">
                 </label>
                 <button x-show="profileForm.photoUrl" @click="profileForm.photoUrl=''" class="block text-[10px] font-bold text-slate-400 hover:text-red-400">Remove photo</button>
             </div>
@@ -3184,6 +3210,42 @@
         <div class="flex gap-3 pt-1">
             <button @click="closeModal('modalProfile')" class="flex-1 border border-slate-200 dark:border-slate-700 font-black py-3 rounded-xl text-xs uppercase tracking-wider hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">Cancel</button>
             <button @click="saveProfile()" :disabled="!profileForm.name.trim()" class="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider shadow-md transition-all disabled:opacity-40">✓ Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- CROP PROFILE PHOTO MODAL -->
+<div x-show="cropModalOpen" x-cloak class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[95] flex items-center justify-center p-4">
+    <div @click.stop class="w-full max-w-sm bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[2rem] p-5 sm:p-6 shadow-2xl space-y-4">
+        <div class="flex justify-between items-start">
+            <div>
+                <h3 class="text-lg font-extrabold tracking-tight">Crop Photo</h3>
+                <p class="text-[11px] text-slate-400 font-medium">Drag to reposition · use the slider to zoom</p>
+            </div>
+            <button @click="cancelCrop()" class="text-slate-400 hover:text-slate-600 font-black text-lg leading-none">✕</button>
+        </div>
+
+        <div class="relative mx-auto select-none touch-none" style="width:280px;height:280px;"
+             @mousedown="startCropDrag($event)" @mousemove="onCropDrag($event)" @mouseup="endCropDrag()" @mouseleave="endCropDrag()"
+             @touchstart.prevent="startCropDrag($event)" @touchmove.prevent="onCropDrag($event)" @touchend="endCropDrag()">
+            <div class="absolute inset-0 overflow-hidden rounded-2xl bg-slate-900 cursor-move">
+                <img :src="cropSourceImage" @load="onCropImageLoad($event)" :style="cropImgStyle" class="absolute select-none pointer-events-none max-w-none" draggable="false">
+                <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(circle at center, transparent 0, transparent 138px, rgba(0,0,0,.6) 139px)"></div>
+                <div class="absolute rounded-full border-2 border-white/80 pointer-events-none" style="inset:2px;"></div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <span class="text-[10px] font-black text-slate-400 uppercase">Zoom</span>
+            <input type="range" min="1" max="3" step="0.01" x-model.number="cropZoom" @input="clampCropOffset()" class="flex-1">
+        </div>
+
+        <div class="flex gap-3 pt-1">
+            <button @click="cancelCrop()" class="flex-1 border border-slate-200 dark:border-slate-700 font-black py-3 rounded-xl text-xs uppercase tracking-wider hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">Cancel</button>
+            <button @click="applyCrop()" :disabled="profilePhotoUploading" class="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider shadow-md transition-all disabled:opacity-40">
+                <span x-show="!profilePhotoUploading">✓ Apply</span>
+                <span x-show="profilePhotoUploading">Applying…</span>
+            </button>
         </div>
     </div>
 </div>
@@ -3773,6 +3835,24 @@
     </table>
 </div>
 
+<!-- TOUR GUIDE OVERLAY -->
+<div x-show="tourActive && tourCurrentStep" x-cloak class="fixed inset-0 z-[300]">
+    <div class="absolute inset-0" @click="endTour()"></div>
+    <div class="absolute rounded-2xl ring-4 ring-brand-500 transition-all duration-300 pointer-events-none" style="box-shadow:0 0 0 9999px rgba(0,0,0,.7);" :style="tourHighlightStyle"></div>
+    <div @click.stop class="absolute bg-white dark:bg-panelDark border border-brand-500/40 rounded-2xl shadow-2xl p-5 space-y-3 transition-all duration-300" :style="tourTooltipStyle">
+        <div class="flex items-center justify-between gap-3">
+            <span class="text-[10px] font-black text-brand-400 uppercase tracking-widest" x-text="'Step '+(tourStepIndex+1)+' of '+tourSteps.length"></span>
+            <button @click="endTour()" class="text-slate-400 hover:text-slate-600 font-black text-[11px] uppercase tracking-wider">✕ Skip</button>
+        </div>
+        <h4 class="text-sm font-black" x-text="tourCurrentStep && tourCurrentStep.title"></h4>
+        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed" x-text="tourCurrentStep && tourCurrentStep.text"></p>
+        <div class="flex gap-2 pt-1">
+            <button x-show="tourStepIndex>0" @click="tourPrev()" class="flex-1 border border-slate-200 dark:border-slate-700 font-black py-2 rounded-lg text-[10px] uppercase tracking-wider hover:bg-slate-100 dark:hover:bg-slate-800">Back</button>
+            <button @click="tourNext()" class="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-black py-2 rounded-lg text-[10px] uppercase tracking-wider" x-text="tourStepIndex===tourSteps.length-1 ? '✓ Finish' : 'Next →'"></button>
+        </div>
+    </div>
+</div>
+
 <script>
 // ==================== CONSTANTS ====================
 const VAULT_KEY = 'vytara_v10_vault';
@@ -3794,6 +3874,22 @@ const GFIT_CLIENT_ID = localStorage.getItem('vytara_gfit_client') || '';
 const LEGACY_KEYS = ['vytara_v8_vault','vytara_v7_vault'];
 
 const SYSTEM_GOALS = ['Bulking','Cutting','Lean Bulk','Fat Loss','Body Recomposition','Maintain Weight','Build Muscle','Increase Strength','Improve Endurance','Lose Weight','Eat Healthier','Improve Flexibility','Better Sleep','Reduce Stress','Athletic Performance','Powerlifting','Bodybuilding','Cardio Fitness','Flexibility & Mobility','General Health'];
+
+// Usage tour — walks through the sidebar nav so every step targets an element
+// that's always present in the DOM, regardless of which tab is active.
+const TOUR_STEPS = [
+    {selector:'[data-tour="nav-dashboard"]', title:'📊 Dashboard', text:'Your daily overview — nutrition rings, workout & nutrition streak heatmaps, personal records, and live Google Fit stats all in one place.'},
+    {selector:'[data-tour="nav-workouts"]', title:'💪 Workouts', text:'Log sets, reps and weight for any exercise. Tap the ℹ️ info button on an exercise to see a muscle diagram and step-by-step form cues.'},
+    {selector:'[data-tour="nav-diet"]', title:'🥗 Nutrition', text:'Log meals manually, auto-fill macros with ✨ AI Search, or 📷 snap a photo of your food and let AI estimate the nutrition for you.'},
+    {selector:'[data-tour="nav-metrics"]', title:'📐 Body Metrics', text:'Track weight, body fat, sleep and stress over time — the chart updates automatically as you add entries.'},
+    {selector:'[data-tour="nav-goals"]', title:'🎯 Goals', text:'Pick a goal like Cutting or Build Muscle and get AI-recommended calorie and macro targets tailored to you.'},
+    {selector:'[data-tour="nav-photos"]', title:'📸 Progress Photos', text:'Upload dated progress photos to visually track your transformation over time.'},
+    {selector:'[data-tour="nav-reports"]', title:'📤 Reports & Export', text:'Generate summary reports for any date range and export your full history as PDF, JSON or CSV.'},
+    {selector:'[data-tour="nav-challenges"]', title:'⚡ Challenges', text:'Challenge a friend by email and compete on workouts, calories or volume — scores update live once signed in.'},
+    {selector:'[data-tour="nav-settings"]', title:'⚙️ Settings', text:'Edit your profile photo, name, DOB and body stats, connect Google Fit, manage your food library, and export your data — all from here.'},
+    {selector:'[data-tour="add-workout-btn"]', title:'➕ Quick Actions', text:'Use these shortcuts to log a workout, meal or body metric from anywhere in the app, without switching tabs.'},
+    {selector:'[data-tour="nav-guide"]', title:'📖 How to Use', text:'Come back to this page any time for the full written guide, or click "Take the Interactive Tour" again to replay this walkthrough.'},
+];
 
 const MOTIVATION_MSGS = [
     'Champions are built in the moments others choose to rest.',
@@ -3823,7 +3919,7 @@ const BUILTIN_EXERCISES = {
     'Biceps':['Barbell Curl','Dumbbell Curl','Hammer Curl','Preacher Curl','Concentration Curl','Cable Curl','Incline Dumbbell Curl','EZ-Bar Curl'],
     'Triceps':['Tricep Pushdown','Skull Crushers','Close-Grip Bench Press','Tricep Dips','Overhead Extension','Diamond Push-Ups','Cable Kickback','Rope Pushdown'],
     'Legs':['Squat','Leg Press','Lunges','Leg Extension','Leg Curl','Romanian Deadlift','Front Squat','Step-Ups'],
-    'Glutes':['Hip Thrust','Glute Bridge','Bulgarian Split Squat','Cable Kickback','Sumo Squat','Donkey Kicks','Clamshells','Lateral Band Walk'],
+    'Glutes':['Hip Thrust','Glute Bridge','Bulgarian Split Squat','Donkey Kicks'],
     'Core':['Plank','Crunches','Leg Raises','Russian Twists','Cable Crunch','Ab Wheel Rollout','Hanging Knee Raise','Side Plank'],
     'Calves':['Standing Calf Raise','Seated Calf Raise','Donkey Calf Raise','Single-Leg Calf Raise'],
     'Forearms':['Wrist Curls','Reverse Wrist Curls','Farmer\'s Walk','Plate Pinch','Bar Hang','Reverse Curl']
@@ -5229,6 +5325,24 @@ function vytaraApp() {
         },
         profileForm: { name:'', dob:'', gender:'', height:'', currentWeight:'', photoUrl:'' },
         profilePhotoUploading: false,
+        cropModalOpen: false,
+        cropSourceImage: '',
+        cropNaturalW: 0,
+        cropNaturalH: 0,
+        cropZoom: 1,
+        cropOffsetX: 0,
+        cropOffsetY: 0,
+        cropDragging: false,
+        cropDragStartX: 0,
+        cropDragStartY: 0,
+        cropOffsetStartX: 0,
+        cropOffsetStartY: 0,
+        cropContainerSize: 280,
+        tourActive: false,
+        tourStepIndex: 0,
+        tourSteps: TOUR_STEPS,
+        tourRect: null,
+        _tourWasMobileMenuOpen: false,
         workouts: [],
         dietLogs: [],
         metricsLogs: [],
@@ -5691,6 +5805,10 @@ function vytaraApp() {
             // 8. Render charts
             this.$nextTick(()=>{ this.generateHeatmapData(); this.$nextTick(()=>this.renderDataCharts()); });
             this._setupBackGuard();
+
+            // 9. Keep the tour spotlight aligned with its target on resize/scroll
+            window.addEventListener('resize', () => { if(this.tourActive) this._updateTourPosition(); });
+            window.addEventListener('scroll', () => { if(this.tourActive) this._updateTourPosition(); }, true);
         },
 
         _applyLoadedData(data) {
@@ -7128,17 +7246,146 @@ function vytaraApp() {
             };
             this.openModals.modalProfile = true;
         },
-        async uploadProfilePhoto(fileObj) {
+        openCropModal(fileObj) {
             if(!fileObj) return;
-            this.profilePhotoUploading = true;
             const reader = new FileReader();
-            reader.onload = async (e) => {
-                const compressed = await this.compressImage(e.target.result, 320, 0.8);
-                this.profileForm.photoUrl = compressed;
-                this.profilePhotoUploading = false;
+            reader.onload = (e) => {
+                this.cropSourceImage = e.target.result;
+                this.cropNaturalW = 0;
+                this.cropNaturalH = 0;
+                this.cropZoom = 1;
+                this.cropOffsetX = 0;
+                this.cropOffsetY = 0;
+                this.cropModalOpen = true;
             };
-            reader.onerror = () => { this.profilePhotoUploading = false; alert('Could not read that image.'); };
+            reader.onerror = () => alert('Could not read that image.');
             reader.readAsDataURL(fileObj);
+        },
+        onCropImageLoad(ev) {
+            this.cropNaturalW = ev.target.naturalWidth;
+            this.cropNaturalH = ev.target.naturalHeight;
+        },
+        get cropBaseScale() {
+            if(!this.cropNaturalW || !this.cropNaturalH) return 1;
+            return Math.max(this.cropContainerSize / this.cropNaturalW, this.cropContainerSize / this.cropNaturalH);
+        },
+        get cropDisplayScale() { return this.cropBaseScale * this.cropZoom; },
+        get cropImgStyle() {
+            const w = this.cropNaturalW * this.cropDisplayScale;
+            const h = this.cropNaturalH * this.cropDisplayScale;
+            const left = (this.cropContainerSize - w) / 2 + this.cropOffsetX;
+            const top  = (this.cropContainerSize - h) / 2 + this.cropOffsetY;
+            return `width:${w}px;height:${h}px;left:${left}px;top:${top}px;`;
+        },
+        clampCropOffset() {
+            const w = this.cropNaturalW * this.cropDisplayScale;
+            const h = this.cropNaturalH * this.cropDisplayScale;
+            const maxX = Math.max(0, (w - this.cropContainerSize) / 2);
+            const maxY = Math.max(0, (h - this.cropContainerSize) / 2);
+            this.cropOffsetX = Math.min(maxX, Math.max(-maxX, this.cropOffsetX));
+            this.cropOffsetY = Math.min(maxY, Math.max(-maxY, this.cropOffsetY));
+        },
+        startCropDrag(ev) {
+            this.cropDragging = true;
+            const p = ev.touches ? ev.touches[0] : ev;
+            this.cropDragStartX = p.clientX;
+            this.cropDragStartY = p.clientY;
+            this.cropOffsetStartX = this.cropOffsetX;
+            this.cropOffsetStartY = this.cropOffsetY;
+        },
+        onCropDrag(ev) {
+            if(!this.cropDragging) return;
+            const p = ev.touches ? ev.touches[0] : ev;
+            this.cropOffsetX = this.cropOffsetStartX + (p.clientX - this.cropDragStartX);
+            this.cropOffsetY = this.cropOffsetStartY + (p.clientY - this.cropDragStartY);
+            this.clampCropOffset();
+        },
+        endCropDrag() { this.cropDragging = false; },
+        cancelCrop() { this.cropModalOpen = false; this.cropSourceImage = ''; },
+        applyCrop() {
+            this.profilePhotoUploading = true;
+            const size = 320;
+            const canvas = document.createElement('canvas');
+            canvas.width = size; canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.onload = () => {
+                const scaleRatio = size / this.cropContainerSize;
+                const w = this.cropNaturalW * this.cropDisplayScale * scaleRatio;
+                const h = this.cropNaturalH * this.cropDisplayScale * scaleRatio;
+                const left = ((this.cropContainerSize - this.cropNaturalW * this.cropDisplayScale) / 2 + this.cropOffsetX) * scaleRatio;
+                const top  = ((this.cropContainerSize - this.cropNaturalH * this.cropDisplayScale) / 2 + this.cropOffsetY) * scaleRatio;
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.clip();
+                ctx.drawImage(img, left, top, w, h);
+                ctx.restore();
+                this.profileForm.photoUrl = canvas.toDataURL('image/jpeg', 0.85);
+                this.profilePhotoUploading = false;
+                this.cropModalOpen = false;
+                this.cropSourceImage = '';
+            };
+            img.onerror = () => { this.profilePhotoUploading = false; alert('Could not process that image.'); };
+            img.src = this.cropSourceImage;
+        },
+
+        // ==================== TOUR GUIDE ====================
+        startTourGuide() {
+            this.tourStepIndex = 0;
+            this.tourActive = true;
+            this._tourWasMobileMenuOpen = this.mobileMenuOpen;
+            this.mobileMenuOpen = true;
+            setTimeout(() => this._updateTourPosition(), 30);
+        },
+        tourNext() {
+            if(this.tourStepIndex >= this.tourSteps.length - 1) { this.endTour(); return; }
+            this.tourStepIndex++;
+            setTimeout(() => this._updateTourPosition(), 30);
+        },
+        tourPrev() {
+            if(this.tourStepIndex <= 0) return;
+            this.tourStepIndex--;
+            setTimeout(() => this._updateTourPosition(), 30);
+        },
+        endTour() {
+            this.tourActive = false;
+            this.tourRect = null;
+            this.mobileMenuOpen = this._tourWasMobileMenuOpen;
+        },
+        _updateTourPosition() {
+            const step = this.tourSteps[this.tourStepIndex];
+            if(!step) { this.tourRect = null; return; }
+            const el = document.querySelector(step.selector);
+            if(!el) { this.tourRect = null; return; }
+            el.scrollIntoView({block:'center', behavior:'smooth'});
+            const measure = () => {
+                const r = el.getBoundingClientRect();
+                this.tourRect = { top:r.top, left:r.left, width:r.width, height:r.height };
+            };
+            clearTimeout(this._tourPositionTimer);
+            this._tourPositionTimer = setTimeout(measure, 350);
+            // The sidebar slides in with a CSS transition on mobile — re-measure once
+            // it actually finishes so the spotlight isn't captured mid-animation.
+            const aside = document.querySelector('aside');
+            if(aside) aside.addEventListener('transitionend', measure, {once:true});
+        },
+        get tourCurrentStep() { return this.tourSteps[this.tourStepIndex] || null; },
+        get tourHighlightStyle() {
+            if(!this.tourRect) return 'display:none;';
+            const pad = 8;
+            return `top:${this.tourRect.top - pad}px;left:${this.tourRect.left - pad}px;width:${this.tourRect.width + pad*2}px;height:${this.tourRect.height + pad*2}px;`;
+        },
+        get tourTooltipStyle() {
+            const tooltipW = 300;
+            if(!this.tourRect) return `top:50%;left:50%;width:${tooltipW}px;transform:translate(-50%,-50%);`;
+            const vw = window.innerWidth, vh = window.innerHeight;
+            const spaceBelow = vh - (this.tourRect.top + this.tourRect.height);
+            let top = spaceBelow > 240 ? (this.tourRect.top + this.tourRect.height + 20) : Math.max(16, this.tourRect.top - 230);
+            top = Math.min(top, vh - 240);
+            const left = Math.min(Math.max(16, this.tourRect.left), vw - tooltipW - 16);
+            return `top:${top}px;left:${left}px;width:${tooltipW}px;`;
         },
         saveProfile() {
             if(!this.profileForm.name.trim()) { alert('Please enter your name.'); return; }
@@ -7839,16 +8086,19 @@ function vytaraApp() {
                     this.googleFitConnected = false;
                     this.googleFitAccessToken = null;
                     this.googleFitLastError = 'Your Google Fit session expired and could not be renewed silently. Click "Sign in with Google" to reconnect.';
+                    this.googleFitSyncing = false;
                     this.persist();
                     console.warn('[VYTARA] Google Fit token expired — please reconnect in Settings');
                     return;
                 }
                 if(res.status===403) {
                     this.googleFitLastError = 'Google denied access to Fitness data (permission denied). Reconnect and accept all requested permissions.';
+                    this.googleFitSyncing = false;
                     return;
                 }
                 if(!res.ok) {
                     this.googleFitLastError = 'Google Fit sync failed (HTTP '+res.status+'). Will retry on next sync.';
+                    this.googleFitSyncing = false;
                     return;
                 }
                 const data = await res.json();
