@@ -75,6 +75,28 @@
       </div>
     </div>
 
+    <!-- USAGE ANALYTICS -->
+    <div class="card space-y-4">
+      <div class="flex items-start justify-between">
+        <div>
+          <h2 class="font-black text-white flex items-center gap-2">📊 Usage Analytics</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Registered users and recent activity across the app</p>
+        </div>
+        <button class="btn-secondary" style="padding:6px 12px;font-size:10px;" onclick="loadUserStats()">↻ Refresh</button>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div style="background:#0a0f1e;border-radius:12px;padding:16px;" class="text-center">
+          <p id="statTotalUsers" class="text-3xl font-black text-blue-400">—</p>
+          <p class="text-[10px] font-black text-slate-500 uppercase tracking-wider mt-1">Registered Users</p>
+        </div>
+        <div style="background:#0a0f1e;border-radius:12px;padding:16px;" class="text-center">
+          <p id="statActiveUsers" class="text-3xl font-black text-emerald-400">—</p>
+          <p class="text-[10px] font-black text-slate-500 uppercase tracking-wider mt-1">Active (Last 7 Days)</p>
+        </div>
+      </div>
+      <p id="statsNote" class="text-[10px] text-slate-500 leading-relaxed"></p>
+    </div>
+
     <!-- GEMINI AI KEY -->
     <div class="card space-y-5">
       <div class="flex items-start justify-between">
@@ -188,7 +210,7 @@
 <script type="module">
 import { initializeApp }                    from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, deleteField } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc, deleteField, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js';
 
 const FB_CONFIG = {
     apiKey: 'AIzaSyAeHZRyQcAXAIKD2bW72IF_mEIIdCfH0dI',
@@ -257,7 +279,40 @@ async function initAdmin() {
     } catch(e) {
         document.getElementById('syncStatus').textContent = 'Firebase read error: ' + e.message;
     }
+    loadUserStats();
 }
+
+// ── USAGE ANALYTICS ───────────────────────────────────────
+// Counts docs in the `users` collection (one per user who has completed onboarding
+// at least once — index.html only creates this doc on first persist(), not at signup).
+// "Active" = wrote data (persistCloud's updatedAt, plain Date.now() epoch millis) within
+// the last 7 days. There's no per-user "last seen" beyond that write timestamp.
+window.loadUserStats = async function() {
+    const totalEl  = document.getElementById('statTotalUsers');
+    const activeEl = document.getElementById('statActiveUsers');
+    const noteEl   = document.getElementById('statsNote');
+    totalEl.textContent = '…';
+    activeEl.textContent = '…';
+    noteEl.textContent = '';
+    noteEl.className = 'text-[10px] text-slate-500 leading-relaxed';
+    try {
+        const snap = await getDocs(collection(db, 'users'));
+        const sevenDaysAgo = Date.now() - 7*24*60*60*1000;
+        let active = 0;
+        snap.forEach(docSnap => {
+            const u = docSnap.data();
+            if(typeof u.updatedAt === 'number' && u.updatedAt >= sevenDaysAgo) active++;
+        });
+        totalEl.textContent  = snap.size;
+        activeEl.textContent = active;
+        noteEl.textContent = 'Registered = users with a saved profile. Active = made a change in the last 7 days.';
+    } catch(e) {
+        totalEl.textContent = '—';
+        activeEl.textContent = '—';
+        noteEl.textContent = '⚠️ Could not load stats (' + e.message + '). This admin account likely needs Firestore rules allowing it to list the "users" collection — check the Firebase Console.';
+        noteEl.className = 'text-[10px] text-amber-400 leading-relaxed';
+    }
+};
 
 // ── GEMINI ─────────────────────────────────────────────────
 window.testGemini = async function() {

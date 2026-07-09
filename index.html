@@ -870,6 +870,29 @@
         </div>
     </div>
 
+    <!-- ============ WEEKLY WORKOUT PLAN ============ -->
+    <div x-show="!workoutBuilder.active" class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-5 sm:p-6 space-y-4">
+        <div>
+            <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">📅 Weekly Plan</h3>
+            <p class="text-xs text-slate-400 font-medium mt-1">Pre-plan exercises for each day of the week, then start that day's workout with one tap.</p>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            <template x-for="day in weekDays" :key="day">
+                <div class="rounded-2xl border p-3.5 flex flex-col gap-2 transition-all"
+                     :class="day===todayPlanDayKey?'border-brand-500/50 bg-brand-500/5':'border-slate-200 dark:border-slate-800'">
+                    <div class="flex items-center justify-between">
+                        <p class="text-[11px] font-black uppercase tracking-wider" :class="day===todayPlanDayKey?'text-brand-500':'text-slate-500 dark:text-slate-400'" x-text="day"></p>
+                        <button @click="openPlanDayModal(day)" class="text-slate-400 hover:text-brand-400 transition-colors text-xs" title="Edit day">✎</button>
+                    </div>
+                    <p class="text-xs font-extrabold text-slate-700 dark:text-slate-200 truncate" x-text="weeklyPlan[day].label || (weeklyPlan[day].exercises.length?'Planned':'Rest Day')"></p>
+                    <p class="text-[10px] text-slate-400 font-medium" x-text="weeklyPlan[day].exercises.length ? (weeklyPlan[day].exercises.length+' exercise'+(weeklyPlan[day].exercises.length>1?'s':'')) : 'No plan yet'"></p>
+                    <button x-show="day===todayPlanDayKey && weeklyPlan[day].exercises.length>0" @click="startPlannedWorkout(day)"
+                            class="mt-1 bg-brand-500 hover:bg-brand-600 text-white font-black py-2 rounded-lg text-[10px] uppercase tracking-wider shadow-sm transition-all">▶ Start Today's Workout</button>
+                </div>
+            </template>
+        </div>
+    </div>
+
     <!-- ============ INLINE WORKOUT BUILDER (Muscles -> Exercises -> Guide -> Log) ============ -->
     <template x-if="workoutBuilder.active">
         <div class="space-y-6">
@@ -948,7 +971,7 @@
                     </div>
 
                     <!-- CHEST, BACK, SHOULDERS, BICEPS & TRICEPS: compact professional rows on desktop, premium cards on mobile -->
-                    <template x-if="workoutBuilder.selectedMuscle==='Chest' || workoutBuilder.selectedMuscle==='Back' || workoutBuilder.selectedMuscle==='Shoulders' || workoutBuilder.selectedMuscle==='Biceps' || workoutBuilder.selectedMuscle==='Triceps'">
+                    <template x-if="workoutBuilder.selectedMuscle==='Chest' || workoutBuilder.selectedMuscle==='Back' || workoutBuilder.selectedMuscle==='Shoulders' || workoutBuilder.selectedMuscle==='Biceps' || workoutBuilder.selectedMuscle==='Triceps' || workoutBuilder.selectedMuscle==='Core' || workoutBuilder.selectedMuscle==='Legs' || workoutBuilder.selectedMuscle==='Glutes'">
                         <div class="space-y-5">
                             <div x-show="!workoutBuilder.exerciseSearch && builderRecentForMuscle.length>0">
                                 <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Recent</p>
@@ -1062,7 +1085,7 @@
                     </template>
 
                     <!-- ALL OTHER MUSCLES: existing simple row list, unchanged -->
-                    <template x-if="workoutBuilder.selectedMuscle!=='Chest' && workoutBuilder.selectedMuscle!=='Back' && workoutBuilder.selectedMuscle!=='Shoulders' && workoutBuilder.selectedMuscle!=='Biceps' && workoutBuilder.selectedMuscle!=='Triceps'">
+                    <template x-if="workoutBuilder.selectedMuscle!=='Chest' && workoutBuilder.selectedMuscle!=='Back' && workoutBuilder.selectedMuscle!=='Shoulders' && workoutBuilder.selectedMuscle!=='Biceps' && workoutBuilder.selectedMuscle!=='Triceps' && workoutBuilder.selectedMuscle!=='Core' && workoutBuilder.selectedMuscle!=='Legs' && workoutBuilder.selectedMuscle!=='Glutes'">
                         <div class="space-y-5">
                             <!-- Recent (only shown when not searching) -->
                             <div x-show="!workoutBuilder.exerciseSearch && builderRecentForMuscle.length>0">
@@ -3250,6 +3273,51 @@
     </div>
 </div>
 
+<!-- PLAN DAY MODAL -->
+<div x-show="openModals.modalPlanDay" x-cloak @click.self="openModals.modalPlanDay=false" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[90] flex items-start justify-center p-0 sm:p-4 overflow-y-auto">
+    <div @click.stop class="w-full max-w-lg bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-none sm:rounded-[2rem] p-5 sm:p-7 shadow-2xl space-y-5 sm:my-6 min-h-screen sm:min-h-0">
+        <div class="flex justify-between items-start">
+            <h3 class="text-xl font-extrabold tracking-tight" x-text="planDayFullName(planDayForm.day)+' Plan'"></h3>
+            <button @click="openModals.modalPlanDay=false" class="text-slate-400 hover:text-slate-600 font-black text-lg leading-none">✕</button>
+        </div>
+
+        <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Day Label (optional)</label>
+            <input type="text" x-model="planDayForm.label" placeholder="e.g. Push Day, Leg Day, Rest">
+        </div>
+
+        <div class="relative">
+            <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Add Exercise</label>
+            <input type="text" x-model="planDayForm.exerciseSearch" placeholder="Search exercises to add...">
+            <div x-show="planDaySearchResults.length>0" class="absolute z-10 mt-1 w-full bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden max-h-52 overflow-y-auto">
+                <template x-for="ex in planDaySearchResults" :key="ex">
+                    <button @click="addExerciseToPlanDay(ex)" class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-brand-500/10 transition-colors" x-text="ex"></button>
+                </template>
+            </div>
+        </div>
+
+        <div class="space-y-2">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest" x-text="planDayForm.exercises.length+' exercise'+(planDayForm.exercises.length===1?'':'s')+' planned'"></p>
+            <div x-show="planDayForm.exercises.length===0" class="p-4 text-center text-slate-400 text-xs font-medium border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">No exercises added yet — search above to add some.</div>
+            <div class="space-y-1.5">
+                <template x-for="(ex,exi) in planDayForm.exercises" :key="'plan-ex-'+ex">
+                    <div class="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                        <p class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate" x-text="ex"></p>
+                        <button @click="removeExerciseFromPlanDay(exi)" class="text-slate-400 hover:text-red-400 font-black text-sm shrink-0 transition-colors">✕</button>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <div class="flex gap-3 pt-1">
+            <button @click="clearPlanDay(planDayForm.day)" class="text-[11px] font-black text-red-400 hover:text-red-500 uppercase tracking-wider">Clear Day</button>
+            <div class="flex-1"></div>
+            <button @click="openModals.modalPlanDay=false" class="border border-slate-200 dark:border-slate-700 font-black py-3 px-5 rounded-xl text-xs uppercase tracking-wider hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">Cancel</button>
+            <button @click="savePlanDay()" class="bg-brand-500 hover:bg-brand-600 text-white font-black py-3 px-5 rounded-xl text-xs uppercase tracking-wider shadow-md transition-all">✓ Save Plan</button>
+        </div>
+    </div>
+</div>
+
 <!-- WATER MODAL -->
 <div x-show="openModals.modalWater" x-cloak @click.self="closeModal('modalWater')" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[80] flex items-end sm:items-center justify-center p-2 sm:p-4">
     <div @click.stop class="w-full max-w-md bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[2rem] rounded-b-none sm:rounded-[2rem] p-5 sm:p-6 shadow-2xl space-y-4">
@@ -3875,6 +3943,9 @@ const LEGACY_KEYS = ['vytara_v8_vault','vytara_v7_vault'];
 
 const SYSTEM_GOALS = ['Bulking','Cutting','Lean Bulk','Fat Loss','Body Recomposition','Maintain Weight','Build Muscle','Increase Strength','Improve Endurance','Lose Weight','Eat Healthier','Improve Flexibility','Better Sleep','Reduce Stress','Athletic Performance','Powerlifting','Bodybuilding','Cardio Fitness','Flexibility & Mobility','General Health'];
 
+const WEEK_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const WEEK_DAY_FULL = { Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday', Fri:'Friday', Sat:'Saturday', Sun:'Sunday' };
+
 // Usage tour — walks through the sidebar nav so every step targets an element
 // that's always present in the DOM, regardless of which tab is active.
 const TOUR_STEPS = [
@@ -3918,8 +3989,8 @@ const BUILTIN_EXERCISES = {
     'Shoulders':['Overhead Press','Shoulder Press','Dumbbell Lateral Raise','Front Raise','Arnold Press','Upright Row','Reverse Flyes','Shrugs','Cable Lateral Raise'],
     'Biceps':['Barbell Curl','Dumbbell Curl','Hammer Curl','Preacher Curl','Concentration Curl','Cable Curl','Incline Dumbbell Curl','EZ-Bar Curl'],
     'Triceps':['Tricep Pushdown','Skull Crushers','Close-Grip Bench Press','Tricep Dips','Overhead Extension','Diamond Push-Ups','Cable Kickback','Rope Pushdown'],
-    'Legs':['Squat','Leg Press','Lunges','Leg Extension','Leg Curl','Romanian Deadlift','Front Squat','Step-Ups'],
-    'Glutes':['Hip Thrust','Glute Bridge','Bulgarian Split Squat','Donkey Kicks'],
+    'Legs':['Squat','Leg Press','Lunges','Leg Extension','Leg Curl','Romanian Deadlift','Front Squat','Step-Ups','Bulgarian Split Squat','Goblet Squat','Hack Squat','Smith Machine Squat','Walking Lunges'],
+    'Glutes':['Hip Thrust','Glute Bridge','Bulgarian Split Squat','Donkey Kicks','Fire Hydrants','Frog Pumps','Hip Abduction Machine','Romanian Deadlift','Single Leg Glute Bridge','Sumo Squat','Step-Ups'],
     'Core':['Plank','Crunches','Leg Raises','Russian Twists','Cable Crunch','Ab Wheel Rollout','Hanging Knee Raise','Side Plank'],
     'Calves':['Standing Calf Raise','Seated Calf Raise','Donkey Calf Raise','Single-Leg Calf Raise'],
     'Forearms':['Wrist Curls','Reverse Wrist Curls','Farmer\'s Walk','Plate Pinch','Bar Hang','Reverse Curl']
@@ -3992,8 +4063,16 @@ const EXERCISE_INFO = {
 'Step-Ups':{primary:['Legs'],secondary:['Glutes','Core'],steps:['Stand in front of a bench or box at knee height.','Step one foot onto the bench, drive through that heel.','Bring other foot up to stand fully on the bench.','Step back down with control, one foot at a time.','Complete all reps on one leg before switching, or alternate.'],tip:'Keep chest up and push through the front heel, not the back foot. Focus on single-leg strength.'},
 'Bulgarian Split Squat':{primary:['Legs'],secondary:['Glutes','Core'],steps:['Stand 2-3 feet in front of a bench. Place rear foot on the bench.','Hold dumbbells or barbell. Front foot flat on the floor.','Lower your back knee toward the floor by bending both knees.','Lower until front thigh is parallel to the floor.','Drive up through front heel to return to starting position.'],tip:'One of the hardest leg exercises. Use bodyweight first to master balance, then add load.'},
 'Sumo Squat':{primary:['Legs'],secondary:['Glutes'],steps:['Stand with feet much wider than shoulder-width, toes pointed out 45 degrees.','Hold dumbbell or kettlebell in front, or barbell on back.','Keep chest tall, brace core.','Lower hips straight down between heels — not forward.','Drive through heels and squeeze glutes to stand.'],tip:'Wide stance targets inner thighs and glutes more than a standard squat.'},
+'Goblet Squat':{primary:['Legs'],secondary:['Glutes','Core'],steps:['Hold a single dumbbell or kettlebell vertically against your chest with both hands.','Stand with feet shoulder-width, toes slightly out.','Brace core and squat down, letting elbows track inside the knees.','Descend until thighs are at least parallel to the floor.','Drive through heels to stand back up, keeping the weight close to your chest.'],tip:'The front-loaded weight naturally keeps your torso upright — a great squat pattern to learn proper depth and bracing.'},
+'Hack Squat':{primary:['Legs'],secondary:['Glutes'],steps:['Position shoulders under the pads and feet shoulder-width on the platform.','Unlock the safety handles and brace your core.','Bend knees to lower the sled, keeping your back flat against the pad.','Descend until thighs are parallel to the platform, or as deep as mobility allows.','Drive through the whole foot to press back up without locking knees hard.'],tip:'Foot placement changes the emphasis — higher on the platform targets glutes/hamstrings more, lower targets quads.'},
+'Smith Machine Squat':{primary:['Legs'],secondary:['Glutes','Core'],steps:['Position the bar across your upper back/traps and unrack by rotating it free.','Set feet slightly forward of the bar path, shoulder-width apart.','Brace core and squat down, following the machine\'s fixed vertical path.','Descend until thighs are parallel to the floor.','Drive through heels to return to standing, then re-rack when finished.'],tip:'The fixed bar path removes the balance demand of a free squat — keep your foot position consistent every rep.'},
+'Walking Lunges':{primary:['Legs'],secondary:['Glutes','Core'],steps:['Stand tall holding dumbbells at your sides (or bodyweight only).','Step forward into a lunge, lowering the back knee toward the floor.','Instead of stepping back, push off the front foot to bring the back leg forward into the next lunge.','Continue alternating legs, moving forward with each rep.','Keep torso upright and core braced throughout the walk.'],tip:'The continuous forward motion adds a balance and coordination demand on top of the strength challenge — start with bodyweight to master the pattern.'},
 'Donkey Kicks':{primary:['Glutes'],secondary:[],steps:['Start on hands and knees, wrists under shoulders, knees under hips.','Keep core braced and back flat throughout.','Kick one leg up and back, keeping knee bent at 90 degrees.','Lift until thigh is parallel to floor and foot faces the ceiling.','Squeeze glute hard at the top, then lower back to start.'],tip:'Focus on squeezing the glute at the top, not how high you kick. Add ankle weights for more resistance.'},
 'Clamshells':{primary:['Glutes'],secondary:['Legs'],steps:['Lie on your side, knees bent at 90 degrees, hips stacked.','Place a resistance band above the knees (recommended).','Keep feet together. Rotate top knee upward like a clamshell opening.','Lift until top knee points toward the ceiling.','Lower slowly — resist the band on the way down.'],tip:'Excellent for hip abductor and glute medius activation. Common in warm-ups and rehabilitation.'},
+'Fire Hydrants':{primary:['Glutes'],secondary:['Core'],steps:['Start on hands and knees, wrists under shoulders, knees under hips.','Keep core braced and back flat throughout.','Lift one bent knee out to the side, keeping the 90-degree bend.','Raise until thigh is roughly parallel to floor, squeezing the glute.','Lower with control back to start. Complete reps, then switch sides.'],tip:'Keep your hips square to the floor throughout — rotating the torso to lift higher works around the glute instead of through it.'},
+'Frog Pumps':{primary:['Glutes'],secondary:[],steps:['Lie on your back, soles of feet together, knees dropped out to sides.','Keep feet close to glutes, forming a diamond shape with your legs.','Drive hips up by squeezing glutes, keeping feet together throughout.','Squeeze hard at the top for a full second.','Lower hips back down with control. Repeat.'],tip:'The wide knee position emphasizes the glute max through a shortened, high-tension range — quality of squeeze matters more than range of motion.'},
+'Hip Abduction Machine':{primary:['Glutes'],secondary:[],steps:['Sit in machine with back against pad, legs inside the padded levers.','Set weight and starting position so knees start together.','Push legs outward against resistance by contracting outer glutes.','Squeeze at full abduction for a second.','Return slowly to start under control. Do not let the weight stack slam.'],tip:'This isolates the gluteus medius/minimus — great for hip stability, but keep torso still and avoid leaning.'},
+'Single Leg Glute Bridge':{primary:['Glutes'],secondary:['Core'],steps:['Lie on back, knees bent, feet flat. Extend one leg straight out.','Keep the extended leg in line with your torso, hips level.','Drive through the grounded heel to lift hips off the floor.','Squeeze the working glute hard at the top — avoid hip rotation.','Lower with control. Complete all reps on one side before switching.'],tip:'Unilateral loading exposes side-to-side imbalances — if one hip drops, slow down and focus on keeping hips square.'},
 'Lateral Band Walk':{primary:['Glutes'],secondary:['Legs'],steps:['Place resistance band around ankles or just above knees.','Stand with feet hip-width apart, slight bend in knees.','Step sideways with one foot, maintaining tension on the band.','Bring other foot in, maintaining hip-width stance.','Walk 10-15 steps one direction, then reverse.'],tip:'Keep hips level and avoid tilting. The band should stay taut the entire time.'},
 'Russian Twists':{primary:['Core'],secondary:[],steps:['Sit on floor, knees bent, feet slightly elevated or flat.','Lean back slightly to about 45 degrees — engage core to hold.','Hold weight or clasp hands together.','Rotate torso to one side, bringing hands near the floor.','Rotate to other side. That is one rep.'],tip:'The rotation must come from the torso, not just the arms. Slower speed equals more core engagement.'},
 'Cable Crunch':{primary:['Core'],secondary:[],steps:['Kneel facing a high cable pulley with rope attachment.','Grip rope behind or at sides of head.','Round your lower back and crunch abs, pulling elbows toward knees.','Hold peak contraction for 1 second — focus on abs, not arms.','Return to start by extending the torso back up.'],tip:'The abs should do the work, not your arms pulling. Curl ribcage toward your hips.'},
@@ -4072,8 +4151,16 @@ const EXERCISE_META = {
     'Glute Bridge':{equipment:'Bodyweight',difficulty:'Beginner'},
     'Bulgarian Split Squat':{equipment:'Dumbbell',difficulty:'Advanced'},
     'Sumo Squat':{equipment:'Barbell',difficulty:'Intermediate'},
+    'Goblet Squat':{equipment:'Dumbbell',difficulty:'Beginner'},
+    'Hack Squat':{equipment:'Machine',difficulty:'Intermediate'},
+    'Smith Machine Squat':{equipment:'Machine',difficulty:'Beginner'},
+    'Walking Lunges':{equipment:'Dumbbell',difficulty:'Intermediate'},
     'Donkey Kicks':{equipment:'Bodyweight',difficulty:'Beginner'},
     'Clamshells':{equipment:'Bodyweight',difficulty:'Beginner'},
+    'Fire Hydrants':{equipment:'Bodyweight',difficulty:'Beginner'},
+    'Frog Pumps':{equipment:'Bodyweight',difficulty:'Beginner'},
+    'Hip Abduction Machine':{equipment:'Machine',difficulty:'Beginner'},
+    'Single Leg Glute Bridge':{equipment:'Bodyweight',difficulty:'Intermediate'},
     'Lateral Band Walk':{equipment:'Resistance Band',difficulty:'Beginner'},
     'Plank':{equipment:'Bodyweight',difficulty:'Beginner'},
     'Crunches':{equipment:'Bodyweight',difficulty:'Beginner'},
@@ -4140,6 +4227,26 @@ const EXERCISE_WORKOUT_ASSETS = {
     'Diamond Push-Ups':{folder:'triceps', slug:'diamond_push_ups'},
     'Cable Kickback':{folder:'triceps', slug:'cable_kickback'},
     'Rope Pushdown':{folder:'triceps', slug:'rope_pushdown'},
+    'Ab Wheel Rollout':{folder:'core', slug:'ab_wheel_rollout'},
+    'Cable Crunch':{folder:'core', slug:'cable_crunch'},
+    'Crunches':{folder:'core', slug:'crunches'},
+    'Hanging Knee Raise':{folder:'core', slug:'hanging_knee_raise'},
+    'Leg Raises':{folder:'core', slug:'leg_raises'},
+    'Plank':{folder:'core', slug:'plank'},
+    'Russian Twists':{folder:'core', slug:'russian_twists'},
+    'Side Plank':{folder:'core', slug:'side_plank'},
+    'Leg Curl':{folder:'legs', slug:'leg_curl'},
+    'Leg Extension':{folder:'legs', slug:'leg_extension'},
+    'Leg Press':{folder:'legs', slug:'leg_press'},
+    'Lunges':{folder:'legs', slug:'lunges'},
+    'Romanian Deadlift':{folder:'legs', slug:'romanian_deadlift'},
+    'Squat':{folder:'legs', slug:'squat'},
+    'Front Squat':{folder:'legs', slug:'front_squat'},
+    'Step-Ups':{folder:'legs', slug:'step_ups'},
+    'Bulgarian Split Squat':{folder:'legs', slug:'bulgarian_split_squat'},
+    'Donkey Kicks':{folder:'glutes', slug:'donkey_kicks'},
+    'Glute Bridge':{folder:'glutes', slug:'glute_bridge'},
+    'Hip Thrust':{folder:'glutes', slug:'hip_thrust'},
 };
 function getExerciseWorkoutAssets(name) {
     const entry = EXERCISE_WORKOUT_ASSETS[name];
@@ -4285,6 +4392,86 @@ const EXERCISE_MUSCLE_LEGEND = {
     'Rope Pushdown': {
         front: [ {color:LEGEND_COLORS.red, muscle:'Triceps Brachii (All Heads)'} ],
         back: [ {color:LEGEND_COLORS.blue, muscle:'Triceps Brachii (Long Head)'} ],
+    },
+    'Ab Wheel Rollout': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Rectus Abdominis'}, {color:LEGEND_COLORS.orange, muscle:'External Obliques'}, {color:LEGEND_COLORS.yellow, muscle:'Hip Flexors (Iliopsoas)'}, {color:LEGEND_COLORS.blue, muscle:'Serratus Anterior'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Latissimus Dorsi'}, {color:LEGEND_COLORS.red, muscle:'Erector Spinae'}, {color:LEGEND_COLORS.orange, muscle:'Teres Major'}, {color:LEGEND_COLORS.green, muscle:'Lower Trapezius'} ],
+    },
+    'Cable Crunch': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Rectus Abdominis (Primary)'}, {color:LEGEND_COLORS.orange, muscle:'External Obliques'}, {color:LEGEND_COLORS.yellow, muscle:'Internal Obliques'}, {color:LEGEND_COLORS.green, muscle:'Hip Flexors (Iliopsoas)'}, {color:LEGEND_COLORS.blue, muscle:'Tensor Fasciae Latae'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Erector Spinae'}, {color:LEGEND_COLORS.blue, muscle:'Latissimus Dorsi'}, {color:LEGEND_COLORS.orange, muscle:'Multifidus'}, {color:LEGEND_COLORS.green, muscle:'Gluteus Maximus'} ],
+    },
+    'Hanging Knee Raise': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Lower Rectus Abdominis (Primary)'}, {color:LEGEND_COLORS.orange, muscle:'External Obliques (Stabilizer)'}, {color:LEGEND_COLORS.yellow, muscle:'Iliopsoas (Hip Flexors — Primary)'}, {color:LEGEND_COLORS.green, muscle:'Tensor Fasciae Latae (Stabilizer)'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Latissimus Dorsi (Stabilizer)'}, {color:LEGEND_COLORS.blue, muscle:'Lower Trapezius (Stabilizer)'}, {color:LEGEND_COLORS.orange, muscle:'Erector Spinae (Stabilizer)'}, {color:LEGEND_COLORS.green, muscle:'Teres Major (Stabilizer)'} ],
+    },
+    'Leg Raises': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Lower Rectus Abdominis (Primary)'}, {color:LEGEND_COLORS.orange, muscle:'External Obliques (Stabilizer)'}, {color:LEGEND_COLORS.yellow, muscle:'Iliopsoas (Hip Flexors — Primary)'}, {color:LEGEND_COLORS.green, muscle:'Tensor Fasciae Latae (Stabilizer)'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Latissimus Dorsi (Stabilizer)'}, {color:LEGEND_COLORS.blue, muscle:'Lower Trapezius (Stabilizer)'}, {color:LEGEND_COLORS.orange, muscle:'Erector Spinae (Stabilizer)'}, {color:LEGEND_COLORS.green, muscle:'Teres Major (Stabilizer)'} ],
+    },
+    'Crunches': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Rectus Abdominis (Upper)'}, {color:LEGEND_COLORS.orange, muscle:'External Obliques'}, {color:LEGEND_COLORS.yellow, muscle:'Internal Obliques'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Erector Spinae (Spinal Stabilizers)'} ],
+    },
+    'Plank': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Rectus Abdominis'}, {color:LEGEND_COLORS.orange, muscle:'External Obliques'}, {color:LEGEND_COLORS.yellow, muscle:'Internal Obliques'}, {color:LEGEND_COLORS.blue, muscle:'Serratus Anterior'}, {color:LEGEND_COLORS.green, muscle:'Hip Flexors (Iliopsoas)'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Erector Spinae'}, {color:LEGEND_COLORS.blue, muscle:'Lower Trapezius'}, {color:LEGEND_COLORS.orange, muscle:'Multifidus'}, {color:LEGEND_COLORS.green, muscle:'Gluteus Maximus'}, {color:LEGEND_COLORS.yellow, muscle:'Gluteus Medius'} ],
+    },
+    'Russian Twists': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Rectus Abdominis'}, {color:LEGEND_COLORS.orange, muscle:'External Obliques'}, {color:LEGEND_COLORS.yellow, muscle:'Internal Obliques'}, {color:LEGEND_COLORS.green, muscle:'Hip Flexors (Iliopsoas)'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Erector Spinae'}, {color:LEGEND_COLORS.blue, muscle:'Latissimus Dorsi'}, {color:LEGEND_COLORS.orange, muscle:'Gluteus Medius'} ],
+    },
+    'Side Plank': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Rectus Abdominis (Obliques)'}, {color:LEGEND_COLORS.orange, muscle:'External Obliques'}, {color:LEGEND_COLORS.yellow, muscle:'Internal Obliques'}, {color:LEGEND_COLORS.green, muscle:'Hip Flexors (Iliopsoas)'}, {color:LEGEND_COLORS.blue, muscle:'Serratus Anterior'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Latissimus Dorsi'}, {color:LEGEND_COLORS.blue, muscle:'Lower Trapezius'}, {color:LEGEND_COLORS.orange, muscle:'Erector Spinae'}, {color:LEGEND_COLORS.green, muscle:'Gluteus Medius'} ],
+    },
+    'Leg Curl': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Hamstrings (Biceps Femoris, Semitendinosus, Semimembranosus)'} ],
+        back: [ {color:LEGEND_COLORS.red, muscle:'Hamstrings (Biceps Femoris, Semitendinosus, Semimembranosus)'} ],
+    },
+    'Leg Extension': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Quadriceps (Rectus Femoris, Vastus Lateralis, Vastus Medialis, Vastus Intermedius)'} ],
+        back: [],
+    },
+    'Leg Press': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Rectus Femoris'}, {color:LEGEND_COLORS.orange, muscle:'Vastus Lateralis'}, {color:LEGEND_COLORS.yellow, muscle:'Vastus Medialis'}, {color:LEGEND_COLORS.purple, muscle:'Gluteus Maximus'}, {color:LEGEND_COLORS.green, muscle:'Gastrocnemius'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Gluteus Maximus'}, {color:LEGEND_COLORS.red, muscle:'Hamstrings (Biceps Femoris, Semitendinosus, Semimembranosus)'}, {color:LEGEND_COLORS.green, muscle:'Gastrocnemius'} ],
+    },
+    'Lunges': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Quadriceps (Rectus Femoris, Vastus Lateralis, Vastus Medialis, Vastus Intermedius)'}, {color:LEGEND_COLORS.green, muscle:'Gluteus Medius (Hip Stabilizer)'}, {color:LEGEND_COLORS.yellow, muscle:'Adductors (Adductor Longus, Adductor Magnus)'} ],
+        back: [ {color:LEGEND_COLORS.blue, muscle:'Gluteus Maximus (Primary)'}, {color:LEGEND_COLORS.red, muscle:'Hamstrings (Biceps Femoris, Semitendinosus, Semimembranosus)'}, {color:LEGEND_COLORS.purple, muscle:'Gastrocnemius (Calves)'} ],
+    },
+    'Romanian Deadlift': {
+        front: [ {color:LEGEND_COLORS.blue, muscle:'Adductors (Inner Thigh)'}, {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Erector Spinae (Lower Back)'}, {color:LEGEND_COLORS.orange, muscle:'Gluteus Maximus (Glutes)'}, {color:LEGEND_COLORS.red, muscle:'Hamstrings (Biceps Femoris, Semitendinosus, Semimembranosus)'}, {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'} ],
+    },
+    'Squat': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Quadriceps (Rectus Femoris, Vastus Lateralis, Vastus Medialis, Vastus Intermedius)'}, {color:LEGEND_COLORS.yellow, muscle:'Adductors (Inner Thighs)'}, {color:LEGEND_COLORS.orange, muscle:'Gluteus Medius (Hip Abductors)'}, {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Erector Spinae (Lower Back)'}, {color:LEGEND_COLORS.orange, muscle:'Gluteus Maximus (Glutes)'}, {color:LEGEND_COLORS.red, muscle:'Hamstrings (Biceps Femoris, Semitendinosus, Semimembranosus)'}, {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'} ],
+    },
+    'Front Squat': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Quadriceps (Rectus Femoris, Vastus Lateralis, Vastus Medialis, Vastus Intermedius)'}, {color:LEGEND_COLORS.orange, muscle:'Adductors (Inner Thighs)'}, {color:LEGEND_COLORS.yellow, muscle:'Vastus Medialis (Inner Quad)'}, {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'} ],
+        back: [ {color:LEGEND_COLORS.purple, muscle:'Erector Spinae (Lower Back)'}, {color:LEGEND_COLORS.orange, muscle:'Gluteus Maximus (Glutes)'}, {color:LEGEND_COLORS.red, muscle:'Hamstrings (Biceps Femoris, Semitendinosus, Semimembranosus)'}, {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'} ],
+    },
+    'Step-Ups': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Quadriceps (Rectus Femoris, Vastus Lateralis, Vastus Medialis, Vastus Intermedius)'}, {color:LEGEND_COLORS.orange, muscle:'Gluteus Medius (Hip Abductors)'}, {color:LEGEND_COLORS.yellow, muscle:'Adductors (Inner Thigh)'}, {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'} ],
+        back: [ {color:LEGEND_COLORS.red, muscle:'Gluteus Maximus (Glutes)'}, {color:LEGEND_COLORS.purple, muscle:'Hamstrings (Biceps Femoris, Semitendinosus, Semimembranosus)'}, {color:LEGEND_COLORS.orange, muscle:'Gluteus Medius (Hip Abductors)'}, {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'} ],
+    },
+    'Bulgarian Split Squat': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Quadriceps (Rectus Femoris, Vastus Lateralis, Vastus Medialis, Vastus Intermedius)'}, {color:LEGEND_COLORS.orange, muscle:'Gluteus Medius (Hip Abductors)'}, {color:LEGEND_COLORS.yellow, muscle:'Adductors (Inner Thigh)'}, {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'} ],
+        back: [ {color:LEGEND_COLORS.orange, muscle:'Gluteus Maximus'}, {color:LEGEND_COLORS.red, muscle:'Hamstrings (Biceps Femoris, Semitendinosus, Semimembranosus)'}, {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'} ],
+    },
+    'Donkey Kicks': {
+        front: [ {color:LEGEND_COLORS.orange, muscle:'Gluteus Medius (Hip Abductors)'}, {color:LEGEND_COLORS.red, muscle:'Tensor Fasciae Latae (TFL)'}, {color:LEGEND_COLORS.yellow, muscle:'Rectus Femoris (Hip Flexor)'}, {color:LEGEND_COLORS.purple, muscle:'Vastus Lateralis (Outer Quad)'}, {color:LEGEND_COLORS.green, muscle:'Vastus Medialis (Inner Quad)'} ],
+        back: [ {color:LEGEND_COLORS.orange, muscle:'Gluteus Maximus (Glutes)'}, {color:LEGEND_COLORS.red, muscle:'Hamstrings (Biceps Femoris, Semitendinosus, Semimembranosus)'}, {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'} ],
+    },
+    'Glute Bridge': {
+        front: [ {color:LEGEND_COLORS.orange, muscle:'Gluteus Medius (Hip Abductors)'}, {color:LEGEND_COLORS.green, muscle:'Adductors (Inner Thigh)'}, {color:LEGEND_COLORS.red, muscle:'Quadriceps'} ],
+        back: [ {color:LEGEND_COLORS.orange, muscle:'Gluteus Maximus (Glutes)'}, {color:LEGEND_COLORS.red, muscle:'Hamstrings (Biceps Femoris, Semitendinosus, Semimembranosus)'}, {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'} ],
+    },
+    'Hip Thrust': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Hip Flexors (Iliopsoas)'}, {color:LEGEND_COLORS.yellow, muscle:'Adductors (Inner Thighs)'}, {color:LEGEND_COLORS.purple, muscle:'Quadriceps (Front Thighs)'}, {color:LEGEND_COLORS.green, muscle:'Calves (Gastrocnemius)'} ],
+        back: [ {color:LEGEND_COLORS.orange, muscle:'Gluteus Maximus (Glutes)'}, {color:LEGEND_COLORS.red, muscle:'Hamstrings (Biceps Femoris, Semitendinosus, Semimembranosus)'}, {color:LEGEND_COLORS.green, muscle:'Calves (Gastrocnemius)'} ],
     },
 };
 function getExerciseMuscleLegend(name) { return EXERCISE_MUSCLE_LEGEND[name] || null; }
@@ -5438,11 +5625,13 @@ function vytaraApp() {
         historyFilters: { search:'', muscle:'', exercise:'' },
         calendarMonth: '',
         challenges: [],
+        weeklyPlan: { Mon:{label:'',exercises:[]}, Tue:{label:'',exercises:[]}, Wed:{label:'',exercises:[]}, Thu:{label:'',exercises:[]}, Fri:{label:'',exercises:[]}, Sat:{label:'',exercises:[]}, Sun:{label:'',exercises:[]} },
+        planDayForm: { day:'', label:'', exercises:[], exerciseSearch:'' },
         reportRange: { from:'', to:'' },
         filters: { workoutsFrom:'', workoutsTo:'', dietFrom:'', dietTo:'', metricsFrom:'', metricsTo:'' },
         dashboardDate: '',
         mealHistory: [],
-        openModals: { modalWater:false, modalDiet:false, modalMetrics:false, modalWorkout:false, foodEditModal:false, modalDietView:false, modalCustomExercise:false, modalProfile:false },
+        openModals: { modalWater:false, modalDiet:false, modalMetrics:false, modalWorkout:false, foodEditModal:false, modalDietView:false, modalCustomExercise:false, modalProfile:false, modalPlanDay:false },
         heatmapDays: [],
         heatmapMonthLabels: [],
         currentStreak: 0,
@@ -5561,6 +5750,13 @@ function vytaraApp() {
                 .map(ex=>({ex, score:words.reduce((s,w)=>s+(ex.toLowerCase().includes(w)?1:0),0)}))
                 .filter(r=>r.score>0).sort((a,b)=>b.score-a.score);
             return scored.slice(0,3).map(r=>r.ex);
+        },
+        get planDaySearchResults() {
+            const q=(this.planDayForm.exerciseSearch||'').toLowerCase().trim();
+            if(!q) return [];
+            return this.allExerciseNames
+                .filter(ex=>!this.planDayForm.exercises.includes(ex) && ex.toLowerCase().includes(q))
+                .sort().slice(0,8);
         },
         get recentExercises() {
             const seen=new Set(), out=[];
@@ -5911,6 +6107,8 @@ function vytaraApp() {
             this.strengthGoals = s.strengthGoals||[];
             this.goalTargets = s.goalTargets||{ workoutFrequencyPerWeek:'', streakTarget:'' };
             this.challenges = s.challenges||[];
+            const blankPlanDay = () => ({label:'',exercises:[]});
+            this.weeklyPlan = {Mon:blankPlanDay(),Tue:blankPlanDay(),Wed:blankPlanDay(),Thu:blankPlanDay(),Fri:blankPlanDay(),Sat:blankPlanDay(),Sun:blankPlanDay(),...(s.weeklyPlan||{})};
             this.mealHistory       = s.mealHistory||[];
             this.foodDatabase      = s.foodDatabase||[];
             // Restore Google Fit session
@@ -6287,7 +6485,7 @@ function vytaraApp() {
         },
 
         persist() {
-            const data = { profile:this.profile, workouts:this.workouts, dietLogs:this.dietLogs, metricsLogs:this.metricsLogs, waterLogs:this.waterLogs, photos:this.photos.map(p=>({...p,url:p.storagePath?undefined:p.url,data:p.storagePath?undefined:p.url})), customGoals:this.customGoals, customExercises:this.customExercises, favoriteExercises:this.favoriteExercises, strengthGoals:this.strengthGoals, goalTargets:this.goalTargets, challenges:this.challenges, mealHistory:this.mealHistory, foodDatabase:this.foodDatabase, googleFitConnected:this.googleFitConnected, googleFitAccessToken:this.googleFitAccessToken, googleFitData:this.googleFitData };
+            const data = { profile:this.profile, workouts:this.workouts, dietLogs:this.dietLogs, metricsLogs:this.metricsLogs, waterLogs:this.waterLogs, photos:this.photos.map(p=>({...p,url:p.storagePath?undefined:p.url,data:p.storagePath?undefined:p.url})), customGoals:this.customGoals, customExercises:this.customExercises, favoriteExercises:this.favoriteExercises, strengthGoals:this.strengthGoals, goalTargets:this.goalTargets, challenges:this.challenges, mealHistory:this.mealHistory, foodDatabase:this.foodDatabase, googleFitConnected:this.googleFitConnected, googleFitAccessToken:this.googleFitAccessToken, googleFitData:this.googleFitData, weeklyPlan:this.weeklyPlan };
             localStorage.setItem(VAULT_KEY, JSON.stringify(data));
             if(this.firebaseUser&&window._fb) this.persistCloud(data);
             this.generateHeatmapData();
@@ -7009,6 +7207,43 @@ function vytaraApp() {
             };
             this.saveWorkoutLog();
             this.workoutBuilder.active=false;
+        },
+
+        // ==================== WEEKLY WORKOUT PLAN ====================
+        weekDays: WEEK_DAYS,
+        get todayPlanDayKey() { return WEEK_DAYS[(new Date().getDay()+6)%7]; },
+        planDayFullName(day) { return WEEK_DAY_FULL[day]||day; },
+        openPlanDayModal(day) {
+            const existing = this.weeklyPlan[day] || {label:'',exercises:[]};
+            this.planDayForm = { day, label:existing.label||'', exercises:[...existing.exercises], exerciseSearch:'' };
+            this.openModals.modalPlanDay = true;
+        },
+        addExerciseToPlanDay(name) {
+            if(!name || this.planDayForm.exercises.includes(name)) return;
+            this.planDayForm.exercises.push(name);
+            this.planDayForm.exerciseSearch='';
+        },
+        removeExerciseFromPlanDay(idx) { this.planDayForm.exercises.splice(idx,1); },
+        savePlanDay() {
+            const day = this.planDayForm.day;
+            if(!day) return;
+            this.weeklyPlan[day] = { label:this.planDayForm.label.trim(), exercises:[...this.planDayForm.exercises] };
+            this.persist();
+            this.openModals.modalPlanDay = false;
+        },
+        clearPlanDay(day) {
+            if(!confirm('Clear the plan for '+this.planDayFullName(day)+'?')) return;
+            this.weeklyPlan[day] = {label:'',exercises:[]};
+            this.persist();
+        },
+        // Seeds the inline workout builder with every exercise already planned for a day,
+        // landing straight on the logging step — mirrors builderStartLogging()'s push shape
+        // for each exercise instead of routing through the single-exercise guide flow.
+        startPlannedWorkout(day) {
+            const plan = this.weeklyPlan[day];
+            if(!plan || plan.exercises.length===0) return;
+            this.workoutBuilder = { active:true, step:'log', date:this.getToday(), duration:'', selectedMuscle:'', exerciseSearch:'', equipmentFilter:'', activeExercise:'', guideTab:'overview', notes:'',
+                variations: plan.exercises.map(exercise=>({exercise, exerciseNotes:'', sets:[blankSet()]})) };
         },
         // Single source of truth for per-exercise history stats — real data only, empty state (null) if none.
         getExerciseStats(name) {
