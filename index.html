@@ -458,18 +458,25 @@
     <!-- Water + Nutrition Progress Row -->
     <!-- Google Fit Live Data (shown when connected) -->
     <div x-show="googleFitConnected" class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-[1.5rem] p-5 shadow-sm space-y-3">
-        <div class="flex items-center justify-between">
-            <p class="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
-                Google Fit — Today
+        <div class="flex items-center justify-between flex-wrap gap-2">
+            <p class="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
+               :class="googleFitNeedsReauth?'text-amber-400':'text-emerald-400'">
+                <span class="w-1.5 h-1.5 rounded-full inline-block"
+                      :class="googleFitNeedsReauth?'bg-amber-400':'bg-emerald-400 animate-pulse'"></span>
+                <span x-show="googleFitReconnecting">Reconnecting…</span>
+                <span x-show="!googleFitReconnecting">Google Fit — Today</span>
             </p>
-            <button @click="syncGoogleFitData()" :disabled="googleFitSyncing"
-                    class="text-[9px] font-black text-slate-400 hover:text-emerald-400 transition-colors">
-                <span x-show="!googleFitSyncing">🔄 Sync</span>
-                <span x-show="googleFitSyncing">Syncing…</span>
-            </button>
+            <div class="flex items-center gap-2.5">
+                <span class="text-[9px] font-bold text-slate-400" x-show="!googleFitNeedsReauth" x-text="'Last synced '+googleFitLastSyncedLabel"></span>
+                <button x-show="googleFitNeedsReauth" @click="connectGoogleFit()" class="text-[9px] font-black text-amber-400 hover:text-amber-500 transition-colors">↻ Reconnect</button>
+                <button x-show="!googleFitNeedsReauth" @click="syncGoogleFitData()" :disabled="googleFitSyncing || googleFitReconnecting"
+                        class="text-[9px] font-black text-slate-400 hover:text-emerald-400 transition-colors">
+                    <span x-show="!googleFitSyncing">🔄 Sync</span>
+                    <span x-show="googleFitSyncing">Syncing…</span>
+                </button>
+            </div>
         </div>
-        <p x-show="googleFitLastError" class="text-[10px] text-red-400 font-bold" x-text="googleFitLastError"></p>
+        <p x-show="googleFitLastError" class="text-[10px] font-bold" :class="googleFitNeedsReauth?'text-amber-400':'text-red-400'" x-text="googleFitLastError"></p>
         <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
             <div class="bg-emerald-500/8 border border-emerald-500/15 rounded-xl p-3 text-center">
                 <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Steps</p>
@@ -878,16 +885,56 @@
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
             <template x-for="day in weekDays" :key="day">
-                <div class="rounded-2xl border p-3.5 flex flex-col gap-2 transition-all"
-                     :class="day===todayPlanDayKey?'border-brand-500/50 bg-brand-500/5':'border-slate-200 dark:border-slate-800'">
-                    <div class="flex items-center justify-between">
-                        <p class="text-[11px] font-black uppercase tracking-wider" :class="day===todayPlanDayKey?'text-brand-500':'text-slate-500 dark:text-slate-400'" x-text="day"></p>
-                        <button @click="openPlanDayModal(day)" class="text-slate-400 hover:text-brand-400 transition-colors text-xs" title="Edit day">✎</button>
+                <div @click="openPlanDayModal(day)"
+                     class="rounded-2xl border overflow-hidden flex flex-col cursor-pointer group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+                     :class="day===todayPlanDayKey ? 'border-brand-500/60 bg-brand-500/[0.04] ring-1 ring-brand-500/20' : 'border-slate-200 dark:border-slate-800 hover:border-brand-500/30'">
+                    <!-- Header -->
+                    <div class="px-3.5 pt-3.5 pb-2 flex items-center justify-between gap-1.5">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <span class="text-base leading-none shrink-0" x-text="planDayIcon(day)"></span>
+                            <p class="text-[11px] font-black uppercase tracking-wider truncate" :class="day===todayPlanDayKey?'text-brand-500':'text-slate-500 dark:text-slate-400'" x-text="day"></p>
+                            <span x-show="day===todayPlanDayKey" class="shrink-0 text-[7px] font-black uppercase tracking-wider bg-brand-500 text-white px-1.5 py-0.5 rounded-full">Today</span>
+                        </div>
+                        <button @click.stop="openPlanDayModal(day)" class="shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-brand-400 transition-colors text-xs" title="Edit day">✎</button>
                     </div>
-                    <p class="text-xs font-extrabold text-slate-700 dark:text-slate-200 truncate" x-text="weeklyPlan[day].label || (weeklyPlan[day].exercises.length?'Planned':'Rest Day')"></p>
-                    <p class="text-[10px] text-slate-400 font-medium" x-text="weeklyPlan[day].exercises.length ? (weeklyPlan[day].exercises.length+' exercise'+(weeklyPlan[day].exercises.length>1?'s':'')) : 'No plan yet'"></p>
-                    <button x-show="day===todayPlanDayKey && weeklyPlan[day].exercises.length>0" @click="startPlannedWorkout(day)"
-                            class="mt-1 bg-brand-500 hover:bg-brand-600 text-white font-black py-2 rounded-lg text-[10px] uppercase tracking-wider shadow-sm transition-all">▶ Start Today's Workout</button>
+
+                    <!-- Body -->
+                    <div class="px-3.5 pb-3.5 flex-1 flex flex-col">
+                        <template x-if="weeklyPlan[day].exercises.length===0">
+                            <div class="flex-1 flex flex-col items-center justify-center gap-0.5 py-4 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl min-h-[92px]">
+                                <p class="text-[11px] font-bold text-slate-400">Rest Day</p>
+                                <p class="text-[9px] text-slate-300 dark:text-slate-600">Tap to plan a workout</p>
+                            </div>
+                        </template>
+                        <template x-if="weeklyPlan[day].exercises.length>0">
+                            <div class="flex-1 flex flex-col gap-2">
+                                <p class="text-xs font-extrabold text-slate-800 dark:text-slate-100 truncate" x-text="weeklyPlan[day].label || 'Workout Day'"></p>
+                                <div class="flex flex-wrap gap-1">
+                                    <template x-for="m in planDayMuscles(day).slice(0,3)" :key="m">
+                                        <span class="text-[8px] font-black px-1.5 py-0.5 rounded-full bg-brand-500/10 text-brand-400 uppercase tracking-wide" x-text="m"></span>
+                                    </template>
+                                    <span x-show="planDayMuscles(day).length>3" class="text-[8px] font-black px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400" x-text="'+'+(planDayMuscles(day).length-3)"></span>
+                                </div>
+                                <p class="text-[9px] text-slate-400 font-bold" x-text="weeklyPlan[day].exercises.length+' exercise'+(weeklyPlan[day].exercises.length>1?'s':'')+' · ~'+planDayEstimatedMinutes(day)+'min'"></p>
+
+                                <template x-if="day===todayPlanDayKey">
+                                    <div class="space-y-1">
+                                        <div class="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                            <div class="h-full rounded-full transition-all duration-500" :class="planDayCompletionPct(day)>=100?'bg-emerald-500':'bg-brand-500'" :style="'width:'+planDayCompletionPct(day)+'%'"></div>
+                                        </div>
+                                        <p class="text-[9px] font-black" :class="planDayCompletionPct(day)>=100?'text-emerald-500':'text-slate-400'" x-text="planDayCompletionPct(day)+'% complete'"></p>
+                                    </div>
+                                </template>
+
+                                <div class="mt-auto pt-1">
+                                    <p x-show="day===todayPlanDayKey && planDayCompletionPct(day)>=100" class="text-center bg-emerald-500/10 text-emerald-500 font-black py-2 rounded-lg text-[10px] uppercase tracking-wider">✓ Completed</p>
+                                    <button x-show="!(day===todayPlanDayKey && planDayCompletionPct(day)>=100)" @click.stop="startPlannedWorkout(day)"
+                                            class="w-full font-black py-2 rounded-lg text-[10px] uppercase tracking-wider transition-all"
+                                            :class="day===todayPlanDayKey ? 'bg-brand-500 hover:bg-brand-600 text-white shadow-sm' : 'border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-brand-500/40 hover:text-brand-400'">▶ Start</button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
                 </div>
             </template>
         </div>
@@ -1524,9 +1571,9 @@
                                                 <select x-model="s.setType" class="!text-[10px] !py-1.5 !px-1.5" title="Set type">
                                                     <template x-for="t in SET_TYPES" :key="t"><option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option></template>
                                                 </select>
-                                                <input type="number" x-model="s.reps" :placeholder="isTimedExercise(v.exercise)?'Secs':'Reps'" min="0">
-                                                <input type="number" step="any" x-model="s.weight" placeholder="kg" min="0">
-                                                <input type="number" step="0.5" x-model="s.rpe" placeholder="RPE" min="0" max="10" title="Rate of Perceived Exertion (0-10)">
+                                                <input type="number" inputmode="numeric" x-model="s.reps" :placeholder="isTimedExercise(v.exercise)?'Secs':'Reps'" min="0">
+                                                <input type="number" step="any" inputmode="decimal" x-model="s.weight" placeholder="kg" min="0">
+                                                <input type="number" step="0.5" inputmode="decimal" x-model="s.rpe" placeholder="RPE" min="0" max="10" title="Rate of Perceived Exertion (0-10)">
                                                 <input type="text" x-model="s.rest" placeholder="90s">
                                                 <input type="text" x-model="s.tempo" placeholder="2-1-2">
                                                 <button @click="builderRemoveSet(vi,si)" x-show="v.sets.length>1" class="shrink-0 text-red-400 text-xs font-black hover:text-red-500 px-1">✕</button>
@@ -1538,12 +1585,12 @@
                                                     <select x-model="s.setType" class="!text-[10px] !py-1.5 !px-1.5" title="Set type">
                                                         <template x-for="t in SET_TYPES" :key="t"><option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option></template>
                                                     </select>
-                                                    <input type="number" x-model="s.reps" :placeholder="isTimedExercise(v.exercise)?'Secs':'Reps'" min="0">
-                                                    <input type="number" step="any" x-model="s.weight" placeholder="kg" min="0">
+                                                    <input type="number" inputmode="numeric" x-model="s.reps" :placeholder="isTimedExercise(v.exercise)?'Secs':'Reps'" min="0">
+                                                    <input type="number" step="any" inputmode="decimal" x-model="s.weight" placeholder="kg" min="0">
                                                     <button @click="builderRemoveSet(vi,si)" x-show="v.sets.length>1" class="shrink-0 text-red-400 text-xs font-black hover:text-red-500 px-1">✕</button>
                                                 </div>
                                                 <div class="grid gap-1.5" style="grid-template-columns:1fr 1fr 1fr;">
-                                                    <input type="number" step="0.5" x-model="s.rpe" placeholder="RPE" min="0" max="10" title="Rate of Perceived Exertion (0-10)">
+                                                    <input type="number" step="0.5" inputmode="decimal" x-model="s.rpe" placeholder="RPE" min="0" max="10" title="Rate of Perceived Exertion (0-10)">
                                                     <input type="text" x-model="s.rest" placeholder="Rest e.g. 90s">
                                                     <input type="text" x-model="s.tempo" placeholder="Tempo e.g. 2-1-2">
                                                 </div>
@@ -1590,14 +1637,41 @@
         <div class="bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 p-5 rounded-[1.5rem] shadow-sm">
             <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Personal Records</p>
             <div x-show="workouts.length===0" class="text-xs text-slate-400 italic font-medium">No records yet.</div>
-            <div class="space-y-2" x-show="workouts.length>0">
-                <template x-for="(val,ex) in computedMetrics.prs" :key="ex">
-                    <div class="flex justify-between items-center text-xs py-2 border-b border-slate-100 dark:border-slate-800/80">
-                        <span class="font-bold text-slate-700 dark:text-slate-300 truncate" x-text="ex"></span>
-                        <span class="font-black text-brand-500 ml-4 shrink-0" x-text="val+' kg'"></span>
+            <template x-if="workouts.length>0">
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div class="bg-brand-500/8 border border-brand-500/15 rounded-xl p-3">
+                            <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">🏆 Highest Weight</p>
+                            <p class="text-base font-black text-brand-500 leading-tight" x-text="prSummaryCards.bestWeight+' kg'"></p>
+                            <p class="text-[9px] font-bold text-slate-400 truncate" x-text="prSummaryCards.bestWeightExercise"></p>
+                        </div>
+                        <div class="bg-emerald-500/8 border border-emerald-500/15 rounded-xl p-3">
+                            <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">📊 Best Volume</p>
+                            <p class="text-base font-black text-emerald-400 leading-tight" x-text="prSummaryCards.bestVolume.toLocaleString()+' kg'"></p>
+                            <p class="text-[9px] font-bold text-slate-400 truncate" x-text="prSummaryCards.bestVolumeDate ? 'Session on '+prSummaryCards.bestVolumeDate : ''"></p>
+                        </div>
+                        <div class="bg-amber-500/8 border border-amber-500/15 rounded-xl p-3">
+                            <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">📈 Best Est. 1RM</p>
+                            <p class="text-base font-black text-amber-400 leading-tight" x-text="prSummaryCards.best1RM+' kg'"></p>
+                            <p class="text-[9px] font-bold text-slate-400 truncate" x-text="prSummaryCards.best1RMExercise"></p>
+                        </div>
+                        <div class="bg-purple-500/8 border border-purple-500/15 rounded-xl p-3">
+                            <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">🎯 Most Trained</p>
+                            <p class="text-base font-black text-purple-400 leading-tight" x-text="prSummaryCards.mostTrainedMuscle"></p>
+                            <p class="text-[9px] font-bold text-slate-400" x-text="prSummaryCards.mostTrainedCount+' exercise'+(prSummaryCards.mostTrainedCount===1?'':'s')+' logged'"></p>
+                        </div>
                     </div>
-                </template>
-            </div>
+                    <div class="space-y-2">
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Best Weight Per Exercise</p>
+                        <template x-for="(val,ex) in computedMetrics.prs" :key="ex">
+                            <div class="flex justify-between items-center text-xs py-2 border-b border-slate-100 dark:border-slate-800/80">
+                                <span class="font-bold text-slate-700 dark:text-slate-300 truncate" x-text="ex"></span>
+                                <span class="font-black text-brand-500 ml-4 shrink-0" x-text="val+' kg'"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
         </div>
     </div>
     <!-- History controls: view toggle + search + muscle/exercise filters -->
@@ -2578,9 +2652,10 @@
                 <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">🏃 Google Fit</h3>
                 <p class="text-xs text-slate-400 font-medium mt-1">
                     <span x-show="!googleFitConnected">Sign in with Google to sync your steps, calories and active minutes</span>
-                    <span x-show="googleFitConnected">✓ Connected — syncing your activity data</span>
+                    <span x-show="googleFitConnected && !googleFitNeedsReauth">✓ Connected — last synced <span x-text="googleFitLastSyncedLabel"></span></span>
+                    <span x-show="googleFitConnected && googleFitNeedsReauth">Reconnect to keep syncing your activity data</span>
                 </p>
-                <p x-show="googleFitLastError" class="text-xs text-red-400 font-bold mt-1.5" x-text="googleFitLastError"></p>
+                <p x-show="googleFitLastError" class="text-xs font-bold mt-1.5" :class="googleFitNeedsReauth?'text-amber-400':'text-red-400'" x-text="googleFitLastError"></p>
             </div>
             <div class="flex items-center gap-2">
                 <button x-show="!googleFitConnected" @click="appConfigLoaded ? connectGoogleFit() : (alert('Loading, please try again in a moment.'))"
@@ -2594,10 +2669,15 @@
                     Sign in with Google
                 </button>
                 <div x-show="googleFitConnected" class="flex items-center gap-2">
-                    <div class="flex items-center gap-1.5 text-[11px] font-black text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
-                        Connected
+                    <div class="flex items-center gap-1.5 text-[11px] font-black px-3 py-1.5 rounded-lg border"
+                         :class="googleFitReconnecting ? 'text-blue-400 bg-blue-500/10 border-blue-500/20' : googleFitNeedsReauth ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'">
+                        <span class="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin inline-block" x-show="googleFitReconnecting"></span>
+                        <span class="w-1.5 h-1.5 rounded-full inline-block" :class="googleFitNeedsReauth?'bg-amber-400':'bg-emerald-400 animate-pulse'" x-show="!googleFitReconnecting"></span>
+                        <span x-show="googleFitReconnecting">Reconnecting…</span>
+                        <span x-show="!googleFitReconnecting && googleFitNeedsReauth">Disconnected</span>
+                        <span x-show="!googleFitReconnecting && !googleFitNeedsReauth">Connected</span>
                     </div>
+                    <button x-show="googleFitNeedsReauth" @click="connectGoogleFit()" class="text-[11px] font-black text-amber-400 border border-amber-400/30 px-3 py-1.5 rounded-lg hover:bg-amber-500/10 transition-all">↻ Reconnect</button>
                     <button @click="disconnectGoogleFit()" class="text-[11px] font-black text-slate-400 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg hover:text-red-400 hover:border-red-400/30 transition-all">Sign out</button>
                 </div>
             </div>
@@ -2633,7 +2713,14 @@
                     <p class="text-[9px] font-black text-slate-400 uppercase">Sleep</p>
                 </div>
             </div>
-            <button @click="syncGoogleFitData()" :disabled="googleFitSyncing"
+            <div class="flex items-center justify-between px-1">
+                <span class="text-xs font-bold text-slate-500 dark:text-slate-400">Auto-sync every 5 minutes</span>
+                <button @click="googleFitAutoSync=!googleFitAutoSync;persist()" type="button"
+                        class="w-10 h-6 rounded-full transition-colors relative shrink-0" :class="googleFitAutoSync?'bg-emerald-500':'bg-slate-300 dark:bg-slate-700'">
+                    <span class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all" :class="googleFitAutoSync?'left-[18px]':'left-0.5'"></span>
+                </button>
+            </div>
+            <button @click="syncGoogleFitData()" :disabled="googleFitSyncing || googleFitReconnecting"
                     class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/40 transition-all disabled:opacity-40">
                 <span x-show="!googleFitSyncing">🔄 Refresh Data</span>
                 <span x-show="googleFitSyncing" class="flex items-center gap-1.5">
@@ -3722,7 +3809,7 @@
 <div x-show="openModals.modalWorkout" x-cloak @click.self="closeModal('modalWorkout')" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[80] flex items-start justify-center p-0 sm:p-4 overflow-y-auto">
     <div @click.stop class="w-full max-w-2xl bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-none sm:rounded-[2rem] p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-5 sm:my-6 min-h-screen sm:min-h-0">
         <div class="flex justify-between items-start">
-            <h3 class="text-xl font-extrabold tracking-tight">Log Workout</h3>
+            <h3 class="text-xl font-extrabold tracking-tight" x-text="workoutForm._editId?'Edit Workout':'Log Workout'"></h3>
             <button @click="closeModal('modalWorkout')" class="text-slate-400 hover:text-slate-600 font-black text-lg leading-none">✕</button>
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -3850,24 +3937,43 @@
                             </div>
                         </div>
 
-                        <!-- Sets rows -->
+                        <!-- Sets rows — identical fields/layout to the inline workout builder's log step -->
                         <div class="px-4 pb-4 space-y-2">
-                            <div class="grid text-[9px] font-black text-slate-400 uppercase tracking-widest" style="grid-template-columns:1.5rem 1fr 1fr auto;gap:.35rem;">
-                                <span class="text-center">#</span>
-                                <span x-text="isTimedExercise(v.exercise)?'Seconds':'Reps'"></span>
-                                <span>Weight (kg)</span>
-                                <span class="hidden sm:block">Notes</span><span></span>
+                            <div class="hidden sm:grid gap-2 px-1 pb-1 text-[9px] font-black text-slate-400 uppercase tracking-widest" style="grid-template-columns:1.5rem 6rem 1fr 1fr .9fr 1fr 1fr auto;">
+                                <span>#</span><span>Type</span><span x-text="isTimedExercise(v.exercise)?'Secs':'Reps'"></span><span>Weight</span><span>RPE</span><span>Rest</span><span>Tempo</span><span></span>
                             </div>
                             <template x-for="(s,si) in v.sets" :key="si">
-                                <div class="set-row" style="grid-template-columns:1.5rem 1fr 1fr auto;">
-                                    <div class="flex items-center justify-center">
+                                <div>
+                                    <!-- Desktop/tablet: single aligned table row -->
+                                    <div class="hidden sm:grid gap-2 items-center bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2 mb-1.5" style="grid-template-columns:1.5rem 6rem 1fr 1fr .9fr 1fr 1fr auto;">
                                         <span class="w-5 h-5 rounded-full bg-brand-500/15 text-brand-400 text-[9px] font-black flex items-center justify-center shrink-0" x-text="si+1"></span>
+                                        <select x-model="s.setType" class="!text-[10px] !py-1.5 !px-1.5" title="Set type">
+                                            <template x-for="t in SET_TYPES" :key="t"><option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option></template>
+                                        </select>
+                                        <input type="number" inputmode="numeric" x-model="s.reps" :placeholder="isTimedExercise(v.exercise)?'Secs':'Reps'" min="0">
+                                        <input type="number" step="any" inputmode="decimal" x-model="s.weight" placeholder="kg" min="0">
+                                        <input type="number" step="0.5" inputmode="decimal" x-model="s.rpe" placeholder="RPE" min="0" max="10" title="Rate of Perceived Exertion (0-10)">
+                                        <input type="text" x-model="s.rest" placeholder="90s">
+                                        <input type="text" x-model="s.tempo" placeholder="2-1-2">
+                                        <button @click="removeSet(vi,si)" x-show="v.sets.length>1" class="shrink-0 text-red-400 text-xs font-black hover:text-red-500 px-1">✕</button>
                                     </div>
-                                    <input type="number" x-model="s.reps" :placeholder="isTimedExercise(v.exercise)?'Secs':'Reps'" min="0" :title="isTimedExercise(v.exercise)?'Enter seconds':'Enter reps'">
-                                    <input type="number" step="any" x-model="s.weight" placeholder="kg" min="0">
-                                    <input type="text" x-model="s.notes" placeholder="Notes" class="hidden sm:block">
-                                    <button @click="removeSet(vi,si)" x-show="v.sets.length>1" class="shrink-0 text-red-400 text-xs font-black hover:text-red-500 px-1">✕</button>
-                                    <div x-show="v.sets.length===1" class="w-5"></div>
+                                    <!-- Mobile: stacked card -->
+                                    <div class="sm:hidden bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2.5 space-y-1.5 mb-1.5">
+                                        <div class="grid gap-1.5 items-center" style="grid-template-columns:1.5rem 5.5rem 1fr 1fr auto;">
+                                            <span class="w-5 h-5 rounded-full bg-brand-500/15 text-brand-400 text-[9px] font-black flex items-center justify-center shrink-0" x-text="si+1"></span>
+                                            <select x-model="s.setType" class="!text-[10px] !py-1.5 !px-1.5" title="Set type">
+                                                <template x-for="t in SET_TYPES" :key="t"><option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option></template>
+                                            </select>
+                                            <input type="number" inputmode="numeric" x-model="s.reps" :placeholder="isTimedExercise(v.exercise)?'Secs':'Reps'" min="0">
+                                            <input type="number" step="any" inputmode="decimal" x-model="s.weight" placeholder="kg" min="0">
+                                            <button @click="removeSet(vi,si)" x-show="v.sets.length>1" class="shrink-0 text-red-400 text-xs font-black hover:text-red-500 px-1">✕</button>
+                                        </div>
+                                        <div class="grid gap-1.5" style="grid-template-columns:1fr 1fr 1fr;">
+                                            <input type="number" step="0.5" inputmode="decimal" x-model="s.rpe" placeholder="RPE" min="0" max="10" title="Rate of Perceived Exertion (0-10)">
+                                            <input type="text" x-model="s.rest" placeholder="Rest e.g. 90s">
+                                            <input type="text" x-model="s.tempo" placeholder="Tempo e.g. 2-1-2">
+                                        </div>
+                                    </div>
                                 </div>
                             </template>
                             <div class="flex items-center justify-between pt-1">
@@ -3886,7 +3992,7 @@
         <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Overall Notes</label><textarea x-model="workoutForm.notes" rows="2" placeholder="How did it feel?" class="!resize-none"></textarea></div>
         <div class="flex gap-3">
             <button @click="closeModal('modalWorkout')" class="flex-1 border border-slate-200 dark:border-slate-700 font-bold py-3 rounded-xl text-xs uppercase tracking-wider text-slate-400">Cancel</button>
-            <button @click="saveWorkoutLog()" class="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-black py-3 rounded-xl text-xs uppercase tracking-widest shadow-md transition-all">Save Workout</button>
+            <button @click="saveWorkoutLog()" class="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-black py-3 rounded-xl text-xs uppercase tracking-widest shadow-md transition-all" x-text="workoutForm._editId?'✓ Save Changes':'Save Workout'"></button>
         </div>
     </div>
 </div>
@@ -4504,6 +4610,14 @@ function slugifyExerciseName(name) { return (name||'').toLowerCase().replace(/[^
 // so advanced logging fields (RPE, rest, set type, tempo) stay consistent everywhere.
 const SET_TYPES = ['working','warmup','dropset','failure','assisted'];
 function blankSet() { return {reps:'',weight:'',rpe:'',rest:'',setType:'working',tempo:'',notes:''}; }
+// "+ Add Set" convenience — most sets in a session repeat the same weight/reps/rest/tempo,
+// so prefill the new row from the previous set instead of making the user retype everything.
+// Falls back to a fully blank set for the first row.
+function nextSetFrom(sets) {
+    if(!sets || sets.length===0) return blankSet();
+    const last = sets[sets.length-1];
+    return { reps:last.reps, weight:last.weight, rpe:last.rpe, rest:last.rest, setType:last.setType, tempo:last.tempo, notes:'' };
+}
 function blankVariation(name) { return {exercise:name||'',exerciseNotes:'',sets:[blankSet()],_showSugg:false,_suggestions:[],_showInfo:false}; }
 
 // Movement pattern — derived from primary muscle + category + name keywords (real classification, not fabricated).
@@ -5669,10 +5783,15 @@ function vytaraApp() {
         googleFitConnected: false,
         googleFitData: { stepsToday:0, calsBurned:0, activeMins:0, heartRateAvg:0, sleepHours:0 },
         googleFitSyncing: false,
+        googleFitReconnecting: false,
+        googleFitNeedsReauth: false,
+        googleFitAutoSync: true,
         googleFitAccessToken: null,
         googleFitLastError: '',
+        googleFitLastSyncedAt: null,
         _gfitSyncTimer: null,
         _gfitRefreshTimer: null,
+        _gfitVisibilityBound: false,
         feedbackForm: { name:'', email:'', message:'', rating:5 },
         feedbackLoading: false,
         feedbackSent: false,
@@ -5801,6 +5920,42 @@ function vytaraApp() {
             ];
         },
         get computedMetrics() { return this.getDashboardMetrics(); },
+        // Richer Personal Records summary — surfaces stats that were already being computed
+        // per-exercise (getExerciseStats' bestWeight/estimated1RM) at the whole-history level,
+        // plus session volume and muscle-group frequency which weren't aggregated anywhere.
+        get prSummaryCards() {
+            let bestWeight = 0, bestWeightExercise = '';
+            let bestVolume = 0, bestVolumeDate = '';
+            let best1RM = 0, best1RMExercise = '';
+            const muscleCounts = {};
+            this.workouts.forEach(w => {
+                const variations = (w.variations && w.variations.length>0) ? w.variations : (w.exercise ? [{exercise:w.exercise, sets:w.sets||[]}] : []);
+                let sessionVolume = 0;
+                variations.forEach(v => {
+                    if(!v || !v.exercise) return;
+                    (this.getExerciseMetaFor(v.exercise).primary||[]).forEach(m => { muscleCounts[m] = (muscleCounts[m]||0)+1; });
+                    (v.sets||[]).forEach(s => {
+                        const wt = parseFloat(s&&s.weight)||0;
+                        const reps = parseInt(s&&s.reps)||0;
+                        if(wt>bestWeight) { bestWeight=wt; bestWeightExercise=v.exercise; }
+                        sessionVolume += wt*reps;
+                        if(wt>0 && reps>0) {
+                            const oneRM = wt*(1+reps/30);
+                            if(oneRM>best1RM) { best1RM=oneRM; best1RMExercise=v.exercise; }
+                        }
+                    });
+                });
+                if(sessionVolume>bestVolume) { bestVolume=sessionVolume; bestVolumeDate=w.date; }
+            });
+            let mostTrainedMuscle = '—', mostTrainedCount = 0;
+            Object.entries(muscleCounts).forEach(([m,c]) => { if(c>mostTrainedCount) { mostTrainedCount=c; mostTrainedMuscle=m; } });
+            return {
+                bestWeight: Math.round(bestWeight), bestWeightExercise,
+                bestVolume: Math.round(bestVolume), bestVolumeDate,
+                best1RM: Math.round(best1RM), best1RMExercise,
+                mostTrainedMuscle, mostTrainedCount,
+            };
+        },
         _buildHeatmap() {
             const today=this.getToday();
             const workoutDates=new Set(this.workouts.map(w=>w.date));
@@ -6116,6 +6271,8 @@ function vytaraApp() {
                 this.googleFitConnected   = true;
                 this.googleFitAccessToken = s.googleFitAccessToken;
                 this.googleFitData        = s.googleFitData || {stepsToday:0,calsBurned:0,activeMins:0,heartRateAvg:0,sleepHours:0};
+                this.googleFitLastSyncedAt = s.googleFitLastSyncedAt || null;
+                this.googleFitAutoSync = typeof s.googleFitAutoSync === 'boolean' ? s.googleFitAutoSync : true;
             }
         },
 
@@ -6485,7 +6642,7 @@ function vytaraApp() {
         },
 
         persist() {
-            const data = { profile:this.profile, workouts:this.workouts, dietLogs:this.dietLogs, metricsLogs:this.metricsLogs, waterLogs:this.waterLogs, photos:this.photos.map(p=>({...p,url:p.storagePath?undefined:p.url,data:p.storagePath?undefined:p.url})), customGoals:this.customGoals, customExercises:this.customExercises, favoriteExercises:this.favoriteExercises, strengthGoals:this.strengthGoals, goalTargets:this.goalTargets, challenges:this.challenges, mealHistory:this.mealHistory, foodDatabase:this.foodDatabase, googleFitConnected:this.googleFitConnected, googleFitAccessToken:this.googleFitAccessToken, googleFitData:this.googleFitData, weeklyPlan:this.weeklyPlan };
+            const data = { profile:this.profile, workouts:this.workouts, dietLogs:this.dietLogs, metricsLogs:this.metricsLogs, waterLogs:this.waterLogs, photos:this.photos.map(p=>({...p,url:p.storagePath?undefined:p.url,data:p.storagePath?undefined:p.url})), customGoals:this.customGoals, customExercises:this.customExercises, favoriteExercises:this.favoriteExercises, strengthGoals:this.strengthGoals, goalTargets:this.goalTargets, challenges:this.challenges, mealHistory:this.mealHistory, foodDatabase:this.foodDatabase, googleFitConnected:this.googleFitConnected, googleFitAccessToken:this.googleFitAccessToken, googleFitData:this.googleFitData, googleFitLastSyncedAt:this.googleFitLastSyncedAt, googleFitAutoSync:this.googleFitAutoSync, weeklyPlan:this.weeklyPlan };
             localStorage.setItem(VAULT_KEY, JSON.stringify(data));
             if(this.firebaseUser&&window._fb) this.persistCloud(data);
             this.generateHeatmapData();
@@ -6988,7 +7145,7 @@ function vytaraApp() {
             this.workoutForm.variations.push(blankVariation());
         },
         removeVariation(vi) { this.workoutForm.variations.splice(vi,1); },
-        addSet(vi) { this.workoutForm.variations[vi].sets.push(blankSet()); },
+        addSet(vi) { const sets=this.workoutForm.variations[vi].sets; sets.push(nextSetFrom(sets)); },
         removeSet(vi,si) { this.workoutForm.variations[vi].sets.splice(si,1); },
 
         updateSuggestionsForVar(vi) {
@@ -7191,7 +7348,7 @@ function vytaraApp() {
             this.workoutBuilder.step='log';
         },
         builderAddAnotherExercise() { this.workoutBuilder.step='muscles'; },
-        builderAddSet(vi) { this.workoutBuilder.variations[vi].sets.push(blankSet()); },
+        builderAddSet(vi) { const sets=this.workoutBuilder.variations[vi].sets; sets.push(nextSetFrom(sets)); },
         builderRemoveSet(vi,si) { this.workoutBuilder.variations[vi].sets.splice(si,1); },
         builderRemoveVariation(vi) { this.workoutBuilder.variations.splice(vi,1); },
         builderSaveWorkout() {
@@ -7244,6 +7401,44 @@ function vytaraApp() {
             if(!plan || plan.exercises.length===0) return;
             this.workoutBuilder = { active:true, step:'log', date:this.getToday(), duration:'', selectedMuscle:'', exerciseSearch:'', equipmentFilter:'', activeExercise:'', guideTab:'overview', notes:'',
                 variations: plan.exercises.map(exercise=>({exercise, exerciseNotes:'', sets:[blankSet()]})) };
+        },
+        // Unique primary muscle groups trained across a planned day's exercises, in the
+        // order they first appear — drives the muscle chips and the card's small icon.
+        planDayMuscles(day) {
+            const plan = this.weeklyPlan[day];
+            if(!plan || plan.exercises.length===0) return [];
+            const seen = [];
+            plan.exercises.forEach(ex => {
+                const m = this.getExerciseMetaFor(ex).primary[0];
+                if(m && !seen.includes(m)) seen.push(m);
+            });
+            return seen;
+        },
+        planDayIcon(day) {
+            const muscles = this.planDayMuscles(day);
+            return muscles.length ? (MUSCLE_ICONS[muscles[0]] || '🏋️') : '🛌';
+        },
+        // Rough session length: ~8 min per exercise (sets + rest + transitions) — a simple,
+        // honest estimate rather than a fabricated precise number.
+        planDayEstimatedMinutes(day) {
+            const plan = this.weeklyPlan[day];
+            if(!plan || plan.exercises.length===0) return 0;
+            return plan.exercises.length * 8;
+        },
+        // Completion is only meaningful for TODAY (the plan is a recurring weekly template,
+        // not per-date data) — % of today's planned exercises that already have a logged
+        // set in today's workout history.
+        planDayCompletionPct(day) {
+            if(day !== this.todayPlanDayKey) return null;
+            const plan = this.weeklyPlan[day];
+            if(!plan || plan.exercises.length===0) return null;
+            const today = this.getToday();
+            const loggedToday = this.workouts.filter(w=>w.date===today);
+            if(loggedToday.length===0) return 0;
+            const loggedNames = new Set();
+            loggedToday.forEach(w => (w.variations||[]).forEach(v => loggedNames.add(v.exercise)));
+            const done = plan.exercises.filter(ex => loggedNames.has(ex)).length;
+            return Math.round((done / plan.exercises.length) * 100);
         },
         // Single source of truth for per-exercise history stats — real data only, empty state (null) if none.
         getExerciseStats(name) {
@@ -8250,21 +8445,55 @@ function vytaraApp() {
 
         // Starts (or restarts) the background sync + silent-renewal timers. Safe to call
         // repeatedly — always clears any existing timers first so we never double-schedule.
-        _startGoogleFitKeepAlive() {
+        // On a fresh page load the restored access token is very likely already past its
+        // ~60min lifetime (the user may have been away for hours/days), so we proactively
+        // renew it FIRST — before ever hitting the Fitness API — instead of waiting for a
+        // sync call to fail with 401 and only THEN discovering we need a new token. This is
+        // what actually fixes "dashboard stops syncing" / "have to log in every session":
+        // most of the time the browser's Google session is still alive and this silent
+        // renewal just quietly succeeds with zero visible UI.
+        async _startGoogleFitKeepAlive() {
             if(this._gfitSyncTimer) clearInterval(this._gfitSyncTimer);
             if(this._gfitRefreshTimer) clearInterval(this._gfitRefreshTimer);
             this._gfitSyncTimer = null;
             this._gfitRefreshTimer = null;
             if(!this.googleFitConnected || !this.googleFitAccessToken) return;
-            this.syncGoogleFitData(); // refresh immediately so the dashboard never shows leftover stale numbers
+
+            this.googleFitReconnecting = true;
+            const freshToken = await this.silentRefreshGoogleFit();
+            if(freshToken) {
+                this.googleFitAccessToken = freshToken;
+                this.googleFitNeedsReauth = false;
+                this.persist();
+            }
+            this.googleFitReconnecting = false;
+            // Whether or not the proactive renewal succeeded, still attempt a sync — if the
+            // existing token happens to still be valid (renewal wasn't needed yet), or the
+            // renewal above already replaced it, this is the call that actually fetches data.
+            this.syncGoogleFitData();
+
             this._gfitSyncTimer = setInterval(() => {
-                if(this.googleFitConnected) this.syncGoogleFitData();
-            }, 5 * 60 * 1000); // re-sync every 5 minutes while connected
+                if(this.googleFitConnected && this.googleFitAutoSync) this.syncGoogleFitData();
+            }, 5 * 60 * 1000); // re-sync every 5 minutes while connected (if auto-sync is on)
             this._gfitRefreshTimer = setInterval(async () => {
                 if(!this.googleFitConnected) return;
                 const newToken = await this.silentRefreshGoogleFit();
-                if(newToken) { this.googleFitAccessToken = newToken; this.persist(); }
-            }, 45 * 60 * 1000); // proactively renew before the ~60min token lifetime is up
+                if(newToken) { this.googleFitAccessToken = newToken; this.googleFitNeedsReauth = false; this.persist(); }
+            }, 20 * 60 * 1000); // proactively renew well before the ~60min token lifetime is up
+
+            // Re-arm as soon as the user comes back to this tab — catches the common case of
+            // "left the tab in the background for hours, came back, dashboard looks stale."
+            if(!this._gfitVisibilityBound) {
+                this._gfitVisibilityBound = true;
+                document.addEventListener('visibilitychange', () => {
+                    if(document.visibilityState==='visible' && this.googleFitConnected) {
+                        this.silentRefreshGoogleFit().then(newToken => {
+                            if(newToken) { this.googleFitAccessToken = newToken; this.googleFitNeedsReauth = false; this.persist(); }
+                            this.syncGoogleFitData();
+                        });
+                    }
+                });
+            }
         },
 
         _stopGoogleFitKeepAlive() {
@@ -8272,6 +8501,7 @@ function vytaraApp() {
             if(this._gfitRefreshTimer) clearInterval(this._gfitRefreshTimer);
             this._gfitSyncTimer = null;
             this._gfitRefreshTimer = null;
+            this.googleFitReconnecting = false;
         },
 
         connectGoogleFit() {
@@ -8335,6 +8565,7 @@ function vytaraApp() {
                     try { popup.close(); } catch(e) {}
                     this.googleFitAccessToken = token;
                     this.googleFitConnected   = true;
+                    this.googleFitNeedsReauth = false;
                     this.googleFitLastError   = '';
                     this.persist();
                     this._startGoogleFitKeepAlive();
@@ -8351,9 +8582,22 @@ function vytaraApp() {
             this._stopGoogleFitKeepAlive();
             this.googleFitAccessToken = null;
             this.googleFitConnected   = false;
+            this.googleFitNeedsReauth = false;
             this.googleFitLastError   = '';
+            this.googleFitLastSyncedAt = null;
             this.googleFitData        = { stepsToday:0, calsBurned:0, activeMins:0, heartRateAvg:0, sleepHours:0 };
             this.persist();
+        },
+        // Human-friendly "Last synced Xm ago" string for the connected-state UI.
+        get googleFitLastSyncedLabel() {
+            if(!this.googleFitLastSyncedAt) return 'Not synced yet';
+            const diffMs = Date.now() - this.googleFitLastSyncedAt;
+            const mins = Math.floor(diffMs / 60000);
+            if(mins < 1) return 'Just now';
+            if(mins < 60) return mins + 'm ago';
+            const hrs = Math.floor(mins / 60);
+            if(hrs < 24) return hrs + 'h ago';
+            return Math.floor(hrs / 24) + 'd ago';
         },
 
         async syncGoogleFitData(isRetry) {
@@ -8397,13 +8641,17 @@ function vytaraApp() {
                             return this.syncGoogleFitData(true);
                         }
                     }
+                    // Keep googleFitConnected true — this is a token refresh problem, not the
+                    // user disconnecting. googleFitNeedsReauth drives a one-tap "Reconnect"
+                    // affordance inline in the still-visible connected card, instead of
+                    // reverting the whole UI back to the pre-connection state.
                     this._stopGoogleFitKeepAlive();
-                    this.googleFitConnected = false;
                     this.googleFitAccessToken = null;
-                    this.googleFitLastError = 'Your Google Fit session expired and could not be renewed silently. Click "Sign in with Google" to reconnect.';
+                    this.googleFitNeedsReauth = true;
+                    this.googleFitLastError = 'Google Fit needs a quick reconnect to keep syncing — your browser session may have signed out.';
                     this.googleFitSyncing = false;
                     this.persist();
-                    console.warn('[VYTARA] Google Fit token expired — please reconnect in Settings');
+                    console.warn('[VYTARA] Google Fit token expired — silent renewal failed, reconnect needed');
                     return;
                 }
                 if(res.status===403) {
@@ -8418,6 +8666,8 @@ function vytaraApp() {
                 }
                 const data = await res.json();
                 this.googleFitLastError = '';
+                this.googleFitNeedsReauth = false;
+                this.googleFitLastSyncedAt = Date.now();
                 let steps=0, cals=0, mins=0, hrSum=0, hrCount=0, sleepMins=0;
                 (data.bucket||[]).forEach(b => {
                     (b.dataset||[]).forEach(ds => {
