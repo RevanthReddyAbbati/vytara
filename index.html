@@ -1018,7 +1018,7 @@
                     </div>
 
                     <!-- CHEST, BACK, SHOULDERS, BICEPS & TRICEPS: compact professional rows on desktop, premium cards on mobile -->
-                    <template x-if="workoutBuilder.selectedMuscle==='Chest' || workoutBuilder.selectedMuscle==='Back' || workoutBuilder.selectedMuscle==='Shoulders' || workoutBuilder.selectedMuscle==='Biceps' || workoutBuilder.selectedMuscle==='Triceps' || workoutBuilder.selectedMuscle==='Core' || workoutBuilder.selectedMuscle==='Legs' || workoutBuilder.selectedMuscle==='Glutes'">
+                    <template x-if="workoutBuilder.selectedMuscle==='Chest' || workoutBuilder.selectedMuscle==='Back' || workoutBuilder.selectedMuscle==='Shoulders' || workoutBuilder.selectedMuscle==='Biceps' || workoutBuilder.selectedMuscle==='Triceps' || workoutBuilder.selectedMuscle==='Core' || workoutBuilder.selectedMuscle==='Legs' || workoutBuilder.selectedMuscle==='Glutes' || workoutBuilder.selectedMuscle==='Calves' || workoutBuilder.selectedMuscle==='Forearms'">
                         <div class="space-y-5">
                             <div x-show="!workoutBuilder.exerciseSearch && builderRecentForMuscle.length>0">
                                 <p class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Recent</p>
@@ -1560,23 +1560,33 @@
                                 </div>
                                 <div class="p-4 sm:p-5 space-y-2">
                                     <!-- Column headers (tablet/desktop table view) -->
-                                    <div class="hidden sm:grid gap-2 px-1 pb-1 text-[9px] font-black text-slate-400 uppercase tracking-widest" style="grid-template-columns:1.5rem 6rem 1fr 1fr .9fr 1fr 1fr auto;">
+                                    <datalist id="tempo-presets-builder"><option value="2-0-2"><option value="3-1-1"><option value="4-2-1"><option value="1-1-1"><option value="2-1-3"></datalist>
+                                    <div class="hidden sm:grid gap-2 px-1 pb-1 text-[9px] font-black text-slate-400 uppercase tracking-widest" style="grid-template-columns:1.5rem 6rem 1fr 1fr .9fr 1.3fr 1.1fr auto;">
                                         <span>#</span><span>Type</span><span x-text="isTimedExercise(v.exercise)?'Secs':'Reps'"></span><span>Weight</span><span>RPE</span><span>Rest</span><span>Tempo</span><span></span>
                                     </div>
                                     <template x-for="(s,si) in v.sets" :key="si">
                                         <div>
                                             <!-- Desktop/tablet: single aligned table row -->
-                                            <div class="hidden sm:grid gap-2 items-center bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2 mb-1.5" style="grid-template-columns:1.5rem 6rem 1fr 1fr .9fr 1fr 1fr auto;">
+                                            <div class="hidden sm:grid gap-2 items-center bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2 mb-1.5" style="grid-template-columns:1.5rem 6rem 1fr 1fr .9fr 1.3fr 1.1fr auto;">
                                                 <span class="w-5 h-5 rounded-full bg-brand-500/15 text-brand-400 text-[9px] font-black flex items-center justify-center shrink-0" x-text="si+1"></span>
                                                 <select x-model="s.setType" class="!text-[10px] !py-1.5 !px-1.5" title="Set type">
                                                     <template x-for="t in SET_TYPES" :key="t"><option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option></template>
                                                 </select>
                                                 <input type="number" inputmode="numeric" x-model="s.reps" :placeholder="isTimedExercise(v.exercise)?'Secs':'Reps'" min="0">
                                                 <input type="number" step="any" inputmode="decimal" x-model="s.weight" placeholder="kg" min="0">
-                                                <input type="number" step="0.5" inputmode="decimal" x-model="s.rpe" placeholder="RPE" min="0" max="10" title="Rate of Perceived Exertion (0-10)">
-                                                <input type="text" x-model="s.rest" placeholder="90s">
-                                                <input type="text" x-model="s.tempo" placeholder="2-1-2">
-                                                <button @click="builderRemoveSet(vi,si)" x-show="v.sets.length>1" class="shrink-0 text-red-400 text-xs font-black hover:text-red-500 px-1">✕</button>
+                                                <div class="flex flex-col gap-0.5" title="Rate of Perceived Exertion (0-10)">
+                                                    <span class="text-[9px] font-black text-brand-400 text-center" x-text="s.rpe?s.rpe:'–'"></span>
+                                                    <input type="range" min="0" max="10" step="0.5" x-model="s.rpe" class="!p-0 !border-0 !bg-transparent w-full" style="accent-color:#3b82f6">
+                                                </div>
+                                                <div class="flex items-center gap-1">
+                                                    <input type="text" x-model="s.rest" placeholder="90s" class="min-w-0">
+                                                    <button type="button" @click="startRestTimer(s)" class="shrink-0 text-[9px] font-black px-1.5 py-1.5 rounded-md border transition-colors" :class="s._restTimer?'border-brand-500 text-brand-500 bg-brand-500/10':'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-brand-400'" x-text="s._restTimer?formatRestRemaining(s):'▶'"></button>
+                                                </div>
+                                                <input type="text" list="tempo-presets-builder" x-model="s.tempo" placeholder="2-1-2">
+                                                <div class="flex items-center gap-1 shrink-0">
+                                                    <button @click="builderDuplicateSet(vi,si)" title="Duplicate set" class="text-slate-400 hover:text-brand-400 font-black text-xs px-1">⧉</button>
+                                                    <button @click="builderRemoveSet(vi,si)" x-show="v.sets.length>1" class="text-red-400 hover:text-red-500 font-black text-xs px-1">✕</button>
+                                                </div>
                                             </div>
                                             <!-- Mobile: stacked card -->
                                             <div class="sm:hidden bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2.5 space-y-1.5 mb-1.5">
@@ -1587,12 +1597,21 @@
                                                     </select>
                                                     <input type="number" inputmode="numeric" x-model="s.reps" :placeholder="isTimedExercise(v.exercise)?'Secs':'Reps'" min="0">
                                                     <input type="number" step="any" inputmode="decimal" x-model="s.weight" placeholder="kg" min="0">
-                                                    <button @click="builderRemoveSet(vi,si)" x-show="v.sets.length>1" class="shrink-0 text-red-400 text-xs font-black hover:text-red-500 px-1">✕</button>
+                                                    <div class="flex items-center gap-1 shrink-0">
+                                                        <button @click="builderDuplicateSet(vi,si)" title="Duplicate set" class="text-slate-400 hover:text-brand-400 font-black text-xs px-1">⧉</button>
+                                                        <button @click="builderRemoveSet(vi,si)" x-show="v.sets.length>1" class="text-red-400 hover:text-red-500 font-black text-xs px-1">✕</button>
+                                                    </div>
                                                 </div>
-                                                <div class="grid gap-1.5" style="grid-template-columns:1fr 1fr 1fr;">
-                                                    <input type="number" step="0.5" inputmode="decimal" x-model="s.rpe" placeholder="RPE" min="0" max="10" title="Rate of Perceived Exertion (0-10)">
-                                                    <input type="text" x-model="s.rest" placeholder="Rest e.g. 90s">
-                                                    <input type="text" x-model="s.tempo" placeholder="Tempo e.g. 2-1-2">
+                                                <div class="grid gap-1.5" style="grid-template-columns:1fr 1.2fr 1fr;">
+                                                    <div class="flex flex-col gap-0.5" title="Rate of Perceived Exertion (0-10)">
+                                                        <span class="text-[8px] font-black text-brand-400 text-center" x-text="s.rpe?('RPE '+s.rpe):'RPE –'"></span>
+                                                        <input type="range" min="0" max="10" step="0.5" x-model="s.rpe" class="!p-0 !border-0 !bg-transparent w-full" style="accent-color:#3b82f6">
+                                                    </div>
+                                                    <div class="flex items-center gap-1">
+                                                        <input type="text" x-model="s.rest" placeholder="Rest 90s" class="min-w-0">
+                                                        <button type="button" @click="startRestTimer(s)" class="shrink-0 text-[9px] font-black px-1.5 py-1.5 rounded-md border transition-colors" :class="s._restTimer?'border-brand-500 text-brand-500 bg-brand-500/10':'border-slate-200 dark:border-slate-700 text-slate-400'" x-text="s._restTimer?formatRestRemaining(s):'▶'"></button>
+                                                    </div>
+                                                    <input type="text" list="tempo-presets-builder" x-model="s.tempo" placeholder="Tempo 2-1-2">
                                                 </div>
                                             </div>
                                         </div>
@@ -1690,6 +1709,10 @@
             <option value="">All Exercises</option>
             <template x-for="ex in historyExerciseOptions" :key="ex"><option :value="ex" x-text="ex"></option></template>
         </select>
+        <select x-model="historyFilters.type" class="!w-auto">
+            <option value="">All Types</option>
+            <template x-for="t in CARDIO_TYPES" :key="t.value"><option :value="t.value" x-text="t.label"></option></template>
+        </select>
     </div>
 
     <!-- Calendar view -->
@@ -1740,7 +1763,7 @@
                         <div class="flex items-start justify-between gap-2">
                             <div class="flex items-center gap-2 flex-1 min-w-0">
                                 <div class="w-2.5 h-2.5 rounded-full shrink-0 mt-0.5"
-                                     :class="w.type==='running'||w.type==='walking'||w.type==='cardio'||w.type==='cycling'?'bg-emerald-400':'bg-brand-500'"></div>
+                                     :class="w.type&&w.type!=='strength'?'bg-emerald-400':'bg-brand-500'"></div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-extrabold text-slate-800 dark:text-slate-100 leading-tight"
                                        x-text="(w.variations&&w.variations.length>0)?(w.variations.map(v=>v.exercise).filter(Boolean).slice(0,3).join(', ')+(w.variations.length>3?' +more':'')):(w.exercise||(w.type||'Workout'))"></p>
@@ -1806,13 +1829,12 @@
                                 </template>
                             </div>
                         </template>
-                        <!-- Cardio details -->
-                        <template x-if="['running','walking','cardio','cycling'].includes(w.type||'')">
+                        <!-- Cardio details — dynamic per workout type, only shows fields that were actually logged -->
+                        <template x-if="w.type&&w.type!=='strength'">
                             <div class="flex flex-wrap gap-3 text-xs">
-                                <span x-show="w.distance>0" class="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 font-black" x-text="w.distance+' km'"></span>
-                                <span x-show="w.pace>0" class="px-3 py-1.5 rounded-xl bg-brand-500/10 text-brand-400 font-black" x-text="w.pace+' min/km'"></span>
-                                <span x-show="w.speed>0" class="px-3 py-1.5 rounded-xl bg-brand-500/10 text-brand-400 font-black" x-text="w.speed+' km/h'"></span>
-                                <span x-show="w.caloriesBurned>0" class="px-3 py-1.5 rounded-xl bg-orange-500/10 text-orange-400 font-black" x-text="w.caloriesBurned+' kcal burned'"></span>
+                                <template x-for="f in (CARDIO_FIELD_DEFS[w.type]||[]).filter(f=>f.key!=='notes')" :key="f.key">
+                                    <span x-show="w[f.key]" class="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 font-black" x-text="w[f.key]+(f.unit?' '+f.unit:'')"></span>
+                                </template>
                             </div>
                         </template>
                         <p x-show="w.notes" class="text-[11px] text-slate-400 font-medium italic" x-text="'📝 '+w.notes"></p>
@@ -2712,6 +2734,35 @@
                     <p class="text-lg font-black text-purple-400" x-text="(googleFitData.sleepHours||0)>0?(googleFitData.sleepHours)+'h':'—'"></p>
                     <p class="text-[9px] font-black text-slate-400 uppercase">Sleep</p>
                 </div>
+                <div class="rounded-2xl p-3 text-center space-y-1 bg-teal-500/8 border border-teal-500/15">
+                    <p class="text-xl">📍</p>
+                    <p class="text-lg font-black text-teal-400" x-text="(googleFitData.distanceKm||0)>0?(googleFitData.distanceKm)+'km':'—'"></p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Distance</p>
+                </div>
+                <div class="rounded-2xl p-3 text-center space-y-1 bg-blue-500/8 border border-blue-500/15">
+                    <p class="text-xl">⚖️</p>
+                    <p class="text-lg font-black text-blue-400" x-text="(googleFitData.weightKg||0)>0?(googleFitData.weightKg)+'kg':'—'"></p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Weight</p>
+                </div>
+                <div class="rounded-2xl p-3 text-center space-y-1 bg-pink-500/8 border border-pink-500/15">
+                    <p class="text-xl">💗</p>
+                    <p class="text-lg font-black text-pink-400" x-text="(googleFitData.heartPoints||0)>0?(googleFitData.heartPoints):'—'"></p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Heart Points</p>
+                </div>
+                <div class="rounded-2xl p-3 text-center space-y-1 bg-amber-500/8 border border-amber-500/15">
+                    <p class="text-xl">🏋️</p>
+                    <p class="text-lg font-black text-amber-400" x-text="googleFitData.workoutSessionsToday||0"></p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Sessions Today</p>
+                </div>
+            </div>
+            <!-- Connection health + next-sync countdown -->
+            <div class="flex items-center justify-between px-1 flex-wrap gap-1.5">
+                <div class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider"
+                     :class="{'text-emerald-400':googleFitConnectionHealth==='Healthy','text-blue-400':['Syncing','Reconnecting'].includes(googleFitConnectionHealth),'text-amber-400':['Degraded — retrying','Needs Reconnect'].includes(googleFitConnectionHealth),'text-slate-400':['Offline','Disconnected'].includes(googleFitConnectionHealth)}">
+                    <span class="w-1.5 h-1.5 rounded-full inline-block" :class="googleFitConnectionHealth==='Healthy'?'bg-emerald-400 animate-pulse':'bg-current'"></span>
+                    <span x-text="googleFitConnectionHealth"></span>
+                </div>
+                <span class="text-[10px] font-bold text-slate-400" x-text="googleFitNextSyncLabel"></span>
             </div>
             <div class="flex items-center justify-between px-1">
                 <span class="text-xs font-bold text-slate-500 dark:text-slate-400">Auto-sync every 5 minutes</span>
@@ -3396,6 +3447,22 @@
             </div>
         </div>
 
+        <!-- Duplicate / Move to another day -->
+        <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-3 space-y-2" x-show="planDayForm.exercises.length>0">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Duplicate or Move This Day</p>
+            <div class="flex flex-wrap items-center gap-2">
+                <select x-model="planDayCopyTarget" class="!w-auto flex-1 min-w-[120px]">
+                    <option value="">Select a day…</option>
+                    <template x-for="d in planDayOtherDays" :key="d"><option :value="d" x-text="planDayFullName(d)"></option></template>
+                </select>
+                <button @click="copyPlanDayTo(planDayCopyTarget)" :disabled="!planDayCopyTarget"
+                        class="text-[10px] font-black text-brand-400 border border-brand-500/20 px-3 py-2 rounded-lg hover:bg-brand-500/10 transition-all disabled:opacity-40">⧉ Copy To</button>
+                <button @click="movePlanDayTo(planDayCopyTarget)" :disabled="!planDayCopyTarget"
+                        class="text-[10px] font-black text-slate-400 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-lg hover:text-brand-400 hover:border-brand-500/30 transition-all disabled:opacity-40">➜ Move To</button>
+            </div>
+            <p x-show="planDayCopyMsg" x-text="planDayCopyMsg" class="text-[10px] font-bold text-emerald-400"></p>
+        </div>
+
         <div class="flex gap-3 pt-1">
             <button @click="clearPlanDay(planDayForm.day)" class="text-[11px] font-black text-red-400 hover:text-red-500 uppercase tracking-wider">Clear Day</button>
             <div class="flex-1"></div>
@@ -3780,8 +3847,8 @@
 
 
 <!-- METRICS MODAL -->
-<div x-show="openModals.modalMetrics" x-cloak @click.self="closeModal('modalMetrics')" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[80] flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto">
-    <div @click.stop class="w-full max-w-lg bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-5 my-2 sm:my-0">
+<div x-show="openModals.modalMetrics" x-cloak @click.self="closeModal('modalMetrics')" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[80] flex items-start justify-center p-0 sm:p-4 overflow-y-auto">
+    <div @click.stop class="w-full max-w-lg bg-white dark:bg-panelDark border border-slate-200 dark:border-slate-800 rounded-none sm:rounded-[2rem] p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-5 sm:my-6 min-h-screen sm:min-h-0">
         <div class="flex justify-between items-start">
             <h3 class="text-xl font-extrabold tracking-tight">Log Body Metrics</h3>
             <button @click="closeModal('modalMetrics')" class="text-slate-400 hover:text-slate-600 font-black text-lg leading-none">✕</button>
@@ -3820,8 +3887,8 @@
         <div>
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Workout Type</p>
             <div class="flex flex-wrap gap-2">
-                <template x-for="t in ['Strength','Running','Walking','Cardio','Cycling']" :key="t">
-                    <button @click="workoutForm.type=t.toLowerCase()" :class="workoutForm.type===t.toLowerCase()?'bg-brand-500 text-white border-brand-500':'border-slate-200 dark:border-slate-700 text-slate-400 hover:border-brand-500/50 hover:text-brand-400'" class="px-4 py-2 rounded-xl border font-black text-xs uppercase tracking-wider transition-all" x-text="t"></button>
+                <template x-for="t in CARDIO_TYPES" :key="t.value">
+                    <button @click="workoutForm.type=t.value" :class="workoutForm.type===t.value?'bg-brand-500 text-white border-brand-500':'border-slate-200 dark:border-slate-700 text-slate-400 hover:border-brand-500/50 hover:text-brand-400'" class="px-4 py-2 rounded-xl border font-black text-xs uppercase tracking-wider transition-all" x-text="t.label"></button>
                 </template>
             </div>
         </div>
@@ -3834,13 +3901,14 @@
                 </template>
             </div>
         </div>
-        <!-- Cardio/Running/Walking/Cycling fields -->
-        <div x-show="['running','walking','cardio','cycling'].includes(workoutForm.type)" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Distance (km)</label><input type="number" step="any" x-model="workoutForm.distance" placeholder="km"></div>
-            <div x-show="workoutForm.type==='running'||workoutForm.type==='walking'"><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Pace (min/km)</label><input type="number" step="any" x-model="workoutForm.pace" placeholder="min/km"></div>
-            <div x-show="workoutForm.type==='cycling'"><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Speed (km/h)</label><input type="number" step="any" x-model="workoutForm.speed" placeholder="km/h"></div>
-            <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Calories</label><input type="number" x-model="workoutForm.caloriesBurned" placeholder="kcal"></div>
-            <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Notes</label><input type="text" x-model="workoutForm.notes" placeholder="How did it go?"></div>
+        <!-- Cardio fields — driven entirely by CARDIO_FIELD_DEFS, only relevant inputs render per type -->
+        <div x-show="workoutForm.type!=='strength'&&workoutForm.type!==''" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <template x-for="f in (CARDIO_FIELD_DEFS[workoutForm.type]||[])" :key="f.key">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1" x-text="f.label+(f.unit?' ('+f.unit+')':'')"></label>
+                    <input :type="f.text?'text':'number'" step="any" x-model="workoutForm[f.key]" :placeholder="f.unit||f.label">
+                </div>
+            </template>
         </div>
         <!-- Variations (exercises + sets) for strength -->
         <div x-show="workoutForm.type==='strength'||workoutForm.type===''">
@@ -3939,23 +4007,33 @@
 
                         <!-- Sets rows — identical fields/layout to the inline workout builder's log step -->
                         <div class="px-4 pb-4 space-y-2">
-                            <div class="hidden sm:grid gap-2 px-1 pb-1 text-[9px] font-black text-slate-400 uppercase tracking-widest" style="grid-template-columns:1.5rem 6rem 1fr 1fr .9fr 1fr 1fr auto;">
+                            <datalist id="tempo-presets-modal"><option value="2-0-2"><option value="3-1-1"><option value="4-2-1"><option value="1-1-1"><option value="2-1-3"></datalist>
+                            <div class="hidden sm:grid gap-2 px-1 pb-1 text-[9px] font-black text-slate-400 uppercase tracking-widest" style="grid-template-columns:1.5rem 6rem 1fr 1fr .9fr 1.3fr 1.1fr auto;">
                                 <span>#</span><span>Type</span><span x-text="isTimedExercise(v.exercise)?'Secs':'Reps'"></span><span>Weight</span><span>RPE</span><span>Rest</span><span>Tempo</span><span></span>
                             </div>
                             <template x-for="(s,si) in v.sets" :key="si">
                                 <div>
                                     <!-- Desktop/tablet: single aligned table row -->
-                                    <div class="hidden sm:grid gap-2 items-center bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2 mb-1.5" style="grid-template-columns:1.5rem 6rem 1fr 1fr .9fr 1fr 1fr auto;">
+                                    <div class="hidden sm:grid gap-2 items-center bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2 mb-1.5" style="grid-template-columns:1.5rem 6rem 1fr 1fr .9fr 1.3fr 1.1fr auto;">
                                         <span class="w-5 h-5 rounded-full bg-brand-500/15 text-brand-400 text-[9px] font-black flex items-center justify-center shrink-0" x-text="si+1"></span>
                                         <select x-model="s.setType" class="!text-[10px] !py-1.5 !px-1.5" title="Set type">
                                             <template x-for="t in SET_TYPES" :key="t"><option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option></template>
                                         </select>
                                         <input type="number" inputmode="numeric" x-model="s.reps" :placeholder="isTimedExercise(v.exercise)?'Secs':'Reps'" min="0">
                                         <input type="number" step="any" inputmode="decimal" x-model="s.weight" placeholder="kg" min="0">
-                                        <input type="number" step="0.5" inputmode="decimal" x-model="s.rpe" placeholder="RPE" min="0" max="10" title="Rate of Perceived Exertion (0-10)">
-                                        <input type="text" x-model="s.rest" placeholder="90s">
-                                        <input type="text" x-model="s.tempo" placeholder="2-1-2">
-                                        <button @click="removeSet(vi,si)" x-show="v.sets.length>1" class="shrink-0 text-red-400 text-xs font-black hover:text-red-500 px-1">✕</button>
+                                        <div class="flex flex-col gap-0.5" title="Rate of Perceived Exertion (0-10)">
+                                            <span class="text-[9px] font-black text-brand-400 text-center" x-text="s.rpe?s.rpe:'–'"></span>
+                                            <input type="range" min="0" max="10" step="0.5" x-model="s.rpe" class="!p-0 !border-0 !bg-transparent w-full" style="accent-color:#3b82f6">
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <input type="text" x-model="s.rest" placeholder="90s" class="min-w-0">
+                                            <button type="button" @click="startRestTimer(s)" class="shrink-0 text-[9px] font-black px-1.5 py-1.5 rounded-md border transition-colors" :class="s._restTimer?'border-brand-500 text-brand-500 bg-brand-500/10':'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-brand-400'" x-text="s._restTimer?formatRestRemaining(s):'▶'"></button>
+                                        </div>
+                                        <input type="text" list="tempo-presets-modal" x-model="s.tempo" placeholder="2-1-2">
+                                        <div class="flex items-center gap-1 shrink-0">
+                                            <button @click="duplicateSet(vi,si)" title="Duplicate set" class="text-slate-400 hover:text-brand-400 font-black text-xs px-1">⧉</button>
+                                            <button @click="removeSet(vi,si)" x-show="v.sets.length>1" class="text-red-400 hover:text-red-500 font-black text-xs px-1">✕</button>
+                                        </div>
                                     </div>
                                     <!-- Mobile: stacked card -->
                                     <div class="sm:hidden bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2.5 space-y-1.5 mb-1.5">
@@ -3966,12 +4044,21 @@
                                             </select>
                                             <input type="number" inputmode="numeric" x-model="s.reps" :placeholder="isTimedExercise(v.exercise)?'Secs':'Reps'" min="0">
                                             <input type="number" step="any" inputmode="decimal" x-model="s.weight" placeholder="kg" min="0">
-                                            <button @click="removeSet(vi,si)" x-show="v.sets.length>1" class="shrink-0 text-red-400 text-xs font-black hover:text-red-500 px-1">✕</button>
+                                            <div class="flex items-center gap-1 shrink-0">
+                                                <button @click="duplicateSet(vi,si)" title="Duplicate set" class="text-slate-400 hover:text-brand-400 font-black text-xs px-1">⧉</button>
+                                                <button @click="removeSet(vi,si)" x-show="v.sets.length>1" class="text-red-400 hover:text-red-500 font-black text-xs px-1">✕</button>
+                                            </div>
                                         </div>
-                                        <div class="grid gap-1.5" style="grid-template-columns:1fr 1fr 1fr;">
-                                            <input type="number" step="0.5" inputmode="decimal" x-model="s.rpe" placeholder="RPE" min="0" max="10" title="Rate of Perceived Exertion (0-10)">
-                                            <input type="text" x-model="s.rest" placeholder="Rest e.g. 90s">
-                                            <input type="text" x-model="s.tempo" placeholder="Tempo e.g. 2-1-2">
+                                        <div class="grid gap-1.5" style="grid-template-columns:1fr 1.2fr 1fr;">
+                                            <div class="flex flex-col gap-0.5" title="Rate of Perceived Exertion (0-10)">
+                                                <span class="text-[8px] font-black text-brand-400 text-center" x-text="s.rpe?('RPE '+s.rpe):'RPE –'"></span>
+                                                <input type="range" min="0" max="10" step="0.5" x-model="s.rpe" class="!p-0 !border-0 !bg-transparent w-full" style="accent-color:#3b82f6">
+                                            </div>
+                                            <div class="flex items-center gap-1">
+                                                <input type="text" x-model="s.rest" placeholder="Rest 90s" class="min-w-0">
+                                                <button type="button" @click="startRestTimer(s)" class="shrink-0 text-[9px] font-black px-1.5 py-1.5 rounded-md border transition-colors" :class="s._restTimer?'border-brand-500 text-brand-500 bg-brand-500/10':'border-slate-200 dark:border-slate-700 text-slate-400'" x-text="s._restTimer?formatRestRemaining(s):'▶'"></button>
+                                            </div>
+                                            <input type="text" list="tempo-presets-modal" x-model="s.tempo" placeholder="Tempo 2-1-2">
                                         </div>
                                     </div>
                                 </div>
@@ -4083,6 +4170,100 @@ const MOTIVATION_MSGS = [
 
 const SYSTEM_MUSCLE_GROUPS = ['Chest','Back','Shoulders','Biceps','Triceps','Legs','Glutes','Core','Calves','Forearms'];
 
+// Workout-type selector options — value is what's persisted on the workout record,
+// label is what's shown in the Workout Type picker and History type filter.
+const CARDIO_TYPES = [
+    {value:'strength', label:'Strength'},
+    {value:'running', label:'Running'},
+    {value:'walking', label:'Walking'},
+    {value:'cycling', label:'Cycling'},
+    {value:'cardio', label:'Cardio Machine'},
+    {value:'treadmill', label:'Treadmill'},
+    {value:'elliptical', label:'Elliptical'},
+    {value:'stairclimber', label:'Stair Climber'},
+    {value:'rowing', label:'Rowing'},
+];
+
+// Per-cardio-type field sets for the Log/Edit Workout modal — only the fields relevant
+// to that activity are shown. Duration is a shared top-level field, not repeated here.
+const CARDIO_FIELD_DEFS = {
+    running: [
+        {key:'distance', label:'Distance', unit:'km'},
+        {key:'pace', label:'Avg Pace', unit:'min/km'},
+        {key:'speed', label:'Avg Speed', unit:'km/h'},
+        {key:'caloriesBurned', label:'Calories', unit:'kcal'},
+        {key:'heartRate', label:'Avg Heart Rate', unit:'bpm'},
+        {key:'cadence', label:'Cadence', unit:'spm'},
+        {key:'elevation', label:'Elevation Gain', unit:'m'},
+        {key:'notes', label:'Notes', unit:'', text:true},
+    ],
+    walking: [
+        {key:'distance', label:'Distance', unit:'km'},
+        {key:'pace', label:'Avg Pace', unit:'min/km'},
+        {key:'speed', label:'Avg Speed', unit:'km/h'},
+        {key:'caloriesBurned', label:'Calories', unit:'kcal'},
+        {key:'steps', label:'Steps', unit:'steps'},
+        {key:'notes', label:'Notes', unit:'', text:true},
+    ],
+    cycling: [
+        {key:'distance', label:'Distance', unit:'km'},
+        {key:'speed', label:'Avg Speed', unit:'km/h'},
+        {key:'elevation', label:'Elevation Gain', unit:'m'},
+        {key:'caloriesBurned', label:'Calories', unit:'kcal'},
+        {key:'cadence', label:'Cadence', unit:'rpm'},
+        {key:'power', label:'Power (optional)', unit:'W'},
+        {key:'heartRate', label:'Avg Heart Rate', unit:'bpm'},
+        {key:'notes', label:'Notes', unit:'', text:true},
+    ],
+    cardio: [
+        {key:'caloriesBurned', label:'Calories', unit:'kcal'},
+        {key:'distance', label:'Distance', unit:'km'},
+        {key:'speed', label:'Speed', unit:'km/h'},
+        {key:'incline', label:'Incline', unit:'%'},
+        {key:'resistance', label:'Resistance Level', unit:''},
+        {key:'machineType', label:'Machine Type', unit:'', text:true},
+        {key:'heartRate', label:'Avg Heart Rate', unit:'bpm'},
+        {key:'notes', label:'Notes', unit:'', text:true},
+    ],
+    treadmill: [
+        {key:'distance', label:'Distance', unit:'km'},
+        {key:'speed', label:'Speed', unit:'km/h'},
+        {key:'incline', label:'Incline', unit:'%'},
+        {key:'caloriesBurned', label:'Calories', unit:'kcal'},
+        {key:'heartRate', label:'Avg Heart Rate', unit:'bpm'},
+        {key:'notes', label:'Notes', unit:'', text:true},
+    ],
+    elliptical: [
+        {key:'resistance', label:'Resistance Level', unit:''},
+        {key:'caloriesBurned', label:'Calories', unit:'kcal'},
+        {key:'heartRate', label:'Avg Heart Rate', unit:'bpm'},
+        {key:'notes', label:'Notes', unit:'', text:true},
+    ],
+    stairclimber: [
+        {key:'steps', label:'Steps', unit:'steps'},
+        {key:'floors', label:'Floors', unit:'floors'},
+        {key:'resistance', label:'Resistance Level', unit:''},
+        {key:'caloriesBurned', label:'Calories', unit:'kcal'},
+        {key:'heartRate', label:'Avg Heart Rate', unit:'bpm'},
+        {key:'notes', label:'Notes', unit:'', text:true},
+    ],
+    rowing: [
+        {key:'distance', label:'Distance', unit:'m'},
+        {key:'splitPace', label:'Split Pace', unit:'/500m', text:true},
+        {key:'strokeRate', label:'Stroke Rate', unit:'spm'},
+        {key:'caloriesBurned', label:'Calories', unit:'kcal'},
+        {key:'heartRate', label:'Avg Heart Rate', unit:'bpm'},
+        {key:'notes', label:'Notes', unit:'', text:true},
+    ],
+};
+const CARDIO_FIELD_KEYS = [...new Set(Object.values(CARDIO_FIELD_DEFS).flat().map(f=>f.key))];
+const CARDIO_FIELD_TEXT_KEYS = new Set(Object.values(CARDIO_FIELD_DEFS).flat().filter(f=>f.text).map(f=>f.key));
+function blankCardioFields() {
+    const o = {};
+    CARDIO_FIELD_KEYS.forEach(k=>{ o[k]=''; });
+    return o;
+}
+
 // Icons for muscle-selection cards (Workout Builder)
 const MUSCLE_ICONS = {
     'Chest':'🫁','Back':'🧗','Shoulders':'🤷','Biceps':'💪','Triceps':'🤜',
@@ -4095,8 +4276,8 @@ const BUILTIN_EXERCISES = {
     'Shoulders':['Overhead Press','Shoulder Press','Dumbbell Lateral Raise','Front Raise','Arnold Press','Upright Row','Reverse Flyes','Shrugs','Cable Lateral Raise'],
     'Biceps':['Barbell Curl','Dumbbell Curl','Hammer Curl','Preacher Curl','Concentration Curl','Cable Curl','Incline Dumbbell Curl','EZ-Bar Curl'],
     'Triceps':['Tricep Pushdown','Skull Crushers','Close-Grip Bench Press','Tricep Dips','Overhead Extension','Diamond Push-Ups','Cable Kickback','Rope Pushdown'],
-    'Legs':['Squat','Leg Press','Lunges','Leg Extension','Leg Curl','Romanian Deadlift','Front Squat','Step-Ups','Bulgarian Split Squat','Goblet Squat','Hack Squat','Smith Machine Squat','Walking Lunges'],
-    'Glutes':['Hip Thrust','Glute Bridge','Bulgarian Split Squat','Donkey Kicks','Fire Hydrants','Frog Pumps','Hip Abduction Machine','Romanian Deadlift','Single Leg Glute Bridge','Sumo Squat','Step-Ups'],
+    'Legs':['Squat','Leg Press','Lunges','Leg Extension','Leg Curl','Romanian Deadlift','Front Squat','Step-Ups','Bulgarian Split Squat'],
+    'Glutes':['Hip Thrust','Glute Bridge','Bulgarian Split Squat','Donkey Kicks','Romanian Deadlift','Step-Ups'],
     'Core':['Plank','Crunches','Leg Raises','Russian Twists','Cable Crunch','Ab Wheel Rollout','Hanging Knee Raise','Side Plank'],
     'Calves':['Standing Calf Raise','Seated Calf Raise','Donkey Calf Raise','Single-Leg Calf Raise'],
     'Forearms':['Wrist Curls','Reverse Wrist Curls','Farmer\'s Walk','Plate Pinch','Bar Hang','Reverse Curl']
@@ -4168,17 +4349,8 @@ const EXERCISE_INFO = {
 'Front Squat':{primary:['Legs'],secondary:['Core','Shoulders'],steps:['Rest bar on front of shoulders, hands crossed or in clean grip.','Keep elbows high throughout to prevent the bar from rolling.','Feet shoulder-width, toes slightly out.','Squat down keeping torso very upright — more than a back squat.','Drive through heels to stand, maintaining elbow position.'],tip:'Requires more core strength and mobility than a back squat. Focus on keeping elbows up and torso vertical.'},
 'Step-Ups':{primary:['Legs'],secondary:['Glutes','Core'],steps:['Stand in front of a bench or box at knee height.','Step one foot onto the bench, drive through that heel.','Bring other foot up to stand fully on the bench.','Step back down with control, one foot at a time.','Complete all reps on one leg before switching, or alternate.'],tip:'Keep chest up and push through the front heel, not the back foot. Focus on single-leg strength.'},
 'Bulgarian Split Squat':{primary:['Legs'],secondary:['Glutes','Core'],steps:['Stand 2-3 feet in front of a bench. Place rear foot on the bench.','Hold dumbbells or barbell. Front foot flat on the floor.','Lower your back knee toward the floor by bending both knees.','Lower until front thigh is parallel to the floor.','Drive up through front heel to return to starting position.'],tip:'One of the hardest leg exercises. Use bodyweight first to master balance, then add load.'},
-'Sumo Squat':{primary:['Legs'],secondary:['Glutes'],steps:['Stand with feet much wider than shoulder-width, toes pointed out 45 degrees.','Hold dumbbell or kettlebell in front, or barbell on back.','Keep chest tall, brace core.','Lower hips straight down between heels — not forward.','Drive through heels and squeeze glutes to stand.'],tip:'Wide stance targets inner thighs and glutes more than a standard squat.'},
-'Goblet Squat':{primary:['Legs'],secondary:['Glutes','Core'],steps:['Hold a single dumbbell or kettlebell vertically against your chest with both hands.','Stand with feet shoulder-width, toes slightly out.','Brace core and squat down, letting elbows track inside the knees.','Descend until thighs are at least parallel to the floor.','Drive through heels to stand back up, keeping the weight close to your chest.'],tip:'The front-loaded weight naturally keeps your torso upright — a great squat pattern to learn proper depth and bracing.'},
-'Hack Squat':{primary:['Legs'],secondary:['Glutes'],steps:['Position shoulders under the pads and feet shoulder-width on the platform.','Unlock the safety handles and brace your core.','Bend knees to lower the sled, keeping your back flat against the pad.','Descend until thighs are parallel to the platform, or as deep as mobility allows.','Drive through the whole foot to press back up without locking knees hard.'],tip:'Foot placement changes the emphasis — higher on the platform targets glutes/hamstrings more, lower targets quads.'},
-'Smith Machine Squat':{primary:['Legs'],secondary:['Glutes','Core'],steps:['Position the bar across your upper back/traps and unrack by rotating it free.','Set feet slightly forward of the bar path, shoulder-width apart.','Brace core and squat down, following the machine\'s fixed vertical path.','Descend until thighs are parallel to the floor.','Drive through heels to return to standing, then re-rack when finished.'],tip:'The fixed bar path removes the balance demand of a free squat — keep your foot position consistent every rep.'},
-'Walking Lunges':{primary:['Legs'],secondary:['Glutes','Core'],steps:['Stand tall holding dumbbells at your sides (or bodyweight only).','Step forward into a lunge, lowering the back knee toward the floor.','Instead of stepping back, push off the front foot to bring the back leg forward into the next lunge.','Continue alternating legs, moving forward with each rep.','Keep torso upright and core braced throughout the walk.'],tip:'The continuous forward motion adds a balance and coordination demand on top of the strength challenge — start with bodyweight to master the pattern.'},
 'Donkey Kicks':{primary:['Glutes'],secondary:[],steps:['Start on hands and knees, wrists under shoulders, knees under hips.','Keep core braced and back flat throughout.','Kick one leg up and back, keeping knee bent at 90 degrees.','Lift until thigh is parallel to floor and foot faces the ceiling.','Squeeze glute hard at the top, then lower back to start.'],tip:'Focus on squeezing the glute at the top, not how high you kick. Add ankle weights for more resistance.'},
 'Clamshells':{primary:['Glutes'],secondary:['Legs'],steps:['Lie on your side, knees bent at 90 degrees, hips stacked.','Place a resistance band above the knees (recommended).','Keep feet together. Rotate top knee upward like a clamshell opening.','Lift until top knee points toward the ceiling.','Lower slowly — resist the band on the way down.'],tip:'Excellent for hip abductor and glute medius activation. Common in warm-ups and rehabilitation.'},
-'Fire Hydrants':{primary:['Glutes'],secondary:['Core'],steps:['Start on hands and knees, wrists under shoulders, knees under hips.','Keep core braced and back flat throughout.','Lift one bent knee out to the side, keeping the 90-degree bend.','Raise until thigh is roughly parallel to floor, squeezing the glute.','Lower with control back to start. Complete reps, then switch sides.'],tip:'Keep your hips square to the floor throughout — rotating the torso to lift higher works around the glute instead of through it.'},
-'Frog Pumps':{primary:['Glutes'],secondary:[],steps:['Lie on your back, soles of feet together, knees dropped out to sides.','Keep feet close to glutes, forming a diamond shape with your legs.','Drive hips up by squeezing glutes, keeping feet together throughout.','Squeeze hard at the top for a full second.','Lower hips back down with control. Repeat.'],tip:'The wide knee position emphasizes the glute max through a shortened, high-tension range — quality of squeeze matters more than range of motion.'},
-'Hip Abduction Machine':{primary:['Glutes'],secondary:[],steps:['Sit in machine with back against pad, legs inside the padded levers.','Set weight and starting position so knees start together.','Push legs outward against resistance by contracting outer glutes.','Squeeze at full abduction for a second.','Return slowly to start under control. Do not let the weight stack slam.'],tip:'This isolates the gluteus medius/minimus — great for hip stability, but keep torso still and avoid leaning.'},
-'Single Leg Glute Bridge':{primary:['Glutes'],secondary:['Core'],steps:['Lie on back, knees bent, feet flat. Extend one leg straight out.','Keep the extended leg in line with your torso, hips level.','Drive through the grounded heel to lift hips off the floor.','Squeeze the working glute hard at the top — avoid hip rotation.','Lower with control. Complete all reps on one side before switching.'],tip:'Unilateral loading exposes side-to-side imbalances — if one hip drops, slow down and focus on keeping hips square.'},
 'Lateral Band Walk':{primary:['Glutes'],secondary:['Legs'],steps:['Place resistance band around ankles or just above knees.','Stand with feet hip-width apart, slight bend in knees.','Step sideways with one foot, maintaining tension on the band.','Bring other foot in, maintaining hip-width stance.','Walk 10-15 steps one direction, then reverse.'],tip:'Keep hips level and avoid tilting. The band should stay taut the entire time.'},
 'Russian Twists':{primary:['Core'],secondary:[],steps:['Sit on floor, knees bent, feet slightly elevated or flat.','Lean back slightly to about 45 degrees — engage core to hold.','Hold weight or clasp hands together.','Rotate torso to one side, bringing hands near the floor.','Rotate to other side. That is one rep.'],tip:'The rotation must come from the torso, not just the arms. Slower speed equals more core engagement.'},
 'Cable Crunch':{primary:['Core'],secondary:[],steps:['Kneel facing a high cable pulley with rope attachment.','Grip rope behind or at sides of head.','Round your lower back and crunch abs, pulling elbows toward knees.','Hold peak contraction for 1 second — focus on abs, not arms.','Return to start by extending the torso back up.'],tip:'The abs should do the work, not your arms pulling. Curl ribcage toward your hips.'},
@@ -4256,17 +4428,8 @@ const EXERCISE_META = {
     'Hip Thrust':{equipment:'Barbell',difficulty:'Intermediate'},
     'Glute Bridge':{equipment:'Bodyweight',difficulty:'Beginner'},
     'Bulgarian Split Squat':{equipment:'Dumbbell',difficulty:'Advanced'},
-    'Sumo Squat':{equipment:'Barbell',difficulty:'Intermediate'},
-    'Goblet Squat':{equipment:'Dumbbell',difficulty:'Beginner'},
-    'Hack Squat':{equipment:'Machine',difficulty:'Intermediate'},
-    'Smith Machine Squat':{equipment:'Machine',difficulty:'Beginner'},
-    'Walking Lunges':{equipment:'Dumbbell',difficulty:'Intermediate'},
     'Donkey Kicks':{equipment:'Bodyweight',difficulty:'Beginner'},
     'Clamshells':{equipment:'Bodyweight',difficulty:'Beginner'},
-    'Fire Hydrants':{equipment:'Bodyweight',difficulty:'Beginner'},
-    'Frog Pumps':{equipment:'Bodyweight',difficulty:'Beginner'},
-    'Hip Abduction Machine':{equipment:'Machine',difficulty:'Beginner'},
-    'Single Leg Glute Bridge':{equipment:'Bodyweight',difficulty:'Intermediate'},
     'Lateral Band Walk':{equipment:'Resistance Band',difficulty:'Beginner'},
     'Plank':{equipment:'Bodyweight',difficulty:'Beginner'},
     'Crunches':{equipment:'Bodyweight',difficulty:'Beginner'},
@@ -4353,6 +4516,16 @@ const EXERCISE_WORKOUT_ASSETS = {
     'Donkey Kicks':{folder:'glutes', slug:'donkey_kicks'},
     'Glute Bridge':{folder:'glutes', slug:'glute_bridge'},
     'Hip Thrust':{folder:'glutes', slug:'hip_thrust'},
+    'Standing Calf Raise':{folder:'calves', slug:'standing_calf_raise'},
+    'Seated Calf Raise':{folder:'calves', slug:'seated_calf_raise'},
+    'Donkey Calf Raise':{folder:'calves', slug:'donkey_calf_raise'},
+    'Single-Leg Calf Raise':{folder:'calves', slug:'single_leg_calf_raise'},
+    'Wrist Curls':{folder:'forearms', slug:'wrist_curls'},
+    'Reverse Wrist Curls':{folder:'forearms', slug:'reverse_wrist_curls'},
+    "Farmer's Walk":{folder:'forearms', slug:'farmers_walk'},
+    'Plate Pinch':{folder:'forearms', slug:'plate_pinch'},
+    'Bar Hang':{folder:'forearms', slug:'bar_hang'},
+    'Reverse Curl':{folder:'forearms', slug:'reverse_curl'},
 };
 function getExerciseWorkoutAssets(name) {
     const entry = EXERCISE_WORKOUT_ASSETS[name];
@@ -4578,6 +4751,46 @@ const EXERCISE_MUSCLE_LEGEND = {
     'Hip Thrust': {
         front: [ {color:LEGEND_COLORS.red, muscle:'Hip Flexors (Iliopsoas)'}, {color:LEGEND_COLORS.yellow, muscle:'Adductors (Inner Thighs)'}, {color:LEGEND_COLORS.purple, muscle:'Quadriceps (Front Thighs)'}, {color:LEGEND_COLORS.green, muscle:'Calves (Gastrocnemius)'} ],
         back: [ {color:LEGEND_COLORS.orange, muscle:'Gluteus Maximus (Glutes)'}, {color:LEGEND_COLORS.red, muscle:'Hamstrings (Biceps Femoris, Semitendinosus, Semimembranosus)'}, {color:LEGEND_COLORS.green, muscle:'Calves (Gastrocnemius)'} ],
+    },
+    'Standing Calf Raise': {
+        front: [ {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'} ],
+        back: [ {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'}, {color:LEGEND_COLORS.yellow, muscle:'Soleus (Calves)'} ],
+    },
+    'Seated Calf Raise': {
+        front: [ {color:LEGEND_COLORS.green, muscle:'Soleus (Calves)'} ],
+        back: [ {color:LEGEND_COLORS.green, muscle:'Soleus (Calves)'} ],
+    },
+    'Donkey Calf Raise': {
+        front: [ {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'} ],
+        back: [ {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'}, {color:LEGEND_COLORS.yellow, muscle:'Soleus (Calves)'} ],
+    },
+    'Single-Leg Calf Raise': {
+        front: [ {color:LEGEND_COLORS.green, muscle:'Soleus (Calves)'} ],
+        back: [ {color:LEGEND_COLORS.green, muscle:'Gastrocnemius (Calves)'}, {color:LEGEND_COLORS.green, muscle:'Soleus (Calves)'} ],
+    },
+    'Wrist Curls': {
+        front: [ {color:LEGEND_COLORS.green, muscle:'Wrist Flexors (Forearm)'}, {color:LEGEND_COLORS.red, muscle:'Palmaris Longus (Forearm)'} ],
+        back: [ {color:LEGEND_COLORS.green, muscle:'Wrist Flexors (Forearm)'}, {color:LEGEND_COLORS.red, muscle:'Palmaris Longus (Forearm)'} ],
+    },
+    'Reverse Wrist Curls': {
+        front: [ {color:LEGEND_COLORS.green, muscle:'Brachioradialis (Forearm)'}, {color:LEGEND_COLORS.red, muscle:'Wrist Extensors (Forearm)'} ],
+        back: [ {color:LEGEND_COLORS.green, muscle:'Brachioradialis (Forearm)'}, {color:LEGEND_COLORS.red, muscle:'Wrist Extensors (Forearm)'} ],
+    },
+    "Farmer's Walk": {
+        front: [ {color:LEGEND_COLORS.purple, muscle:'Forearm Flexors (Grip Muscles)'}, {color:LEGEND_COLORS.red, muscle:'Rectus Abdominis (Core)'}, {color:LEGEND_COLORS.blue, muscle:'Quadriceps (Legs)'} ],
+        back: [ {color:LEGEND_COLORS.green, muscle:'Trapezius (Upper Back)'}, {color:LEGEND_COLORS.yellow, muscle:'Erector Spinae (Lower Back)'}, {color:LEGEND_COLORS.orange, muscle:'Calves (Lower Leg)'} ],
+    },
+    'Plate Pinch': {
+        front: [ {color:LEGEND_COLORS.red, muscle:'Forearm Flexors (Grip Muscles)'} ],
+        back: [ {color:LEGEND_COLORS.blue, muscle:'Forearm Extensors (Grip Muscles)'} ],
+    },
+    'Bar Hang': {
+        front: [ {color:LEGEND_COLORS.green, muscle:'Forearm Flexors (Grip Muscles)'} ],
+        back: [ {color:LEGEND_COLORS.green, muscle:'Forearm Extensors (Grip Muscles)'} ],
+    },
+    'Reverse Curl': {
+        front: [ {color:LEGEND_COLORS.green, muscle:'Brachioradialis (Forearm)'}, {color:LEGEND_COLORS.red, muscle:'Wrist Extensors (Forearm)'} ],
+        back: [ {color:LEGEND_COLORS.green, muscle:'Brachioradialis (Forearm)'}, {color:LEGEND_COLORS.red, muscle:'Wrist Extensors (Forearm)'} ],
     },
 };
 function getExerciseMuscleLegend(name) { return EXERCISE_MUSCLE_LEGEND[name] || null; }
@@ -5736,11 +5949,13 @@ function vytaraApp() {
         goalTargets: { workoutFrequencyPerWeek:'', streakTarget:'' },
         newStrengthGoal: { exercise:'', targetWeight:'' },
         historyView: 'list',
-        historyFilters: { search:'', muscle:'', exercise:'' },
+        historyFilters: { search:'', muscle:'', exercise:'', type:'' },
         calendarMonth: '',
         challenges: [],
         weeklyPlan: { Mon:{label:'',exercises:[]}, Tue:{label:'',exercises:[]}, Wed:{label:'',exercises:[]}, Thu:{label:'',exercises:[]}, Fri:{label:'',exercises:[]}, Sat:{label:'',exercises:[]}, Sun:{label:'',exercises:[]} },
         planDayForm: { day:'', label:'', exercises:[], exerciseSearch:'' },
+        planDayCopyTarget: '',
+        planDayCopyMsg: '',
         reportRange: { from:'', to:'' },
         filters: { workoutsFrom:'', workoutsTo:'', dietFrom:'', dietTo:'', metricsFrom:'', metricsTo:'' },
         dashboardDate: '',
@@ -5764,7 +5979,7 @@ function vytaraApp() {
         newPresetItem: {name:'',calories:'',protein:'',carbs:'',fat:'',amount:'',unit:'g'},
         mealEntry: { name:'', type:'meal', time:'', mealDate:'', calories:'', protein:'', carbs:'', fat:'', fibre:'', _unit:'g', _showSugg:false, _suggestions:[] },
         metricsForm: { date:'', weight:'', bodyFat:'', muscleMass:'', waist:'', chest:'', arms:'', hips:'', sleep:'', notes:'' },
-        workoutForm: { date:'', type:'strength', duration:'', muscles:[], variations:[], notes:'', distance:'', pace:'', speed:'', caloriesBurned:'' },
+        workoutForm: { date:'', type:'strength', duration:'', muscles:[], variations:[], notes:'', distance:'', pace:'', speed:'', caloriesBurned:'', ...blankCardioFields() },
         // Inline (non-modal) premium workout builder: Muscles -> Exercises -> Guide -> Log
         workoutBuilder: { active:false, step:'muscles', date:'', duration:'', selectedMuscle:'', exerciseSearch:'', equipmentFilter:'', activeExercise:'', guideTab:'overview', variations:[], notes:'' },
         customExerciseForm: { name:'', primaryMuscle:'', secondaryMuscles:[], equipment:'', difficulty:'', category:'', movementPattern:'', notes:'' },
@@ -5781,7 +5996,7 @@ function vytaraApp() {
         challengesLoading: false,
         aiNutritionLoading: false,
         googleFitConnected: false,
-        googleFitData: { stepsToday:0, calsBurned:0, activeMins:0, heartRateAvg:0, sleepHours:0 },
+        googleFitData: { stepsToday:0, calsBurned:0, activeMins:0, heartRateAvg:0, sleepHours:0, distanceKm:0, weightKg:0, heartPoints:0, workoutSessionsToday:0 },
         googleFitSyncing: false,
         googleFitReconnecting: false,
         googleFitNeedsReauth: false,
@@ -5789,9 +6004,13 @@ function vytaraApp() {
         googleFitAccessToken: null,
         googleFitLastError: '',
         googleFitLastSyncedAt: null,
+        googleFitRetryCount: 0,
+        googleFitOffline: false,
         _gfitSyncTimer: null,
         _gfitRefreshTimer: null,
+        _gfitRetryTimer: null,
         _gfitVisibilityBound: false,
+        _gfitOnlineBound: false,
         feedbackForm: { name:'', email:'', message:'', rating:5 },
         feedbackLoading: false,
         feedbackSent: false,
@@ -6160,6 +6379,7 @@ function vytaraApp() {
             if(q) list=list.filter(w=>(w.notes||'').toLowerCase().includes(q)||(w.variations||[]).some(v=>(v.exercise||'').toLowerCase().includes(q))||(w.exercise||'').toLowerCase().includes(q));
             if(this.historyFilters.muscle) list=list.filter(w=>(w.muscles||[]).includes(this.historyFilters.muscle));
             if(this.historyFilters.exercise) list=list.filter(w=>(w.variations||[]).some(v=>v.exercise===this.historyFilters.exercise)||w.exercise===this.historyFilters.exercise);
+            if(this.historyFilters.type) list=list.filter(w=>(w.type||'strength').toLowerCase()===this.historyFilters.type);
             return list;
         },
         get historyExerciseOptions() {
@@ -6350,7 +6570,7 @@ function vytaraApp() {
         openModal(name, presetType) {
             if(name==='modalWorkout') {
                 const today=this.getToday();
-                this.workoutForm={date:today,type:presetType||'strength',duration:'',muscles:[],variations:[blankVariation()],notes:'',distance:'',pace:'',speed:'',caloriesBurned:''};
+                this.workoutForm={date:today,type:presetType||'strength',duration:'',muscles:[],variations:[blankVariation()],notes:'',distance:'',pace:'',speed:'',caloriesBurned:'',...blankCardioFields()};
             }
             if(name==='modalDiet') {
                 const t=this.getToday();
@@ -7174,7 +7394,47 @@ function vytaraApp() {
                 v._suggestions=[];
                 // Auto-show exercise guide if info exists
                 if(EXERCISE_INFO[val]) v._showInfo=true;
+                // Prefill from last session — only while the set is still untouched, so this
+                // never clobbers data the user already typed or an existing logged entry.
+                if(v.sets.length===1 && !v.sets[0].reps && !v.sets[0].weight) {
+                    v.sets[0] = this.prefillSetFromHistory(val);
+                }
             }
+        },
+        // Carries reps/weight/rest/tempo forward from the exercise's most recent logged
+        // session — RPE and notes are left blank since those are subjective to the day.
+        prefillSetFromHistory(name) {
+            const stats = this.getExerciseStats(name);
+            if(!stats || !stats.lastSets || stats.lastSets.length===0) return blankSet();
+            const s = stats.lastSets[0];
+            return {reps:s.reps||'', weight:s.weight||'', rpe:'', rest:s.rest||'', setType:'working', tempo:s.tempo||'', notes:''};
+        },
+        // Duplicate an existing set in place (distinct from "+ Add Set", which carries the
+        // previous set's values into a NEW blank slot at the end of the list).
+        duplicateSet(vi,si) {
+            const sets=this.workoutForm.variations[vi].sets;
+            const dup={...sets[si]};
+            sets.splice(si+1,0,dup);
+        },
+        builderDuplicateSet(vi,si) {
+            const sets=this.workoutBuilder.variations[vi].sets;
+            const dup={...sets[si]};
+            sets.splice(si+1,0,dup);
+        },
+        // Rest timer — counts down from the set's Rest field (seconds). Shared by wizard + modal
+        // set rows since both operate on the same {reps,weight,rpe,rest,...} set object shape.
+        startRestTimer(set) {
+            const secs = parseInt(set.rest)||60;
+            if(set._restTimer) { clearInterval(set._restTimer); set._restTimer=null; set._restRemaining=0; return; }
+            set._restRemaining = secs;
+            set._restTimer = setInterval(() => {
+                set._restRemaining--;
+                if(set._restRemaining<=0) { clearInterval(set._restTimer); set._restTimer=null; set._restRemaining=0; }
+            }, 1000);
+        },
+        formatRestRemaining(set) {
+            const s = set._restRemaining||0;
+            return String(Math.floor(s/60)).padStart(1,'0')+':'+String(s%60).padStart(2,'0');
         },
 
         saveWorkoutLog() {
@@ -7190,10 +7450,7 @@ function vytaraApp() {
                 muscles: [...(this.workoutForm.muscles||[])],
                 variations: isStrength ? this.workoutForm.variations.map(v=>({exercise:v.exercise,exerciseNotes:v.exerciseNotes||'',sets:v.sets.map(s=>({reps:parseInt(s.reps)||0,weight:parseFloat(s.weight)||0,rpe:parseFloat(s.rpe)||0,rest:s.rest||'',setType:s.setType||'working',tempo:s.tempo||'',notes:s.notes||''})).filter(s=>s.reps>0||s.weight>0)})) : [],
                 notes: this.workoutForm.notes||'',
-                distance: parseFloat(this.workoutForm.distance)||0,
-                pace: parseFloat(this.workoutForm.pace)||0,
-                speed: parseFloat(this.workoutForm.speed)||0,
-                caloriesBurned: parseInt(this.workoutForm.caloriesBurned)||0,
+                ...Object.fromEntries(CARDIO_FIELD_KEYS.filter(k=>k!=='notes').map(k=>[k, CARDIO_FIELD_TEXT_KEYS.has(k) ? (this.workoutForm[k]||'') : (parseFloat(this.workoutForm[k])||0)])),
                 // legacy compat
                 exercise: this.workoutForm.variations[0]?.exercise||'',
                 sets: this.workoutForm.variations[0]?.sets||[],
@@ -7233,7 +7490,8 @@ function vytaraApp() {
         editWorkout(w) {
             const mapSet=s=>({reps:s.reps||'',weight:s.weight||'',rpe:s.rpe||'',rest:s.rest||'',setType:s.setType||'working',tempo:s.tempo||'',notes:s.notes||''});
             const variations=(w.variations&&w.variations.length>0)?w.variations.map(v=>({exercise:v.exercise,exerciseNotes:v.exerciseNotes||'',sets:(v.sets||[blankSet()]).map(mapSet),_showSugg:false,_suggestions:[],_showInfo:false})):[{exercise:w.exercise||'',exerciseNotes:'',sets:(w.sets||[blankSet()]).map(mapSet),_showSugg:false,_suggestions:[],_showInfo:false}];
-            this.workoutForm={_editId:w.id,date:w.date,type:w.type||'strength',duration:w.duration||w.minutes||'',muscles:[...(w.muscles||[])],variations,notes:w.notes||'',distance:w.distance||'',pace:w.pace||'',speed:w.speed||'',caloriesBurned:w.caloriesBurned||''};
+            const cardioFields={}; CARDIO_FIELD_KEYS.forEach(k=>{ cardioFields[k]=w[k]||''; });
+            this.workoutForm={_editId:w.id,date:w.date,type:w.type||'strength',duration:w.duration||w.minutes||'',muscles:[...(w.muscles||[])],variations,notes:w.notes||'',distance:w.distance||'',pace:w.pace||'',speed:w.speed||'',caloriesBurned:w.caloriesBurned||'',...cardioFields};
             this.openModals.modalWorkout=true;
         },
 
@@ -7343,7 +7601,7 @@ function vytaraApp() {
         builderStartLogging() {
             const name=this.workoutBuilder.activeExercise;
             if(!this.workoutBuilder.variations.some(v=>v.exercise===name)) {
-                this.workoutBuilder.variations.push({exercise:name, exerciseNotes:'', sets:[blankSet()]});
+                this.workoutBuilder.variations.push({exercise:name, exerciseNotes:'', sets:[this.prefillSetFromHistory(name)]});
             }
             this.workoutBuilder.step='log';
         },
@@ -7373,7 +7631,12 @@ function vytaraApp() {
         openPlanDayModal(day) {
             const existing = this.weeklyPlan[day] || {label:'',exercises:[]};
             this.planDayForm = { day, label:existing.label||'', exercises:[...existing.exercises], exerciseSearch:'' };
+            this.planDayCopyTarget = '';
+            this.planDayCopyMsg = '';
             this.openModals.modalPlanDay = true;
+        },
+        get planDayOtherDays() {
+            return WEEK_DAYS.filter(d=>d!==this.planDayForm.day);
         },
         addExerciseToPlanDay(name) {
             if(!name || this.planDayForm.exercises.includes(name)) return;
@@ -7393,6 +7656,24 @@ function vytaraApp() {
             this.weeklyPlan[day] = {label:'',exercises:[]};
             this.persist();
         },
+        // Copy the day currently open in the modal onto another day, leaving the source
+        // untouched — lets a user reuse "Push Day" across Mon/Thu without retyping it.
+        copyPlanDayTo(targetDay) {
+            if(!targetDay || targetDay===this.planDayForm.day) return;
+            this.weeklyPlan[targetDay] = { label:this.planDayForm.label.trim(), exercises:[...this.planDayForm.exercises] };
+            this.persist();
+            this.planDayCopyMsg = 'Copied to '+this.planDayFullName(targetDay)+'.';
+            setTimeout(()=>{ this.planDayCopyMsg=''; }, 2500);
+        },
+        // Move relocates the plan to another day and clears the source — for reordering
+        // a training split rather than duplicating a template.
+        movePlanDayTo(targetDay) {
+            if(!targetDay || targetDay===this.planDayForm.day) return;
+            this.weeklyPlan[targetDay] = { label:this.planDayForm.label.trim(), exercises:[...this.planDayForm.exercises] };
+            this.weeklyPlan[this.planDayForm.day] = {label:'',exercises:[]};
+            this.persist();
+            this.openModals.modalPlanDay = false;
+        },
         // Seeds the inline workout builder with every exercise already planned for a day,
         // landing straight on the logging step — mirrors builderStartLogging()'s push shape
         // for each exercise instead of routing through the single-exercise guide flow.
@@ -7400,7 +7681,7 @@ function vytaraApp() {
             const plan = this.weeklyPlan[day];
             if(!plan || plan.exercises.length===0) return;
             this.workoutBuilder = { active:true, step:'log', date:this.getToday(), duration:'', selectedMuscle:'', exerciseSearch:'', equipmentFilter:'', activeExercise:'', guideTab:'overview', notes:'',
-                variations: plan.exercises.map(exercise=>({exercise, exerciseNotes:'', sets:[blankSet()]})) };
+                variations: plan.exercises.map(exercise=>({exercise, exerciseNotes:'', sets:[this.prefillSetFromHistory(exercise)]})) };
         },
         // Unique primary muscle groups trained across a planned day's exercises, in the
         // order they first appear — drives the muscle chips and the card's small icon.
@@ -8494,14 +8775,47 @@ function vytaraApp() {
                     }
                 });
             }
+            // Offline detection + automatic resume — the moment connectivity returns, retry
+            // right away instead of waiting for the next 5-minute tick or manual refresh.
+            if(!this._gfitOnlineBound) {
+                this._gfitOnlineBound = true;
+                window.addEventListener('offline', () => { this.googleFitOffline = true; });
+                window.addEventListener('online', () => {
+                    this.googleFitOffline = false;
+                    if(this.googleFitConnected) this.syncGoogleFitData();
+                });
+            }
         },
 
         _stopGoogleFitKeepAlive() {
             if(this._gfitSyncTimer) clearInterval(this._gfitSyncTimer);
             if(this._gfitRefreshTimer) clearInterval(this._gfitRefreshTimer);
+            if(this._gfitRetryTimer) clearTimeout(this._gfitRetryTimer);
             this._gfitSyncTimer = null;
             this._gfitRefreshTimer = null;
+            this._gfitRetryTimer = null;
             this.googleFitReconnecting = false;
+            this.googleFitRetryCount = 0;
+        },
+        // Connection-health summary for the Settings card — reflects retry/offline/reauth state
+        // at a glance instead of making the user parse the raw error string.
+        get googleFitConnectionHealth() {
+            if(!this.googleFitConnected) return 'Disconnected';
+            if(this.googleFitNeedsReauth) return 'Needs Reconnect';
+            if(this.googleFitOffline || !navigator.onLine) return 'Offline';
+            if(this.googleFitReconnecting) return 'Reconnecting';
+            if(this.googleFitSyncing) return 'Syncing';
+            if(this.googleFitRetryCount>0) return 'Degraded — retrying';
+            return 'Healthy';
+        },
+        // Countdown label for the auto-sync card — "Next sync in Xm" so the user can see the
+        // background job is actually scheduled, not just trust a spinner.
+        get googleFitNextSyncLabel() {
+            if(!this.googleFitConnected || !this.googleFitAutoSync) return 'Auto-sync off';
+            if(!this.googleFitLastSyncedAt) return 'Pending first sync';
+            const nextAt = this.googleFitLastSyncedAt + 5*60*1000;
+            const diffMin = Math.ceil((nextAt - Date.now())/60000);
+            return diffMin>0 ? ('Next sync in ~'+diffMin+'m') : 'Syncing shortly…';
         },
 
         connectGoogleFit() {
@@ -8585,7 +8899,8 @@ function vytaraApp() {
             this.googleFitNeedsReauth = false;
             this.googleFitLastError   = '';
             this.googleFitLastSyncedAt = null;
-            this.googleFitData        = { stepsToday:0, calsBurned:0, activeMins:0, heartRateAvg:0, sleepHours:0 };
+            this.googleFitRetryCount  = 0;
+            this.googleFitData        = { stepsToday:0, calsBurned:0, activeMins:0, heartRateAvg:0, sleepHours:0, distanceKm:0, weightKg:0, heartPoints:0, workoutSessionsToday:0 };
             this.persist();
         },
         // Human-friendly "Last synced Xm ago" string for the connected-state UI.
@@ -8600,9 +8915,21 @@ function vytaraApp() {
             return Math.floor(hrs / 24) + 'd ago';
         },
 
+        // Exponential backoff for retryable sync failures (network errors, 5xx) — doubles the
+        // delay each consecutive failure up to a 5-minute cap, so a flaky connection doesn't
+        // hammer the API but still recovers fast once it's healthy again.
+        _scheduleGoogleFitRetry() {
+            if(this._gfitRetryTimer) clearTimeout(this._gfitRetryTimer);
+            this.googleFitRetryCount++;
+            const delay = Math.min(30000 * Math.pow(2, this.googleFitRetryCount-1), 5*60*1000);
+            this._gfitRetryTimer = setTimeout(() => {
+                if(this.googleFitConnected && this.googleFitAutoSync) this.syncGoogleFitData();
+            }, delay);
+        },
         async syncGoogleFitData(isRetry) {
             if(!this.googleFitAccessToken) return;
             if(!navigator.onLine) {
+                this.googleFitOffline = true;
                 this.googleFitLastError = 'Offline — Google Fit will sync again once you\'re back online.';
                 return;
             }
@@ -8617,6 +8944,9 @@ function vytaraApp() {
                         {dataTypeName:'com.google.active_minutes'},
                         {dataTypeName:'com.google.heart_rate.bpm'},
                         {dataTypeName:'com.google.sleep.segment'},
+                        {dataTypeName:'com.google.distance.delta'},
+                        {dataTypeName:'com.google.weight'},
+                        {dataTypeName:'com.google.heart_minutes'},
                     ],
                     bucketByTime: {durationMillis:86400000},
                     startTimeMillis: start.getTime(),
@@ -8660,15 +8990,19 @@ function vytaraApp() {
                     return;
                 }
                 if(!res.ok) {
-                    this.googleFitLastError = 'Google Fit sync failed (HTTP '+res.status+'). Will retry on next sync.';
+                    this.googleFitLastError = 'Google Fit sync failed (HTTP '+res.status+'). Retrying shortly…';
                     this.googleFitSyncing = false;
+                    this._scheduleGoogleFitRetry();
                     return;
                 }
                 const data = await res.json();
                 this.googleFitLastError = '';
                 this.googleFitNeedsReauth = false;
+                this.googleFitOffline = false;
                 this.googleFitLastSyncedAt = Date.now();
-                let steps=0, cals=0, mins=0, hrSum=0, hrCount=0, sleepMins=0;
+                this.googleFitRetryCount = 0;
+                if(this._gfitRetryTimer) { clearTimeout(this._gfitRetryTimer); this._gfitRetryTimer = null; }
+                let steps=0, cals=0, mins=0, hrSum=0, hrCount=0, sleepMins=0, distanceM=0, weightSum=0, weightCount=0, heartPts=0;
                 (data.bucket||[]).forEach(b => {
                     (b.dataset||[]).forEach(ds => {
                         const t = ds.dataSourceId||'';
@@ -8679,6 +9013,9 @@ function vytaraApp() {
                             else if(t.includes('calories'))  cals     += Math.round(parseFloat(v.fpVal||0));
                             else if(t.includes('active_min'))mins     += parseInt(v.intVal||0);
                             else if(t.includes('heart_rate')){ hrSum  += parseFloat(v.fpVal||0); hrCount++; }
+                            else if(t.includes('heart_minutes')) heartPts += parseFloat(v.fpVal||0);
+                            else if(t.includes('distance'))  distanceM+= parseFloat(v.fpVal||0);
+                            else if(t.includes('weight'))    { weightSum += parseFloat(v.fpVal||0); weightCount++; }
                             else if(t.includes('sleep')) {
                                 // sleep segment duration in ms → minutes
                                 const dur = (parseInt((p.endTimeNanos||0)/1e6) - parseInt((p.startTimeNanos||0)/1e6));
@@ -8693,13 +9030,35 @@ function vytaraApp() {
                     activeMins: mins,
                     heartRateAvg: hrCount>0 ? Math.round(hrSum/hrCount) : 0,
                     sleepHours:  sleepMins>0 ? Math.round(sleepMins/60*10)/10 : 0,
+                    distanceKm: Math.round(distanceM/100)/10,
+                    weightKg: weightCount>0 ? Math.round(weightSum/weightCount*10)/10 : 0,
+                    heartPoints: Math.round(heartPts),
+                    workoutSessionsToday: await this._fetchGoogleFitSessionsToday(),
                 };
                 this.persist();
             } catch(e) {
-                this.googleFitLastError = 'Google Fit sync failed — network error. Will retry on next sync.';
+                this.googleFitLastError = 'Google Fit sync failed — network error. Retrying shortly…';
                 console.warn('Google Fit sync error:', e);
+                this.googleFitSyncing = false;
+                this._scheduleGoogleFitRetry();
+                return;
             }
             this.googleFitSyncing = false;
+        },
+        // Best-effort count of today's logged Fit workout sessions. Failures here must never
+        // break the main metrics sync, so every error path just falls back to 0.
+        async _fetchGoogleFitSessionsToday() {
+            if(!this.googleFitAccessToken) return 0;
+            try {
+                const start = new Date(); start.setHours(0,0,0,0);
+                const end = new Date();
+                const url = 'https://www.googleapis.com/fitness/v1/users/me/sessions?startTime='
+                    + encodeURIComponent(start.toISOString()) + '&endTime=' + encodeURIComponent(end.toISOString());
+                const res = await fetch(url, { headers:{'Authorization':'Bearer '+this.googleFitAccessToken} });
+                if(!res.ok) return 0;
+                const data = await res.json();
+                return (data.session||[]).length;
+            } catch(e) { return 0; }
         },
 
         // ==================== CHALLENGES ====================
